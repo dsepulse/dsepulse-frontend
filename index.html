@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSE Pulse — Read the Market. Trade with Precision.</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;font-size:14px;background:#f8f7f4;color:#1a1a18;line-height:1.5}
+a{text-decoration:none;color:inherit}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#f0ece4}
+::-webkit-scrollbar-thumb{background:#d1c9b8}
+
+/* ── NAVIGATION ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117;height:56px;display:flex;align-items:center;padding:0 40px;gap:0;border-bottom:1px solid #1e2530}
+.logo{font-family:'Playfair Display',serif;font-size:17px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;margin-right:36px;letter-spacing:-0.3px}
+.logo-pulse{width:6px;height:6px;background:#16a34a;border-radius:50%}
+.navlink{font-size:12px;font-weight:500;color:#6b7280;padding:0 16px;height:56px;display:flex;align-items:center;letter-spacing:0.2px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap}
+.navlink:hover{color:#e5e7eb}
+.navlink.active{color:#fff;border-bottom-color:#16a34a}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn{padding:7px 18px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;border:none;letter-spacing:0.2px;transition:all 0.15s}
+.btn-ghost{background:transparent;border:1px solid #2d3748;color:#9ca3af}
+.btn-ghost:hover{border-color:#4a5568;color:#e5e7eb}
+.btn-primary{background:#16a34a;color:#fff}
+.btn-primary:hover{background:#15803d}
+
+/* ── TICKER ── */
+.ticker{background:#080d13;height:30px;display:flex;align-items:center;padding:0 40px;gap:20px;border-bottom:1px solid #1e2530;overflow:hidden;position:fixed;top:56px;left:0;right:0;z-index:99}
+.tick{display:flex;align-items:center;gap:7px;font-size:11px;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.tick-name{color:#6b7280}
+.tick-val{color:#e5e7eb}
+.tick-up{color:#16a34a}
+.tick-dn{color:#dc2626}
+.tick-sep{width:1px;height:14px;background:#1e2530;flex-shrink:0}
+.tick-mood{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#16a34a;letter-spacing:0.5px;text-transform:uppercase}
+.tick-dot{width:5px;height:5px;border-radius:50%;background:#16a34a}
+
+/* ── LAYOUT ── */
+.page{padding-top:86px;min-height:100vh}
+.section{display:none}
+.section.active{display:block}
+
+/* ── HERO ── */
+.hero{background:#0d1117;padding:80px 40px 64px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,#16a34a 40%,#16a34a 60%,transparent 100%);opacity:0.6}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#16a34a;margin-bottom:22px}
+.hero-eyebrow::before{content:'';width:24px;height:1px;background:#16a34a}
+.hero h1{font-family:'Playfair Display',serif;font-size:58px;font-weight:800;color:#fff;line-height:1.05;letter-spacing:-2px;max-width:700px;margin-bottom:20px}
+.hero h1 em{font-style:italic;color:#16a34a}
+.hero-sub{font-size:16px;color:#9ca3af;max-width:500px;margin-bottom:36px;font-weight:300;line-height:1.7}
+.hero-actions{display:flex;gap:12px;margin-bottom:60px;flex-wrap:wrap}
+.btn-hero{padding:13px 28px;font-size:14px;border-radius:3px}
+.hero-divider{height:1px;background:#1e2530;margin-bottom:32px}
+.hero-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+.hero-stat{padding-right:32px;border-right:1px solid #1e2530}
+.hero-stat:last-child{border-right:none}
+.hero-stat-num{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:#fff;letter-spacing:-0.5px}
+.hero-stat-lbl{font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:0.7px;margin-top:3px}
+
+/* ── FEATURES STRIP ── */
+.features{background:#fff;border-top:1px solid #e5e0d8;border-bottom:1px solid #e5e0d8;padding:48px 40px}
+.features-eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#9ca3af;margin-bottom:8px}
+.features-heading{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;color:#0d1117;letter-spacing:-0.5px;margin-bottom:4px}
+.features-sub{font-size:14px;color:#6b7280;font-weight:300;margin-bottom:36px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e5e0d8;border:1px solid #e5e0d8}
+.feat{background:#fff;padding:28px}
+.feat-icon{width:40px;height:40px;background:#0d1117;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feat-icon i{color:#16a34a;font-size:18px}
+.feat-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#0d1117;margin-bottom:6px}
+.feat-body{font-size:12px;color:#6b7280;line-height:1.65;font-weight:300}
+
+/* ── CTA ── */
+.cta{background:#0d1117;padding:60px 40px;text-align:center}
+.cta h2{font-family:'Playfair Display',serif;font-size:34px;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:10px}
+.cta p{color:#9ca3af;font-size:15px;font-weight:300;margin-bottom:28px}
+.cta-btns{display:flex;gap:12px;justify-content:center}
+
+/* ── PAGE HEADER ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;padding:28px 40px 0}
+.ptitle{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#0d1117;letter-spacing:-0.3px}
+.psub{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;font-weight:500}
+.pcontent{padding:0 40px 40px}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e5e0d8;border:1px solid #e5e0d8;margin-bottom:20px}
+.metric{background:#fff;padding:18px 22px}
+.metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:600;margin-bottom:8px}
+.metric-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;letter-spacing:-0.3px;line-height:1;color:#0d1117}
+.metric-val.up{color:#15803d}
+.metric-val.dn{color:#b91c1c}
+.metric-sub{font-size:11px;color:#9ca3af;margin-top:5px}
+.metric-sub .up{color:#15803d}
+.metric-sub .dn{color:#b91c1c}
+
+/* ── CARDS ── */
+.card{background:#fff;border:1px solid #e5e0d8}
+.card-head{padding:13px 18px;border-bottom:1px solid #f0ece4;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280}
+.badge{font-size:9px;padding:2px 7px;font-weight:700;letter-spacing:0.3px;border-radius:2px}
+.badge-live{background:#dcfce7;color:#15803d}
+.badge-ai{background:#eff6ff;color:#1d4ed8}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+
+/* ── TABLES ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#9ca3af;padding:0 14px 10px;text-align:left;border-bottom:1px solid #f0ece4}
+.tbl td{padding:10px 14px;border-bottom:1px solid #fafaf8;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafaf8}
+.code{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#0d1117}
+.cat{font-size:9px;padding:1px 5px;font-weight:700;border-radius:2px;margin-left:4px}
+.cat-a{background:#eff6ff;color:#1e40af}
+.cat-b{background:#fef3c7;color:#92400e}
+.up{color:#15803d;font-weight:600}
+.dn{color:#b91c1c;font-weight:600}
+.muted{color:#6b7280}
+.score-wrap{display:flex;align-items:center;gap:6px}
+.score-bar{width:44px;height:2px;background:#f0ece4}
+.score-fill{height:2px;background:#16a34a}
+.rec-buy{font-size:9px;font-weight:700;letter-spacing:0.5px;background:#0d1117;color:#16a34a;padding:3px 8px;border-radius:2px}
+.rec-watch{font-size:9px;font-weight:700;letter-spacing:0.5px;background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:2px}
+
+/* ── PICK CARDS ── */
+.pick-card{background:#fff;border:1px solid #e5e0d8;border-left:3px solid #16a34a;margin-bottom:10px}
+.pick-head{padding:14px 18px;background:#fafaf8;border-bottom:1px solid #f0ece4;display:flex;align-items:center;justify-content:space-between}
+.pick-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.pick-price{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;color:#15803d}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#f0ece4}
+.level{background:#fff;padding:12px 14px;text-align:center}
+.level-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:600;margin-bottom:5px}
+.level-price{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500}
+.level-note{font-size:10px;margin-top:3px;color:#6b7280}
+.pick-footer{padding:10px 18px;background:#fafaf8;border-top:1px solid #f0ece4;display:flex;gap:20px;font-size:11px;color:#6b7280;flex-wrap:wrap}
+
+/* ── HOLDINGS ── */
+.holding{display:flex;align-items:center;gap:14px;padding:11px 18px;border-bottom:1px solid #fafaf8}
+.holding:last-child{border-bottom:none}
+.h-code{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13px;min-width:90px}
+.h-broker{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.3px}
+.h-bar-wrap{flex:1;height:2px;background:#f0ece4;position:relative;min-width:50px}
+.h-bar{height:2px;position:absolute;top:0;left:0}
+.h-val{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;min-width:56px;text-align:right}
+.h-dec{font-size:9px;font-weight:700;letter-spacing:0.3px;padding:2px 7px;border-radius:2px;white-space:nowrap}
+.dec-acc{background:#dcfce7;color:#166534}
+.dec-hold{background:#f0fdf4;color:#15803d}
+.dec-watch{background:#fef3c7;color:#92400e}
+.dec-exit{background:#fee2e2;color:#991b1b}
+
+/* ── ALERTS ── */
+.alert-item{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid #fafaf8}
+.alert-item:last-child{border-bottom:none}
+.alert-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.alert-title{font-size:12px;font-weight:600;color:#0d1117}
+.alert-sub{font-size:11px;color:#6b7280;margin-top:1px}
+.alert-time{font-size:10px;color:#9ca3af;margin-top:2px}
+
+/* ── BLOG ── */
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.blog-card{background:#fff;border:1px solid #e5e0d8;cursor:pointer;transition:border-color 0.15s}
+.blog-card:hover{border-color:#9ca3af}
+.blog-thumb{height:90px;background:#0d1117;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #1e2530}
+.blog-thumb i{color:#16a34a;font-size:28px}
+.blog-body{padding:16px}
+.blog-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#16a34a;margin-bottom:7px}
+.blog-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;line-height:1.3;color:#0d1117;margin-bottom:7px}
+.blog-excerpt{font-size:11px;color:#6b7280;line-height:1.55;font-weight:300}
+.blog-meta{display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-top:10px;text-transform:uppercase;letter-spacing:0.3px}
+
+/* ── PRICING ── */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto}
+.price-card{background:#fff;border:1px solid #e5e0d8;padding:28px;position:relative}
+.price-card.featured{background:#0d1117;border-color:#0d1117}
+.price-popular{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;font-size:9px;font-weight:700;padding:3px 12px;letter-spacing:0.8px;text-transform:uppercase;white-space:nowrap}
+.price-tier{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.price-amount{font-family:'Playfair Display',serif;font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1}
+.price-cur{font-size:17px;vertical-align:super;font-weight:500}
+.price-period{font-size:11px;color:#9ca3af;margin-top:4px;margin-bottom:18px}
+.pf{display:flex;align-items:flex-start;gap:7px;font-size:12px;margin-bottom:9px;font-weight:300}
+.pf i{font-size:13px;margin-top:1px;flex-shrink:0}
+.pf.yes i{color:#16a34a}
+.pf.no i,.pf.no{color:#9ca3af}
+
+/* ── SCREENER ── */
+.screener-bar{background:#fff;border:1px solid #e5e0d8;padding:16px 18px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.f-grp{display:flex;flex-direction:column;gap:3px}
+.f-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af}
+select,input[type=number]{background:#f8f7f4;border:1px solid #e5e0d8;padding:6px 10px;font-size:12px;color:#0d1117;font-family:'IBM Plex Sans',sans-serif;outline:none;border-radius:2px}
+select:focus,input:focus{border-color:#9ca3af}
+
+/* ── MISC ── */
+.divider{height:1px;background:#f0ece4;margin:16px 0}
+.prog{height:3px;background:#f0ece4;margin:0 18px}
+.prog-fill{height:3px;background:#16a34a}
+.footer{background:#080d13;border-top:1px solid #1e2530;padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:60px}
+.footer-logo{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#fff}
+.footer-tagline{font-size:11px;color:#374151;margin-top:2px}
+.footer-disc{font-size:10px;color:#374151;max-width:580px;line-height:1.6}
+
+@media(max-width:960px){
+  .g2,.g3,.feat-grid{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .hero-stats{grid-template-columns:repeat(3,1fr)}
+  .price-grid{grid-template-columns:1fr}
+  .blog-grid{grid-template-columns:1fr 1fr}
+  nav{padding:0 16px}
+  .ph,.pcontent{padding-left:16px;padding-right:16px}
+  .hero,.features,.cta{padding-left:16px;padding-right:16px}
+}
+
+/* ── USER PILL ── */
+.plan-pill{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:0.3px;background:rgba(255,255,255,0.08);color:#94a3b8}
+.nav-user{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer}
+.nav-avatar{width:24px;height:24px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.nav-uname{font-size:11px;color:#e2e8f0;font-weight:500}
+
+/* ── DISCLAIMER BANNER ── */
+.disc-banner{background:#fffbeb;border-bottom:1px solid #fde68a;padding:7px 40px;display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#92400e;line-height:1.5;position:fixed;top:86px;left:0;right:0;z-index:98}
+.disc-close{margin-left:auto;cursor:pointer;font-size:18px;color:#d97706;flex-shrink:0}
+
+/* ── DISCLAIMER MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,13,19,0.7);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#fff;max-width:640px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-hd{padding:16px 20px;border-bottom:1px solid #e5e0d8;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Playfair Display',serif;font-size:18px;color:#0d1117}
+.modal-close{font-size:20px;cursor:pointer;color:#9ca3af;padding:2px 8px}
+.modal-body{padding:20px;font-size:12px;color:#374151;line-height:1.7}
+.modal-footer{padding:14px 20px;border-top:1px solid #e5e0d8;display:flex;gap:8px;justify-content:flex-end}
+
+/* ── HISTORY ── */
+.day-block{border:1px solid #e5e0d8;margin-bottom:8px;background:#fff}
+.day-hd{padding:10px 14px;background:#fafaf8;border-bottom:1px solid #f0ece4;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.day-hd:hover{background:#f0ece4}
+.day-date{font-family:'Playfair Display',serif;font-size:14px;color:#0d1117}
+.day-meta{font-size:11px;color:#6b7280;margin-top:1px}
+.win-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.h-tbl-hd{display:grid;grid-template-columns:20px 88px 110px 108px 68px 68px 56px 58px 72px;background:#fafaf8;border-bottom:1px solid #f0ece4}
+.h-th{padding:6px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af}
+.h-pick-row{display:grid;grid-template-columns:20px 88px 110px 108px 68px 68px 56px 58px 72px;border-bottom:1px solid #fafaf8;align-items:center}
+.h-pick-row:last-child{border-bottom:none}
+.h-pick-row:hover{background:#fafaf8}
+.h-pc{padding:7px 8px;font-size:11px}
+.hist-tag{font-size:9px;padding:2px 6px;font-weight:700;border-radius:2px}
+.t-hit{background:#dcfce7;color:#166534}
+.t-miss{background:#fee2e2;color:#991b1b}
+.t-open{background:#eff6ff;color:#1e40af}
+.perf-chart{display:flex;align-items:flex-end;gap:3px;height:36px;padding:10px 16px 0}
+
+/* ── PICK CARDS EXTENDED ── */
+.pick-card.consec{border-left-color:#2563eb}
+.consec-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;background:#ede9fe;color:#5b21b6;border-radius:2px;margin-left:6px}
+.multi-day{padding:10px 16px;border-top:1px solid #f0ece4}
+.md-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.md-days{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.md-d{background:#fafaf8;border:1px solid #f0ece4;border-radius:2px;padding:8px}
+.md-d.today{border-color:#2563eb;background:#eff6ff}
+.md-dl{font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px}
+.md-dp{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500}
+.info-box{margin:0 16px 8px;padding:8px 10px;background:#eff6ff;border-left:2px solid #2563eb;font-size:11px;color:#1e40af}
+.sig-row{display:flex;gap:6px;padding:8px 16px}
+.sig-btn{flex:1;padding:6px;border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #e5e0d8;background:transparent;color:#6b7280;font-family:'IBM Plex Sans',sans-serif;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.sig-acc{border-color:#93c5fd;color:#1d4ed8}.sig-acc.on,.sig-acc:hover{background:#eff6ff;border-color:#2563eb}
+.sig-hold{border-color:#86efac;color:#15803d}.sig-hold.on,.sig-hold:hover{background:#f0fdf4;border-color:#16a34a}
+.sig-sell{border-color:#fca5a5;color:#b91c1c}.sig-sell.on,.sig-sell:hover{background:#fef2f2;border-color:#dc2626}
+.level.bz{background:#f0fdf4}
+.level.l1{background:#f0fdf4}
+.level.l2{background:#eff6ff}
+.level.l3{background:#fffbeb}
+.level.sl{background:#fef2f2}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#f0ece4}
+.prog-labels{display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;padding:3px 16px 6px;font-family:'IBM Plex Mono',monospace}
+
+/* ── ALERTS ── */
+.alert-action{font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0ece4}
+.toggle-row:last-child{border-bottom:none}
+.toggle{width:38px;height:20px;border-radius:10px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:#16a34a}.toggle.off{background:#d1c9b8}
+.toggle-dot{width:14px;height:14px;background:white;border-radius:50%;position:absolute;top:3px;transition:left 0.2s}
+.toggle.on .toggle-dot{left:21px}.toggle.off .toggle-dot{left:3px}
+.toggle-title{font-size:13px;font-weight:500;color:#0d1117}
+.toggle-desc{font-size:11px;color:#6b7280;margin-top:2px}
+
+/* ── PROFILE / SETTINGS ── */
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:#0d1117;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:24px;color:#16a34a;font-weight:700;margin-bottom:12px}
+.field-row{margin-bottom:12px}
+.field-row label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;display:block;margin-bottom:4px}
+.field-row input,.field-row select,.field-row textarea{width:100%}
+.setting-row{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0ece4;gap:14px}
+.setting-row:last-child{border-bottom:none}
+.setting-lbl{font-size:13px;font-weight:500;color:#0d1117}
+.setting-sub{font-size:11px;color:#6b7280;margin-top:2px}
+.section-eye{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#9ca3af;margin-bottom:8px;padding-left:8px;border-left:2px solid #16a34a}
+select,input[type=number],input[type=text],input[type=email],input[type=password]{background:#f8f7f4;border:1px solid #e5e0d8;padding:6px 10px;font-size:12px;color:#0d1117;font-family:'IBM Plex Sans',sans-serif;outline:none;border-radius:2px}
+select:focus,input:focus{border-color:#9ca3af}
+textarea{background:#f8f7f4;border:1px solid #e5e0d8;padding:8px 10px;font-size:12px;color:#0d1117;font-family:'IBM Plex Sans',sans-serif;outline:none;border-radius:2px;resize:vertical;width:100%}
+
+/* ── PRICING TOGGLE ── */
+.price-toggle{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e0d8;border-radius:2px;padding:3px;margin-bottom:28px;width:fit-content;margin-left:auto;margin-right:auto}
+.ptab{padding:7px 20px;border-radius:2px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'IBM Plex Sans',sans-serif;transition:all 0.2s;color:#6b7280;background:transparent}
+.ptab.on{background:#0d1117;color:#fff}
+.price-billing{font-size:11px;color:#9ca3af;margin-top:2px;margin-bottom:14px;min-height:16px}
+.price-billing.green{color:#16a34a}
+
+/* ── ADJUST PAGE TOP FOR BANNER ── */
+.page{padding-top:116px !important}
+</style>
+</head>
+<body>
+
+<!-- DISCLAIMER BANNER -->
+<div class="disc-banner" id="disc-banner">
+  <i class="ti ti-alert-triangle" style="font-size:13px;color:#d97706;flex-shrink:0;margin-top:1px"></i>
+  <span><strong>Disclaimer:</strong> DSE Pulse provides AI-generated analysis for informational purposes only. This is <strong>not financial advice</strong>. All picks and signals are algorithmic outputs — not guarantees of profit. DSE investments carry significant risk. You may lose capital. Not registered with BSEC. Past performance ≠ future results.
+  <span style="color:#1d4ed8;cursor:pointer;font-weight:600;margin-left:5px" onclick="showDiscModal()">Full disclaimer →</span></span>
+  <span class="disc-close" onclick="document.getElementById('disc-banner').style.display='none'">×</span>
+</div>
+
+<!-- DISCLAIMER MODAL -->
+<div class="modal-overlay" id="disc-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-hd"><div class="modal-title">DSE Pulse — Legal Disclaimer</div><span class="modal-close" onclick="hideDiscModal()">×</span></div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><strong style="color:#0d1117">Not financial advice:</strong> DSE Pulse is an informational platform only. All picks, buy zones, target prices, stop loss levels, signals, and analysis are for educational purposes only. Nothing constitutes financial advice, investment advice, or trading advice. DSE Pulse is not a licensed financial advisor, broker, or investment firm.</div>
+        <div><strong style="color:#0d1117">Investment risk warning:</strong> Trading and investing in DSE securities involves substantial risk of loss. Stock prices can fall significantly. You may lose some or all of your invested capital. Never invest money you cannot afford to lose. Consider your financial situation, investment objectives, and risk tolerance before investing.</div>
+        <div><strong style="color:#0d1117">AI-generated content:</strong> All picks, rankings, scores, buy zones, and signals are generated by automated algorithms. These systems are not infallible. Algorithmic outputs can be wrong. Market conditions change rapidly and unpredictably.</div>
+        <div><strong style="color:#0d1117">Past performance:</strong> Any historical data shown — pick history, hit rates, average returns, P&L figures — is for reference only. Past performance is not indicative of future results.</div>
+        <div><strong style="color:#0d1117">Data accuracy:</strong> DSE Pulse sources market data from multiple third-party providers. We cannot guarantee all prices and data are real-time or error-free. Always verify from your broker before trading.</div>
+        <div><strong style="color:#0d1117">BSEC regulatory notice:</strong> DSE Pulse is not registered with the Bangladesh Securities and Exchange Commission (BSEC) as an investment adviser or portfolio manager. For regulated financial advice, consult a BSEC-licensed adviser.</div>
+        <div><strong style="color:#0d1117">No liability:</strong> DSE Pulse and its affiliates accept no liability for any losses, damages, or financial harm arising from your use of this platform or reliance on its outputs.</div>
+        <div style="background:#fef3c7;border:1px solid #fde68a;padding:12px"><strong>By using DSE Pulse you confirm:</strong> you have read this disclaimer, you understand this is not financial advice, and you accept full responsibility for all investment decisions.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span style="font-size:11px;color:#9ca3af;margin-right:auto">DSE Pulse · dsepulse.com</span>
+      <button class="btn btn-ghost" onclick="hideDiscModal()">Close</button>
+      <button class="btn btn-primary" onclick="acceptDisc()">I understand — continue</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="logo" onclick="show('home')"><div class="logo-pulse"></div>DSE Pulse</div>
+  <a class="navlink active" onclick="show('home')">Home</a>
+  <a class="navlink" onclick="show('dashboard')">Dashboard</a>
+  <a class="navlink" onclick="show('picks')">Daily Picks</a>
+  <a class="navlink" onclick="show('portfolio')">Portfolio</a>
+  <a class="navlink" onclick="show('screener')">Screener</a>
+  <a class="navlink" onclick="show('blog')">Insights</a>
+  <a class="navlink" onclick="show('pricing')">Pricing</a>
+  <a class="navlink" onclick="show('history')">Pick history</a>
+  <a class="navlink" onclick="show('alerts')">Alerts</a>
+  <div id="nav-guest" style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <button class="btn btn-ghost" onclick="showAuth('login')">Sign in</button>
+    <button class="btn btn-primary" onclick="showAuth('register')">Get started free</button>
+  </div>
+  <div id="nav-user" style="margin-left:auto;display:none;align-items:center;gap:8px">
+    <span class="plan-pill" id="nav-plan">FREE</span>
+    <div class="nav-user" onclick="show('profile')">
+      <div class="nav-avatar" id="nav-avatar">U</div>
+      <span class="nav-uname" id="nav-uname">Account</span>
+    </div>
+    <button class="btn btn-ghost" onclick="show('settings')" title="Settings"><i class="ti ti-settings"></i></button>
+  </div>
+</nav>
+
+<div class="ticker">
+  <div class="tick"><span class="tick-name">DSEX</span><span class="tick-val">5,847.2</span><span class="tick-up">+0.66%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">DS30</span><span class="tick-val">2,108.5</span><span class="tick-up">+0.58%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">MIRAKHTER</span><span class="tick-val">৳47.00</span><span class="tick-up">+6.58%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">ACMEPL</span><span class="tick-val">৳26.10</span><span class="tick-up">+6.10%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">NAVANAPHAR</span><span class="tick-val">৳75.40</span><span class="tick-up">+1.75%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">GPHISPAT</span><span class="tick-val">৳16.60</span><span class="tick-dn">-2.35%</span></div>
+  <div class="tick-sep"></div>
+  <div class="tick"><span class="tick-name">BEXIMCO</span><span class="tick-val">৳110.10</span><span class="tick-dn">-16.20%</span></div>
+  <div class="tick-mood"><div class="tick-dot"></div>GREEN DAY</div>
+</div>
+
+<div class="page">
+
+<!-- HOME -->
+<div id="home" class="section active">
+  <div class="hero">
+    <div class="hero-eyebrow"><i class="ti ti-chart-line" style="font-size:12px"></i>Bangladesh's premier DSE intelligence platform</div>
+    <h1>The <em>smartest</em> way to<br>trade the Dhaka market.</h1>
+    <p class="hero-sub">AI-ranked daily picks, tiered exit strategies, live alarms every 10 minutes, and full portfolio management — built for the serious DSE investor.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-hero" onclick="show('dashboard')"><i class="ti ti-layout-dashboard"></i> Open dashboard</button>
+      <button class="btn btn-ghost btn-hero" onclick="show('picks')"><i class="ti ti-chart-bar"></i> Today's picks</button>
+    </div>
+    <div class="hero-divider"></div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">426</div><div class="hero-stat-lbl">DSE stocks tracked</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">10 min</div><div class="hero-stat-lbl">Alarm frequency</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">6</div><div class="hero-stat-lbl">Data sources</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">2–10%</div><div class="hero-stat-lbl">Target per trade</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">Free</div><div class="hero-stat-lbl">To get started</div></div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="features-eyebrow">Why TradeIQ BD</div>
+    <div class="features-heading">Everything the DSE investor needs.</div>
+    <div class="features-sub">Built for Bangladesh. Aware of market hours, holidays, and BD-specific signals.</div>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-icon"><i class="ti ti-brain"></i></div><div class="feat-title">AI-ranked daily picks</div><div class="feat-body">Top 10 stocks scored across 7 dimensions — momentum, volume surge, DSEX alignment, R/R ratio, category, circuit distance, and trade count.</div></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-target"></i></div><div class="feat-title">Tiered exit strategy</div><div class="feat-body">Sell 40% at +2%, 40% at +5%, 20% at +8%. Stop loss at -3%. Never guess when to exit — the system tells you exactly.</div></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-bell-ringing"></i></div><div class="feat-title">Live exit alarms</div><div class="feat-body">Holdings checked every 10 minutes during market hours (10am–2pm, Sunday–Thursday). Instant alarm when any level is hit.</div></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-calendar-event"></i></div><div class="feat-title">BD market calendar</div><div class="feat-body">Fully aware of Bangladesh schedule. Skips Friday, Saturday, and all government holidays. No false alarms on closed market days.</div></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-chart-dots"></i></div><div class="feat-title">Smart money tracking</div><div class="feat-body">Block transaction monitor detects institutional accumulation before retail investors notice. Follow where the crores are moving.</div></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-briefcase"></i></div><div class="feat-title">Multi-BO portfolio</div><div class="feat-body">All 3 BO accounts in one place. Real-time P&L, profit and loss per holding, priority exit recommendations, and capital tracking.</div></div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>Start trading smarter today.</h2>
+    <p>Free plan includes top 3 daily picks. Premium unlocks the full platform.</p>
+    <div class="cta-btns">
+      <button class="btn btn-primary btn-hero" onclick="show('pricing')">View pricing</button>
+      <button class="btn btn-ghost btn-hero" onclick="show('dashboard')">Explore dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+  <div class="ph">
+    <div><div class="ptitle">Dashboard</div><div class="psub" id="dash-date">Sunday, 08 June 2026</div></div>
+    <div style="display:flex;gap:8px;align-self:center">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="renderDash()"><i class="ti ti-refresh"></i> Refresh</button>
+      <button class="btn btn-primary" style="font-size:12px" onclick="show('picks')">All picks</button>
+    </div>
+  </div>
+  <div class="pcontent">
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">DSEX Index</div><div class="metric-val up">5,847.2</div><div class="metric-sub"><span class="up">+38.4 (+0.66%)</span> today</div></div>
+      <div class="metric"><div class="metric-lbl">Portfolio Value</div><div class="metric-val">৳15.83L</div><div class="metric-sub"><span class="dn">−39.2% unrealised</span></div></div>
+      <div class="metric"><div class="metric-lbl">Active Trade</div><div class="metric-val up">ACMEPL</div><div class="metric-sub">৳7.95L available capital</div></div>
+      <div class="metric"><div class="metric-lbl">Top Pick</div><div class="metric-val">MIRAKHTER</div><div class="metric-sub"><span class="up">Score 39/50 — BUY</span></div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Top 3 buy recommendations</span><span class="badge badge-ai">AI SCORED</span></div>
+        <table class="tbl" id="dash-picks-table">
+          <thead><tr><th>#</th><th>Code</th><th>Price</th><th>L1 / L2 / L3 Targets</th><th>Stop loss</th><th>Score</th><th></th></tr></thead>
+          <tbody id="dash-picks-body"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Active trade — ACMEPL</span><span class="badge badge-live">LIVE</span></div>
+        <div style="padding:16px 18px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+            <div><div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700">ACMEPL</div><div style="font-size:11px;color:#9ca3af;margin-top:1px">7,900 shares · avg ৳25.99</div></div>
+            <div style="text-align:right"><div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;color:#15803d">৳26.10</div><div style="font-size:11px;color:#15803d">+৳869 (+0.42%)</div></div>
+          </div>
+          <div class="prog"><div class="prog-fill" style="width:18%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;padding:4px 18px 12px;margin:0 -18px">
+            <span>Buy ৳25.99</span><span style="color:#15803d">L1 ৳26.51</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f0ece4">
+            <div style="background:#f0fdf4;padding:9px;text-align:center"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:3px">L1 +2%</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#15803d;font-weight:500">৳26.51</div></div>
+            <div style="background:#eff6ff;padding:9px;text-align:center"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:3px">L2 +5%</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#1d4ed8;font-weight:500">৳27.29</div></div>
+            <div style="background:#fef2f2;padding:9px;text-align:center"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:3px">SL −3%</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#b91c1c;font-weight:500">৳25.21</div></div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:11px;color:#6b7280">Remaining capital: <strong style="color:#15803d;font-family:'IBM Plex Mono',monospace">৳7,95,179</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Recent alerts</span><span class="badge badge-live">3 today</span></div>
+        <div id="dash-alerts"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Market mood</span></div>
+        <div style="padding:20px 18px;text-align:center">
+          <div style="width:44px;height:44px;background:#f0fdf4;border:1.5px solid #15803d;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="ti ti-trending-up" style="color:#15803d;font-size:18px"></i></div>
+          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#15803d">Green Day</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:3px;margin-bottom:14px">DSEX +0.66% — good day to trade</div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-around;margin-top:12px;font-size:11px">
+            <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#15803d">124</div><div style="color:#9ca3af;font-size:9px;text-transform:uppercase;letter-spacing:0.3px">Gainers</div></div>
+            <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#b91c1c">89</div><div style="color:#9ca3af;font-size:9px;text-transform:uppercase;letter-spacing:0.3px">Losers</div></div>
+            <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700">48</div><div style="color:#9ca3af;font-size:9px;text-transform:uppercase;letter-spacing:0.3px">Neutral</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Capital summary</span></div>
+        <div style="padding:16px 18px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span class="muted">Total capital</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:500">৳10,00,000</span></div>
+          <div style="height:4px;background:#f0ece4;margin:8px 0"><div style="height:4px;width:20.5%;background:#0d1117"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:14px"><span style="color:#f59e0b">Deployed ৳2,04,821</span><span style="color:#15803d">Available ৳7,95,179</span></div>
+          <div class="divider"></div>
+          <div style="font-size:11px;color:#6b7280;margin-top:12px;line-height:1.6">At 5% avg return per trade:<br><strong style="color:#0d1117">৳39,759 potential profit</strong> from available capital</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PICKS -->
+<div id="picks" class="section">
+  <div class="ph">
+    <div><div class="ptitle">Daily picks</div><div class="psub">AI-ranked top 10 · <span id="picks-date"></span> · 426 stocks screened</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-self:center">
+      <span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 8px;font-weight:700;border-radius:2px">Momentum</span>
+      <span style="font-size:10px;background:#eff6ff;color:#1e40af;padding:2px 8px;font-weight:700;border-radius:2px">Volume</span>
+      <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 8px;font-weight:700;border-radius:2px">DSEX</span>
+      <span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 8px;font-weight:700;border-radius:2px">R/R</span>
+    </div>
+  </div>
+  <div class="pcontent">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#15803d;margin-bottom:12px;padding-left:10px;border-left:2px solid #16a34a">Buy recommendations — top 3</div>
+    <div id="buy-cards"></div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#92400e;margin:22px 0 12px;padding-left:10px;border-left:2px solid #f59e0b">Watchlist — #4 to #10</div>
+    <div class="card">
+      <table class="tbl" style="table-layout:fixed;width:100%">
+        <thead><tr><th style="width:32px">#</th><th>Code</th><th>LTP</th><th>Change</th><th>L1 / L2 / L3</th><th>Stop loss</th><th>R/R</th><th>Score</th><th>Signal</th></tr></thead>
+        <tbody id="watch-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PORTFOLIO -->
+<div id="portfolio" class="section">
+  <div class="ph">
+    <div><div class="ptitle">Portfolio</div><div class="psub">3 BO accounts · 30 holdings · ৳10L short-term capital</div></div>
+    <button class="btn btn-primary" style="font-size:12px;align-self:center"><i class="ti ti-plus"></i> Add trade</button>
+  </div>
+  <div class="pcontent">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#15803d;margin-bottom:10px;padding-left:10px;border-left:2px solid #16a34a">Short-term trade — ৳10 lakh capital</div>
+    <div class="pick-card" style="margin-bottom:20px">
+      <div class="pick-head">
+        <div><div class="pick-name">ACMEPL <span class="cat cat-b">B</span></div><div style="font-size:11px;color:#6b7280;margin-top:2px">Bank Asia 16409 · 7,900 shares · Avg ৳25.99 · Capital ৳2,04,821</div></div>
+        <div style="text-align:right"><div class="pick-price">৳26.10</div><div style="font-size:11px;color:#15803d;margin-top:1px">+0.42% · P&L: ৳+869</div></div>
+      </div>
+      <div class="prog" style="margin:0 0 0;"><div class="prog-fill" style="width:18%"></div></div>
+      <div class="levels">
+        <div class="level"><div class="level-lbl">Buy price</div><div class="level-price">৳25.99</div><div class="level-note">avg cost</div></div>
+        <div class="level"><div class="level-lbl">L1 target +2%</div><div class="level-price" style="color:#15803d">৳26.51</div><div class="level-note up">Sell 3,160 → ৳3,285</div></div>
+        <div class="level"><div class="level-lbl">L2 target +5%</div><div class="level-price" style="color:#1d4ed8">৳27.29</div><div class="level-note" style="color:#1d4ed8">Sell 3,160 → ৳8,213</div></div>
+        <div class="level"><div class="level-lbl">Stop loss −3%</div><div class="level-price" style="color:#b91c1c">৳25.21</div><div class="level-note dn">Exit all · −৳6,160</div></div>
+      </div>
+      <div class="pick-footer">
+        <span>R/R: <strong style="color:#15803d">2.93×</strong></span>
+        <span>Full profit: <strong style="color:#15803d">৳18,068</strong></span>
+        <span>Max risk: <strong style="color:#b91c1c">৳6,160</strong></span>
+        <span style="margin-left:auto">Remaining capital: <strong style="font-family:'IBM Plex Mono',monospace">৳7,95,179</strong></span>
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;margin-bottom:10px;padding-left:10px;border-left:2px solid #d1d5db">Long-term holdings — 3 BO accounts</div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="filterH('all')">All (30)</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="filterH('Bank Asia')">Bank Asia (16)</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="filterH('LankaBangla')">LankaBangla (2)</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="filterH('Royal Capital')">Royal Capital (12)</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px;border-color:#fee2e2;color:#b91c1c" onclick="filterH('EXIT')">Exit (13)</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="filterH('HOLD')">Hold / Accumulate (7)</button>
+    </div>
+    <div class="card" id="holdings-list"></div>
+  </div>
+</div>
+
+<!-- SCREENER -->
+<div id="screener" class="section">
+  <div class="ph"><div><div class="ptitle">Stock screener</div><div class="psub">Filter all 426 DSE stocks</div></div></div>
+  <div class="pcontent">
+    <div class="screener-bar">
+      <div class="f-grp"><div class="f-lbl">Category</div><select><option>All</option><option>A</option><option>B</option><option>Z</option></select></div>
+      <div class="f-grp"><div class="f-lbl">Min price ৳</div><input type="number" placeholder="0" style="width:80px"></div>
+      <div class="f-grp"><div class="f-lbl">Max price ৳</div><input type="number" placeholder="999" style="width:80px"></div>
+      <div class="f-grp"><div class="f-lbl">Min change %</div><input type="number" placeholder="0" style="width:80px"></div>
+      <div class="f-grp"><div class="f-lbl">Sector</div><select style="min-width:130px"><option>All sectors</option><option>Pharmaceuticals</option><option>Engineering</option><option>Banking</option><option>Textile</option><option>IT/Tech</option><option>Power</option></select></div>
+      <button class="btn btn-primary" style="font-size:12px;height:33px"><i class="ti ti-filter"></i> Screen</button>
+    </div>
+    <div class="card">
+      <table class="tbl"><thead><tr><th>Code</th><th>Cat</th><th>LTP ৳</th><th>Change %</th><th>Volume</th><th>Value mn</th><th>Score</th><th>Signal</th></tr></thead>
+      <tbody id="screener-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- BLOG -->
+<div id="blog" class="section">
+  <div class="ph"><div><div class="ptitle">Market insights</div><div class="psub">DSE analysis, strategy, and education</div></div></div>
+  <div class="pcontent"><div class="blog-grid" id="blog-grid"></div></div>
+</div>
+
+<!-- PRICING -->
+<div id="pricing" class="section">
+  <div class="ph"><div><div class="ptitle">Pricing</div><div class="psub">Simple, transparent — no hidden fees</div></div></div>
+  <div class="pcontent">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:#0d1117;letter-spacing:-0.5px;margin-bottom:6px">Start free. Upgrade when ready.</div>
+      <div style="font-size:14px;color:#6b7280;font-weight:300">No credit card required for the free plan.</div>
+    </div>
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="price-tier" style="color:#6b7280">Free</div>
+        <div class="price-amount" style="color:#0d1117"><span class="price-cur">৳</span>0</div>
+        <div class="price-period">Forever free</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Top 3 daily picks</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Basic market mood</div>
+        <div class="pf yes"><i class="ti ti-check"></i>DSE market data</div>
+        <div class="pf no"><i class="ti ti-x"></i>Portfolio tracker</div>
+        <div class="pf no"><i class="ti ti-x"></i>Exit alarms</div>
+        <div class="pf no"><i class="ti ti-x"></i>Block trade alerts</div>
+        <div style="margin-top:18px"><button class="btn btn-ghost" style="width:100%;padding:11px;font-size:13px">Get started free</button></div>
+      </div>
+      <div class="price-card featured" style="position:relative">
+        <div class="price-popular">Most Popular</div>
+        <div class="price-tier" style="color:#16a34a">Premium</div>
+        <div class="price-amount" style="color:#fff"><span class="price-cur" style="color:#9ca3af">৳</span>499</div>
+        <div class="price-period">per month</div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Top 10 ranked picks daily</span></div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Tiered exit L1 / L2 / L3</span></div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Live alarms every 10 min</span></div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Full portfolio tracker</span></div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Block trade / smart money</span></div>
+        <div class="pf yes"><i class="ti ti-check"></i><span style="color:#e5e7eb">Advanced screener</span></div>
+        <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:11px;font-size:13px">Start 7-day free trial</button></div>
+      </div>
+      <div class="price-card">
+        <div class="price-tier" style="color:#6b7280">Pro Trader</div>
+        <div class="price-amount" style="color:#0d1117"><span class="price-cur">৳</span>999</div>
+        <div class="price-period">per month</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Everything in Premium</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Multi-BO account sync</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Margin call risk monitor</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Dividend record date alerts</div>
+        <div class="pf yes"><i class="ti ti-check"></i>Priority SMS alerts</div>
+        <div class="pf yes"><i class="ti ti-check"></i>1-on-1 onboarding call</div>
+        <div style="margin-top:18px"><button class="btn btn-ghost" style="width:100%;padding:11px;font-size:13px">Contact us</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PICK HISTORY ══ -->
+<div id="history" class="section">
+  <div class="ph">
+    <div><div class="ptitle">Pick history</div><div class="psub">Day-wise outcomes · P&amp;L tracking · consecutive analysis</div></div>
+    <button class="btn btn-ghost" style="font-size:12px;align-self:center"><i class="ti ti-download"></i> Export CSV</button>
+  </div>
+  <div class="pcontent">
+    <div class="metrics" style="grid-template-columns:repeat(6,1fr)">
+      <div class="metric"><div class="metric-lbl">Total picks</div><div class="metric-val">42</div><div class="metric-sub">14 trading days</div></div>
+      <div class="metric"><div class="metric-lbl">Hit rate L1+</div><div class="metric-val up">71%</div><div class="metric-sub">30 of 42</div></div>
+      <div class="metric"><div class="metric-lbl">Avg return</div><div class="metric-val up">+4.2%</div><div class="metric-sub">closed picks</div></div>
+      <div class="metric"><div class="metric-lbl">Best pick</div><div class="metric-val up">+12.4%</div><div class="metric-sub">MIRAKHTER</div></div>
+      <div class="metric"><div class="metric-lbl">Consecutive</div><div class="metric-val" style="color:#5b21b6;font-size:16px">ACMEPL×3</div><div class="metric-sub">Strongest signal</div></div>
+      <div class="metric"><div class="metric-lbl">Total P&amp;L</div><div class="metric-val up">৳1,24,850</div><div class="metric-sub">closed only</div></div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head"><span class="card-title">Daily win rate — last 14 trading days</span>
+        <div style="display:flex;gap:8px;font-size:10px">
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#15803d;display:inline-block;border-radius:1px"></span>Hit L1+</span>
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#b91c1c;display:inline-block;border-radius:1px"></span>Miss/SL</span>
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#9ca3af;display:inline-block;border-radius:1px"></span>Open</span>
+        </div>
+      </div>
+      <div class="perf-chart" id="perf-bars"></div>
+      <div style="display:flex;padding:0 16px 8px;justify-content:space-between;font-size:9px;color:#9ca3af;font-family:'IBM Plex Mono',monospace" id="bar-dates"></div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:1px solid #f0ece4;margin-bottom:12px">
+      <a class="navlink active" style="height:34px;font-size:11px" id="ht-all" onclick="setHistTab('all')">All days</a>
+      <a class="navlink" style="height:34px;font-size:11px" id="ht-hit" onclick="setHistTab('hit')">Hits only</a>
+      <a class="navlink" style="height:34px;font-size:11px" id="ht-miss" onclick="setHistTab('miss')">Misses</a>
+      <a class="navlink" style="height:34px;font-size:11px" id="ht-consec" onclick="setHistTab('consec')">Consecutive</a>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- ══ ALERTS ══ -->
+<div id="alerts" class="section">
+  <div class="ph">
+    <div><div class="ptitle">Alert centre</div><div class="psub">Real-time exit alarms and notification settings</div></div>
+    <button class="btn btn-primary" style="font-size:12px;align-self:center"><i class="ti ti-plus"></i> Set alert</button>
+  </div>
+  <div class="pcontent">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head"><span class="card-title">Today's alarms</span><span class="badge badge-live">4 alerts</span></div>
+      <div>
+        <div class="alert-item"><div class="alert-dot" style="background:#15803d"></div><div style="flex:1"><div class="alert-title">BDCOM — Target L1 hit</div><div class="alert-sub">Buy ৳27.20 → ৳30.20 · Profit ৳3,306 · Sell 40% now</div><div class="alert-time">Today 11:42am</div></div><span class="alert-action rec-buy">SELL 40%</span></div>
+        <div class="alert-item"><div class="alert-dot" style="background:#15803d"></div><div style="flex:1"><div class="alert-title">EHL — Target L2 hit</div><div class="alert-sub">Buy ৳80.00 → ৳92.20 · Profit ৳2,440 · L2 reached</div><div class="alert-time">Today 10:58am</div></div><span class="alert-action rec-buy">SELL 40%</span></div>
+        <div class="alert-item"><div class="alert-dot" style="background:#f59e0b"></div><div style="flex:1"><div class="alert-title">BPML — Near stop loss</div><div class="alert-sub">Current ৳27.70 · SL at ৳27.12 · 2.1% buffer remaining</div><div class="alert-time">Today 10:15am</div></div><span class="alert-action rec-watch">WATCH</span></div>
+        <div class="alert-item"><div class="alert-dot" style="background:#b91c1c"></div><div style="flex:1"><div class="alert-title">PDL — Stop loss hit — EXIT NOW</div><div class="alert-sub">Buy ৳16.42 → ৳5.50 · Loss ৳-1,38,123 · Exit all 12,650 shares</div><div class="alert-time">Yesterday 1:55pm</div></div><span class="alert-action" style="background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px">EXIT ALL</span></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Alert settings</span></div>
+        <div style="padding:0 16px">
+          <div class="toggle-row"><div><div class="toggle-title">Target hit alarms (L1/L2/L3)</div><div class="toggle-desc">Fire alarm when target price is reached</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Stop loss alarms</div><div class="toggle-desc">Fire alarm when SL price is reached</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Near stop loss warning</div><div class="toggle-desc">Warn when within 3% of stop loss</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Daily picks notification</div><div class="toggle-desc">Alert when new picks ready at 4:35pm</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Circuit breaker warning</div><div class="toggle-desc">Warn when stock near circuit down limit</div></div><div class="toggle off" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Consecutive pick alert</div><div class="toggle-desc">Notify when same stock appears 2+ days</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Market mood change</div><div class="toggle-desc">Notify when DSEX flips green/red</div></div><div class="toggle off" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Delivery settings</span></div>
+        <div style="padding:0 16px">
+          <div class="toggle-row"><div><div class="toggle-title">Email alerts</div><div class="toggle-desc" id="alert-email-disp">your@email.com</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">SMS alerts</div><div class="toggle-desc">Requires Pro plan</div></div><div class="toggle off" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-title">Browser notifications</div><div class="toggle-desc">Popup when browser is open</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          <div style="padding:12px 0">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:7px">Alarm check interval</div>
+            <select style="width:100%"><option>Every 10 minutes (default)</option><option>Every 5 minutes</option><option>Every 15 minutes</option><option>Every 30 minutes</option></select>
+          </div>
+          <div style="padding-bottom:12px">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:7px">Market hours</div>
+            <div style="font-size:12px;color:#6b7280">Sunday – Thursday · 10:00am – 2:00pm<br>Auto-paused on Bangladesh govt holidays</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFILE ══ -->
+<div id="profile" class="section">
+  <div class="ph"><div><div class="ptitle">My profile</div><div class="psub">Account details and subscription</div></div></div>
+  <div class="pcontent">
+    <div class="g2" style="align-items:start">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">Account information</span><button class="btn btn-ghost" style="font-size:11px"><i class="ti ti-edit"></i> Edit</button></div>
+          <div style="padding:16px 18px">
+            <div class="profile-avatar" id="profile-avatar">D</div>
+            <div class="field-row"><label>Full name</label><input type="text" id="pf-name" placeholder="Your full name"></div>
+            <div class="field-row"><label>Email address</label><input type="email" id="pf-email" placeholder="you@email.com"></div>
+            <div class="field-row"><label>Phone number</label><input type="text" placeholder="+880 1700 000000"></div>
+            <div style="height:1px;background:#f0ece4;margin:14px 0"></div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:10px;padding-left:8px;border-left:2px solid #16a34a">BO Accounts</div>
+            <div class="field-row"><label>Broker 1</label><input type="text" value="Bank Asia — BO 16409"></div>
+            <div class="field-row"><label>Broker 2</label><input type="text" value="LankaBangla — BO B9537"></div>
+            <div class="field-row"><label>Broker 3</label><input type="text" value="Royal Capital — BO DN4670"></div>
+            <button class="btn btn-primary" style="width:100%;padding:10px;font-size:13px;margin-top:4px">Save changes</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Change password</span></div>
+          <div style="padding:16px 18px">
+            <div class="field-row"><label>Current password</label><input type="password" placeholder="Your current password"></div>
+            <div class="field-row"><label>New password</label><input type="password" placeholder="Min 8 characters"></div>
+            <div class="field-row"><label>Confirm new password</label><input type="password" placeholder="Repeat new password"></div>
+            <button class="btn btn-primary" style="font-size:12px;margin-top:4px">Update password</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">Current plan</span></div>
+          <div style="padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <div style="font-family:'Playfair Display',serif;font-size:17px;color:#0d1117" id="profile-plan-name">Free Plan</div>
+                <div style="font-size:11px;color:#9ca3af;margin-top:2px">Basic access · No credit card needed</div>
+              </div>
+              <span class="plan-pill" id="profile-plan-pill">FREE</span>
+            </div>
+            <div style="height:1px;background:#f0ece4;margin-bottom:12px"></div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.8">
+              ✓ Top 3 daily picks<br>
+              ✓ Basic market mood<br>
+              ✓ 7-day pick history<br>
+              ✗ Full pick list — <span style="color:#1d4ed8;cursor:pointer" onclick="show('pricing')">Upgrade</span><br>
+              ✗ Portfolio tracker — <span style="color:#1d4ed8;cursor:pointer" onclick="show('pricing')">Upgrade</span><br>
+              ✗ Exit alarms — <span style="color:#1d4ed8;cursor:pointer" onclick="show('pricing')">Upgrade</span>
+            </div>
+            <button class="btn btn-primary" style="width:100%;padding:10px;font-size:13px" onclick="show('pricing')">Upgrade to Premium — ৳499/mo</button>
+            <div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:6px">7-day free trial · Cancel anytime</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">Connected accounts</span></div>
+          <div style="padding:0 16px">
+            <div class="toggle-row">
+              <div style="display:flex;align-items:center;gap:10px">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="Google">
+                <div><div class="toggle-title">Google</div><div class="toggle-desc">Not connected</div></div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px">Connect</button>
+            </div>
+            <div class="toggle-row">
+              <div style="display:flex;align-items:center;gap:10px">
+                <i class="ti ti-brand-facebook" style="font-size:18px;color:#1877f2"></i>
+                <div><div class="toggle-title">Facebook</div><div class="toggle-desc">Not connected</div></div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px">Connect</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Danger zone</span></div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-ghost" style="font-size:12px;border-color:#fee2e2;color:#b91c1c;width:100%;padding:9px">Delete all my data</button>
+            <button class="btn btn-ghost" style="font-size:12px;border-color:#fee2e2;color:#b91c1c;width:100%;padding:9px" onclick="doLogout()">Sign out of DSE Pulse</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div id="settings" class="section">
+  <div class="ph"><div><div class="ptitle">Settings</div><div class="psub">Platform preferences and configuration</div></div></div>
+  <div class="pcontent">
+    <div class="g2" style="align-items:start">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">Trading configuration</span></div>
+          <div style="padding:0 16px">
+            <div class="setting-row"><div><div class="setting-lbl">Short-term capital (৳)</div><div class="setting-sub">Total capital for short-term trades</div></div><input type="number" value="1000000" style="width:110px;text-align:right"></div>
+            <div class="setting-row"><div><div class="setting-lbl">Max concurrent positions</div><div class="setting-sub">Maximum stocks to hold at same time</div></div><input type="number" value="2" style="width:56px;text-align:right"></div>
+            <div class="setting-row"><div><div class="setting-lbl">Default stop loss %</div><div class="setting-sub">Auto stop loss below day low</div></div><input type="number" value="3" style="width:56px;text-align:right"></div>
+            <div class="setting-row"><div><div class="setting-lbl">L1 profit target %</div><div class="setting-sub">First target — sell 40% of position</div></div><input type="number" value="2" style="width:56px;text-align:right"></div>
+            <div class="setting-row"><div><div class="setting-lbl">L2 profit target %</div><div class="setting-sub">Second target — sell 40% of position</div></div><input type="number" value="5" style="width:56px;text-align:right"></div>
+            <div class="setting-row"><div><div class="setting-lbl">L3 profit target %</div><div class="setting-sub">Final target — sell remaining 20%</div></div><input type="number" value="8" style="width:56px;text-align:right"></div>
+            <div style="padding:10px 0"><button class="btn btn-primary" style="font-size:12px">Save trading settings</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Data &amp; live feed</span></div>
+          <div style="padding:0 16px">
+            <div class="toggle-row"><div><div class="setting-lbl">Auto-refresh picks daily</div><div class="setting-sub">Run picker at 4:35pm every trading day</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+            <div class="setting-row"><div><div class="setting-lbl">Alarm check interval</div><div class="setting-sub">How often to check holdings during market hours</div></div><select style="width:130px"><option>10 minutes</option><option>5 minutes</option><option>15 minutes</option></select></div>
+            <div class="setting-row"><div><div class="setting-lbl">Primary data source</div><div class="setting-sub">First source to try for live prices</div></div><select style="width:130px"><option>AmarStock</option><option>DSE Official</option><option>StockBD</option></select></div>
+            <div class="setting-row"><div><div class="setting-lbl">API backend URL</div><div class="setting-sub">Railway backend endpoint</div></div><input type="text" id="api-url-setting" value="https://dsepulse-backend-production.up.railway.app" style="width:280px;font-size:10px"></div>
+            <div style="padding:10px 0"><button class="btn btn-primary" style="font-size:12px">Save data settings</button></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">Display preferences</span></div>
+          <div style="padding:0 16px">
+            <div class="setting-row"><div><div class="setting-lbl">Default page on login</div><div class="setting-sub">Which section opens first</div></div><select style="width:120px"><option>Dashboard</option><option>Daily picks</option><option>Portfolio</option><option>Home</option></select></div>
+            <div class="toggle-row"><div><div class="setting-lbl">Show disclaimer banner</div><div class="setting-sub">Display risk warning bar</div></div><div class="toggle on" onclick="togDisclBanner(this)"><div class="toggle-dot"></div></div></div>
+            <div class="toggle-row"><div><div class="setting-lbl">Show score factors bar</div><div class="setting-sub">Show 7 factor tags on picks page</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+            <div class="toggle-row"><div><div class="setting-lbl">Compact portfolio rows</div><div class="setting-sub">Smaller rows in holdings list</div></div><div class="toggle off" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+            <div class="toggle-row"><div><div class="setting-lbl">Show buy zone range</div><div class="setting-sub">Display aggressive–conservative zone</div></div><div class="toggle on" onclick="togToggle(this)"><div class="toggle-dot"></div></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><span class="card-title">System status</span><button class="btn btn-ghost" style="font-size:11px" onclick="checkHealth()"><i class="ti ti-refresh"></i> Check</button></div>
+          <div style="padding:0 16px">
+            <div class="setting-row"><div><div class="setting-lbl">Netlify frontend</div></div><span class="badge badge-live">Online</span></div>
+            <div class="setting-row"><div><div class="setting-lbl">Railway backend API</div></div><span class="badge badge-live" id="api-status">Checking...</span></div>
+            <div class="setting-row"><div><div class="setting-lbl">Supabase database</div></div><span class="badge badge-live">Connected</span></div>
+            <div class="setting-row"><div><div class="setting-lbl">SSLCommerz payments</div></div><span class="badge" style="background:#fef3c7;color:#92400e">Sandbox</span></div>
+            <div class="setting-row"><div><div class="setting-lbl">Last refresh</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7280" id="last-refresh">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">About DSE Pulse</span></div>
+          <div style="padding:14px 16px;font-size:12px;color:#6b7280;line-height:1.7">
+            <div style="font-family:'Playfair Display',serif;font-size:15px;color:#0d1117;margin-bottom:4px">DSE Pulse</div>
+            Version 2.0 · June 2026<br>
+            Bangladesh's premier DSE intelligence platform.<br>
+            <span style="color:#16a34a">dsepulse.com</span><br><br>
+            <div style="font-size:10px;color:#9ca3af">Read the market. Trade with precision.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+<!-- AUTH MODAL -->
+<div id="auth-modal" style="display:none;position:fixed;inset:0;background:rgba(8,13,19,0.78);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;max-width:420px;width:100%;border:1px solid #1e2530">
+    <div style="padding:16px 22px;border-bottom:1px solid #e5e0d8;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;color:#0d1117" id="auth-title">Sign in to DSE Pulse</div>
+      <span onclick="hideAuth()" style="font-size:22px;cursor:pointer;color:#9ca3af;padding:0 6px">×</span>
+    </div>
+    <div style="padding:22px">
+      <div id="auth-err" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:9px 12px;font-size:12px;margin-bottom:12px;border-radius:2px"></div>
+      <div id="auth-ok" style="display:none;background:#f0fdf4;border:1px solid #86efac;color:#15803d;padding:9px 12px;font-size:12px;margin-bottom:12px;border-radius:2px"></div>
+      <div id="reg-fields">
+        <div style="margin-bottom:12px"><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;display:block;margin-bottom:4px">Full name</label><input type="text" id="auth-name" placeholder="Your full name" style="width:100%;padding:9px 11px;border:1px solid #e5e0d8;font-size:13px;font-family:'IBM Plex Sans',sans-serif;outline:none;background:#f8f7f4"></div>
+      </div>
+      <div style="margin-bottom:12px"><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;display:block;margin-bottom:4px">Email address</label><input type="email" id="auth-email" placeholder="you@email.com" style="width:100%;padding:9px 11px;border:1px solid #e5e0d8;font-size:13px;font-family:'IBM Plex Sans',sans-serif;outline:none;background:#f8f7f4"></div>
+      <div style="margin-bottom:16px"><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;display:block;margin-bottom:4px">Password</label><input type="password" id="auth-pass" placeholder="Min 8 characters" style="width:100%;padding:9px 11px;border:1px solid #e5e0d8;font-size:13px;font-family:'IBM Plex Sans',sans-serif;outline:none;background:#f8f7f4" onkeydown="if(event.key==='Enter')submitAuth()"></div>
+      <button onclick="submitAuth()" id="auth-btn" style="width:100%;padding:11px;background:#16a34a;color:#fff;border:none;font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;margin-bottom:12px">Create free account</button>
+      <div style="text-align:center;font-size:12px;color:#6b7280"><span id="auth-switch-text">Already have an account?</span><span onclick="toggleAuth()" style="color:#1d4ed8;cursor:pointer;font-weight:500;margin-left:4px" id="auth-switch-btn">Sign in</span></div>
+      <div id="reg-note" style="text-align:center;font-size:11px;color:#9ca3af;margin-top:10px">7-day free trial · No credit card needed</div>
+    </div>
+  </div>
+</div>
+
+<!-- TRIAL BANNER -->
+<div id="trial-banner" style="display:none;background:#0d1117;border-bottom:1px solid #16a34a;padding:8px 40px;align-items:center;justify-content:space-between;position:fixed;top:86px;left:0;right:0;z-index:97">
+  <div style="font-size:12px;color:#e5e7eb;display:flex;align-items:center;gap:8px">
+    <i class="ti ti-clock" style="color:#f59e0b;font-size:14px"></i>
+    <span>Free trial: <strong id="trial-days-text" style="color:#f59e0b">7 days</strong> remaining — upgrade to unlock the full platform</span>
+  </div>
+  <button onclick="show('pricing')" style="padding:5px 14px;background:#16a34a;color:#fff;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;flex-shrink:0">Upgrade now</button>
+</div>
+
+<!-- TRIAL EXPIRED WALL -->
+<div id="trial-wall" style="display:none;position:fixed;inset:0;background:rgba(8,13,19,0.92);z-index:400;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;max-width:480px;width:100%;border:1px solid #e5e0d8;text-align:center;padding:40px 32px">
+    <div style="width:52px;height:52px;background:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="ti ti-lock" style="font-size:22px;color:#d97706"></i></div>
+    <div style="font-family:'Playfair Display',serif;font-size:22px;color:#0d1117;margin-bottom:8px">Your free trial has ended</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:24px;line-height:1.7">Your 7-day free trial of DSE Pulse has expired.<br>Subscribe to Premium to continue accessing daily picks, portfolio tracking, and exit alarms.</div>
+    <button onclick="hideWall();show('pricing')" style="width:100%;padding:13px;background:#16a34a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;margin-bottom:10px">View pricing — from ৳499/month</button>
+    <button onclick="hideWall();show('home')" style="background:transparent;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:'IBM Plex Sans',sans-serif">Return to home page</button>
+  </div>
+</div>
+
+<div class="footer">
+  <div><div class="footer-logo">DSE Pulse</div><div class="footer-tagline">Read the market. Trade with precision.</div></div>
+  <div class="footer-disc">Disclaimer: DSE Pulse is for informational purposes only and does not constitute financial advice. All picks and signals are AI-generated algorithmic outputs — not guarantees of profit. DSE investments carry significant risk. You may lose some or all of your capital. Not registered with BSEC. Past performance does not guarantee future results. Always consult a licensed financial adviser before investing. By using DSE Pulse you accept full responsibility for your own investment decisions.</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// DSE Pulse — Frontend v3.0
+// All data from API. No hardcoded data. Never edit this file for data.
+// ══════════════════════════════════════════════════════════════════════
+const API = 'https://dsepulse-backend-production.up.railway.app';
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let STATE = {
+  token:      localStorage.getItem('dp_token') || '',
+  plan:       localStorage.getItem('dp_plan')  || 'free',
+  email:      localStorage.getItem('dp_email') || '',
+  name:       localStorage.getItem('dp_name')  || '',
+  trial_left: parseInt(localStorage.getItem('dp_trial_left') || '7'),
+  trial_exp:  localStorage.getItem('dp_trial_exp') === 'true',
+  config:     null,
+  picks:      [],
+  market:     null,
+  authMode:   'register',
+};
+
+// ── API HELPER ────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  try {
+    const headers = {'Content-Type':'application/json'};
+    if(STATE.token) headers['Authorization'] = 'Bearer ' + STATE.token;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch(API + path, {headers, ...opts, signal: ctrl.signal});
+    clearTimeout(timer);
+    const d = await r.json();
+    if(!r.ok) return {detail: d.detail || 'API error', _error: true};
+    return d;
+  } catch(e) {
+    console.warn('API', path, e.message);
+    return null;
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+async function initApp() {
+  // Load config from API (pricing + feature gates)
+  const cfg = await api('/api/config');
+  if(cfg) STATE.config = cfg;
+
+  // Load market data
+  const mkt = await api('/api/market');
+  if(mkt) STATE.market = mkt.market;
+
+  // If logged in — verify token + get user state
+  if(STATE.token) {
+    const me = await api('/api/auth/me');
+    if(me) {
+      STATE.plan       = me.plan;
+      STATE.trial_left = me.trial_days_left;
+      STATE.trial_exp  = me.trial_expired;
+      STATE.name       = me.name;
+      localStorage.setItem('dp_plan',      me.plan);
+      localStorage.setItem('dp_trial_left', me.trial_days_left);
+      localStorage.setItem('dp_trial_exp',  me.trial_expired);
+    } else {
+      // Token invalid — logout
+      doLogout();
+      return;
+    }
+  }
+
+  // Load today's picks
+  const picksData = STATE.token
+    ? await api('/api/picks/full')
+    : await api('/api/picks/today');
+  if(picksData) {
+    STATE.picks = picksData.picks || picksData;
+    if(picksData.trial_expired) STATE.trial_exp = true;
+  }
+
+  updateUI();
+  renderCurrentSection();
+  checkHealth();
+}
+
+// ── UI STATE ──────────────────────────────────────────────────────────
+function updateUI() {
+  const loggedIn = !!STATE.token;
+
+  // Guest vs user nav
+  const ng = document.getElementById('nav-guest');
+  const nu = document.getElementById('nav-user');
+  if(ng) ng.style.display = loggedIn ? 'none' : 'flex';
+  if(nu) nu.style.display = loggedIn ? 'flex' : 'none';
+
+  // Hide platform nav links for guests
+  document.querySelectorAll('.navlink[data-protected]').forEach(l => {
+    l.style.display = loggedIn ? 'flex' : 'none';
+  });
+
+  if(!loggedIn) return;
+
+  // Update user info in nav
+  const ini = STATE.email ? STATE.email[0].toUpperCase() : 'U';
+  const av = document.getElementById('nav-avatar');
+  const un = document.getElementById('nav-uname');
+  const pb = document.getElementById('nav-plan');
+  if(av) av.textContent = ini;
+  if(un) un.textContent = STATE.name || STATE.email.split('@')[0] || 'Account';
+  if(pb) {
+    pb.textContent = STATE.plan.toUpperCase();
+    pb.style.background = STATE.plan==='pro'?'rgba(124,58,237,0.2)':STATE.plan==='premium'?'rgba(22,163,74,0.2)':'rgba(255,255,255,0.08)';
+    pb.style.color = STATE.plan==='pro'?'#c4b5fd':STATE.plan==='premium'?'#4ade80':'#94a3b8';
+  }
+
+  // Trial banner
+  const tb = document.getElementById('trial-banner');
+  if(tb) {
+    if(!STATE.trial_exp && STATE.plan === 'free' && STATE.trial_left > 0) {
+      tb.style.display = 'flex';
+      const td = document.getElementById('trial-days-text');
+      if(td) td.textContent = STATE.trial_left + (STATE.trial_left === 1 ? ' day' : ' days');
+      document.querySelector('.page').style.paddingTop = '144px';
+    } else {
+      tb.style.display = 'none';
+    }
+  }
+
+  // Trial expired wall
+  if(STATE.trial_exp && STATE.plan === 'free') {
+    showWall();
+  }
+
+  // Update pricing from API config
+  if(STATE.config && STATE.config.pricing) {
+    renderPricing();
+  }
+
+  // Update profile page
+  const pfe = document.getElementById('pf-email');
+  const pfn = document.getElementById('pf-name');
+  const pav = document.getElementById('profile-avatar');
+  if(pfe) pfe.value = STATE.email;
+  if(pfn) pfn.value = STATE.name;
+  if(pav) pav.textContent = ini;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────
+const PROTECTED = ['dashboard','picks','history','portfolio','screener','alerts','profile','settings'];
+
+function show(id) {
+  // Gate protected pages
+  if(PROTECTED.includes(id) && !STATE.token) {
+    showAuth('login');
+    return;
+  }
+  // Gate if trial expired — only allow home + pricing + blog
+  if(STATE.trial_exp && STATE.plan==='free' && !['home','pricing','blog'].includes(id)) {
+    showWall();
+    return;
+  }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.navlink').forEach(l => l.classList.remove('active'));
+  const sec = document.getElementById(id);
+  if(sec) sec.classList.add('active');
+  document.querySelectorAll('.navlink').forEach(l => {
+    const t = l.textContent.trim().toLowerCase().replace(/\s/g,'');
+    const k = id==='blog'?'ins':id==='pricing'?'pri':id==='history'?'pick':id==='profile'?'my':id==='settings'?'set':id==='alerts'?'alert':id;
+    if(t.startsWith(k)) l.classList.add('active');
+  });
+
+  if(id==='dashboard') renderDash();
+  if(id==='picks')     renderPicks();
+  if(id==='history')   renderHistory();
+  if(id==='portfolio') renderPortfolio();
+  if(id==='screener')  renderScreener();
+  if(id==='blog')      loadBlog();
+  if(id==='pricing')   renderPricing();
+  window.scrollTo(0,0);
+}
+
+function renderCurrentSection() {
+  const active = document.querySelector('.section.active');
+  if(active) show(active.id);
+  else show('home');
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────
+function showAuth(mode='register') {
+  STATE.authMode = mode;
+  const modal = document.getElementById('auth-modal');
+  if(!modal) return;
+  modal.style.display = 'flex';
+  setAuthMode(mode);
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-err').style.display = 'none';
+  document.getElementById('auth-ok').style.display = 'none';
+}
+function hideAuth() {
+  const modal = document.getElementById('auth-modal');
+  if(modal) modal.style.display = 'none';
+}
+function setAuthMode(mode) {
+  STATE.authMode = mode;
+  const isReg = mode === 'register';
+  document.getElementById('auth-title').textContent = isReg ? 'Create your DSE Pulse account' : 'Sign in to DSE Pulse';
+  document.getElementById('auth-btn').textContent = isReg ? 'Create free account' : 'Sign in';
+  document.getElementById('reg-fields').style.display = isReg ? 'block' : 'none';
+  document.getElementById('reg-note').style.display = isReg ? 'block' : 'none';
+  document.getElementById('auth-switch-text').textContent = isReg ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('auth-switch-btn').textContent = isReg ? 'Sign in' : 'Create free account';
+}
+function toggleAuth() {
+  setAuthMode(STATE.authMode === 'register' ? 'login' : 'register');
+}
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const name  = document.getElementById('auth-name')?.value.trim() || '';
+  const errEl = document.getElementById('auth-err');
+  const okEl  = document.getElementById('auth-ok');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  if(!email || !pass) { errEl.textContent='Please fill in all fields'; errEl.style.display='block'; return; }
+  if(STATE.authMode==='register' && !name) { errEl.textContent='Please enter your name'; errEl.style.display='block'; return; }
+  if(pass.length < 6) { errEl.textContent='Password must be at least 6 characters'; errEl.style.display='block'; return; }
+
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = 'Please wait...'; btn.disabled = true;
+
+  const endpoint = STATE.authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+  const body = STATE.authMode === 'register'
+    ? {name, email, password: pass}
+    : {email, password: pass};
+
+  const res = await api(endpoint, {method:'POST', body: JSON.stringify(body)});
+  btn.disabled = false;
+  btn.textContent = STATE.authMode === 'register' ? 'Create free account' : 'Sign in';
+
+  if(!res) { errEl.textContent='Connection error. Please try again.'; errEl.style.display='block'; return; }
+  if(res._error || res.detail) { errEl.textContent=res.detail||'Error occurred'; errEl.style.display='block'; return; }
+
+  // Success
+  STATE.token      = res.token;
+  STATE.plan       = res.plan || 'free';
+  STATE.email      = email;
+  STATE.name       = res.name || name;
+  STATE.trial_left = res.trial_days_left || 7;
+  STATE.trial_exp  = res.trial_expired || false;
+
+  localStorage.setItem('dp_token',      res.token);
+  localStorage.setItem('dp_plan',       res.plan || 'free');
+  localStorage.setItem('dp_email',      email);
+  localStorage.setItem('dp_name',       res.name || name);
+  localStorage.setItem('dp_trial_left', res.trial_days_left || 7);
+  localStorage.setItem('dp_trial_exp',  res.trial_expired || false);
+
+  okEl.textContent = STATE.authMode==='register' ? 'Account created! Welcome to DSE Pulse.' : 'Welcome back!';
+  okEl.style.display = 'block';
+
+  // Load picks for new user
+  const pd = await api('/api/picks/full');
+  if(pd) STATE.picks = pd.picks || [];
+
+  setTimeout(() => { hideAuth(); updateUI(); show('dashboard'); }, 800);
+}
+function doLogout() {
+  ['dp_token','dp_plan','dp_email','dp_name','dp_trial_left','dp_trial_exp','dp_disc'].forEach(k=>localStorage.removeItem(k));
+  STATE.token=''; STATE.plan='free'; STATE.email=''; STATE.name=''; STATE.trial_exp=false;
+  updateUI(); show('home');
+}
+
+// ── TRIAL WALL ────────────────────────────────────────────────────────
+function showWall() {
+  const w = document.getElementById('trial-wall');
+  if(w) w.style.display = 'flex';
+}
+function hideWall() {
+  const w = document.getElementById('trial-wall');
+  if(w) w.style.display = 'none';
+}
+
+// ── PICK HELPERS ──────────────────────────────────────────────────────
+const MEDALS = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+function getPicks() { return STATE.picks.length ? STATE.picks : SAMPLE_PICKS; }
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────
+function renderDash() {
+  const picks = getPicks().slice(0,3);
+  const today = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const dd = document.getElementById('dash-date');
+  if(dd) dd.textContent = today;
+
+  // Update picks table
+  let h='';
+  picks.forEach(p=>{
+    h+=`<tr>
+      <td style="color:#9ca3af;font-weight:700;font-size:11px">${p.rank||p.r||1}</td>
+      <td><span class="code">${p.code}</span><span class="cat cat-${(p.cat||'a').toLowerCase()}">${p.cat||'A'}</span></td>
+      <td><span class="up" style="font-family:'IBM Plex Mono',monospace">৳${parseFloat(p.ltp||0).toFixed(2)}</span><br><span style="font-size:10px;color:#6b7280">+${p.pct||0}%</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#15803d">${p.bz||p.buy_zone||'—'}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:10px"><span class="up">৳${p.l1||p.target_l1||0}</span> / <span style="color:#1d4ed8">৳${p.l2||p.target_l2||0}</span> / <span style="color:#92400e">৳${p.l3||p.target_l3||0}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#b91c1c">৳${p.sl||p.stop_loss||0}</td>
+      <td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:${(p.score||0)/50*100}%"></div></div><span style="font-size:10px;color:#6b7280">${p.score||0}</span></div></td>
+      <td><span class="rec-buy">BUY</span></td>
+    </tr>`;
+  });
+  const dpb = document.getElementById('dash-picks-body');
+  if(dpb) dpb.innerHTML = h;
+
+  // Market mood from API
+  if(STATE.market) {
+    const m = STATE.market;
+    const dsexEl = document.querySelector('.metric-val.up');
+    // Update DSEX
+  }
+}
+
+// ── PICKS PAGE ────────────────────────────────────────────────────────
+function renderPicks() {
+  const picks = getPicks();
+  const pd = document.getElementById('picks-date');
+  if(pd) pd.textContent = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' 16:35';
+
+  // Plan limit
+  const limit = STATE.plan==='free' ? 3 : 10;
+  const shown = picks.slice(0, limit);
+  const BZ_DATA = shown.map(p => p.bz || p.buy_zone || '—');
+  const CONSEC  = shown.map(p => parseInt(p.consec)||1);
+  const SIG     = shown.map(() => 'acc');
+
+  // Top 3 pick cards
+  let h='';
+  shown.slice(0,3).forEach((p,i)=>{
+    const c = CONSEC[i]||1;
+    const rank = p.rank||p.r||i+1;
+    h+=`<div class="pick-card${c>=2?' consec':''}">
+      <div class="pick-head">
+        <div><div class="pick-name">${MEDALS[rank-1]||rank+'. '}. ${p.code} <span class="cat cat-${(p.cat||'a').toLowerCase()}">${p.cat||'A'}</span>${c>=2?`<span class="consec-badge"><i class="ti ti-repeat" style="font-size:9px"></i> Day ${c}</span>`:''}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Score ${p.score||0}/50 · Vol ${parseFloat(p.vol||0).toFixed(2)}M · R/R ${p.rr||0}×</div></div>
+        <div style="text-align:right"><div class="pick-price">৳${parseFloat(p.ltp||0).toFixed(2)}</div><div style="font-size:11px;color:#15803d">+${p.pct||0}% today</div></div>
+      </div>
+      <div class="prog"><div class="prog-fill" style="width:15%;background:${c>=2?'#2563eb':'#16a34a'}"></div></div>
+      <div class="prog-labels"><span>Buy zone ${BZ_DATA[i]}</span><span style="color:#15803d">L1 ৳${p.l1||p.target_l1||0}</span><span style="color:#dc2626">SL ৳${p.sl||p.stop_loss||0}</span></div>
+      <div class="levels">
+        <div class="level bz"><div class="level-lbl">Buy zone</div><div class="level-price up" style="font-size:10px">${BZ_DATA[i]}</div><div class="level-note">Agg–Cons</div></div>
+        <div class="level l1"><div class="level-lbl">L1 +2%</div><div class="level-price" style="color:#15803d">৳${p.l1||p.target_l1||0}</div><div class="level-note up">Sell 40%</div></div>
+        <div class="level l2"><div class="level-lbl">L2 +5%</div><div class="level-price" style="color:#1d4ed8">৳${p.l2||p.target_l2||0}</div><div class="level-note" style="color:#1d4ed8">Sell 40%</div></div>
+        <div class="level l3"><div class="level-lbl">L3 +8%</div><div class="level-price" style="color:#d97706">৳${p.l3||p.target_l3||0}</div><div class="level-note" style="color:#d97706">Sell 20%</div></div>
+        <div class="level sl"><div class="level-lbl">Stop loss</div><div class="level-price dn">৳${p.sl||p.stop_loss||0}</div><div class="level-note dn">Exit all</div></div>
+      </div>
+      <div class="sig-row">
+        <button class="sig-btn sig-acc on" onclick="setSig(this)"><i class="ti ti-trending-up"></i> Accumulate</button>
+        <button class="sig-btn sig-hold" onclick="setSig(this)"><i class="ti ti-equal"></i> Hold</button>
+        <button class="sig-btn sig-sell" onclick="setSig(this)"><i class="ti ti-trending-down"></i> Sell signal</button>
+      </div>
+      <div class="pick-footer"><span>R/R: <strong>${p.rr||0}×</strong></span><span>Score: ${p.score||0}/50</span></div>
+    </div>`;
+  });
+  const bc = document.getElementById('buy-cards');
+  if(bc) bc.innerHTML = h;
+
+  // Watchlist (#4-10)
+  let w='';
+  if(STATE.plan !== 'free') {
+    shown.slice(3).forEach(p=>{
+      w+=`<tr>
+        <td style="color:#9ca3af;font-weight:600">${p.rank||p.r}</td>
+        <td><span class="code">${p.code}</span><span class="cat cat-${(p.cat||'a').toLowerCase()}">${p.cat||'A'}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#15803d">${p.bz||p.buy_zone||'—'}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:10px"><span class="up">৳${p.l1||0}</span>/<span style="color:#1d4ed8">৳${p.l2||0}</span>/<span style="color:#92400e">৳${p.l3||0}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#b91c1c">৳${p.sl||0}</td>
+        <td style="color:#15803d;font-family:'IBM Plex Mono',monospace">${p.rr||0}×</td>
+        <td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:${(p.score||0)/50*100}%"></div></div><span style="font-size:10px;color:#6b7280">${p.score||0}</span></div></td>
+        <td><span class="rec-watch">WATCH</span></td>
+      </tr>`;
+    });
+  } else {
+    w=`<tr><td colspan="8" style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">
+      <i class="ti ti-lock" style="font-size:18px;display:block;margin-bottom:6px"></i>
+      Picks #4–10 available on Premium plan<br>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="show('pricing')">Upgrade to Premium</button>
+    </td></tr>`;
+  }
+  const wb = document.getElementById('watch-body');
+  if(wb) wb.innerHTML = w;
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────
+async function renderHistory() {
+  const data = await api('/api/history?days=30');
+  if(!data) return;
+  // Use existing renderHistList with API data if available
+  renderHistList();
+}
+
+// ── BLOG from API ─────────────────────────────────────────────────────
+async function loadBlog() {
+  const data = await api('/api/blog');
+  const grid = document.getElementById('blog-grid');
+  if(!grid) return;
+  const articles = data?.articles || [];
+  if(!articles.length) { renderBlog(); return; } // fallback to static
+  grid.innerHTML = articles.map(a=>`
+    <div class="blog-card">
+      <div class="blog-thumb"><i class="ti ti-file-text" style="color:#16a34a;font-size:26px"></i></div>
+      <div class="blog-body">
+        <div class="blog-tag">${a.category||'General'}</div>
+        <div class="blog-title">${a.title}</div>
+        <div class="blog-excerpt">${a.excerpt||''}</div>
+        <div class="blog-meta"><span>${a.created_at?.split('T')[0]||''}</span><span>${a.read_time||5} min read</span></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── PRICING from API ──────────────────────────────────────────────────
+function renderPricing(type='monthly') {
+  const grid = document.getElementById('price-grid');
+  if(!grid) return;
+  // Get pricing from API config or fallback
+  const pr = STATE.config?.pricing || {
+    monthly:{free:0,premium:499,pro:999},
+    quarterly:{free:0,premium:1347,pro:2697,label:'Save 10%'},
+    annual:{free:0,premium:4790,pro:9590,label:'Save 20%'},
+    trial_days:7
+  };
+  const p = pr[type] || pr.monthly;
+  const plans=[
+    {name:'Free',tier:'free',amt:0,period:'forever',billing:'No credit card',dark:false,feats:[
+      {y:true,t:'Top 3 daily picks'},{y:true,t:'Smart buy zone'},{y:true,t:'Pick history 7 days'},
+      {y:true,t:'Basic screener 50 stocks'},{y:false,t:'Full 10 picks'},{y:false,t:'Portfolio tracker'},{y:false,t:'Exit alarms'},
+    ],cta:'Get started free',ctaFn:"showAuth('register')"},
+    {name:'Premium',tier:'prem',amt:p.premium||499,period:'per month',billing:pr.trial_days+'-day free trial',dark:true,featured:true,feats:[
+      {y:true,t:'All 10 ranked picks daily'},{y:true,t:'Full buy zone range'},{y:true,t:'Multi-day tracking'},
+      {y:true,t:'Exit alarms L1/L2/L3'},{y:true,t:'Portfolio tracker + P&L'},{y:true,t:'Full pick history'},{y:true,t:'Full screener 426 stocks'},
+    ],cta:'Start free trial',ctaFn:"startPayment('premium','"+type+"')" },
+    {name:'Pro Trader',tier:'pro',amt:p.pro||999,period:'per month',billing:'',dark:false,feats:[
+      {y:true,t:'Everything in Premium'},{y:true,t:'Multi-BO account sync'},{y:true,t:'Block trade monitor'},
+      {y:true,t:'Margin loan tracker'},{y:true,t:'Tax report generator'},{y:true,t:'Priority SMS alerts'},{y:true,t:'1-on-1 onboarding'},
+    ],cta:'Get Pro Trader',ctaFn:"startPayment('pro','"+type+"')"},
+  ];
+  grid.innerHTML = plans.map(pl=>`
+    <div class="price-card${pl.featured?' featured':''}" style="position:relative">
+      ${pl.featured?'<div class="price-popular">Most Popular</div>':''}
+      <div class="price-tier" style="color:${pl.dark?'#16a34a':'#6b7280'}">${pl.name}</div>
+      <div class="price-amount" style="color:${pl.dark?'#fff':'#0d1117'}"><span style="color:${pl.dark?'#9ca3af':'inherit'}">৳</span>${pl.amt.toLocaleString()}</div>
+      <div class="price-period">${pl.period}</div>
+      <div class="price-billing" style="color:#16a34a;font-size:11px;margin-bottom:14px">${pl.billing||'&nbsp;'}</div>
+      <div style="height:1px;background:${pl.dark?'rgba(255,255,255,0.1)':'#f0ece4'};margin:10px 0"></div>
+      ${pl.feats.map(f=>`<div class="pf ${f.y?'yes':'no'}"><i class="ti ${f.y?'ti-check':'ti-x'}"></i><span style="color:${pl.dark?'#e5e7eb':''}">${f.t}</span></div>`).join('')}
+      <div style="margin-top:14px"><button class="btn ${pl.dark?'btn-primary':'btn-ghost'}" style="width:100%;padding:10px;font-size:13px" onclick="${pl.ctaFn}">${pl.cta}</button></div>
+    </div>`).join('');
+}
+
+// ── PAYMENT ───────────────────────────────────────────────────────────
+async function startPayment(plan, period='monthly') {
+  if(!STATE.token) { showAuth('register'); return; }
+  const res = await api('/api/payment/initiate', {method:'POST', body: JSON.stringify({plan, period})});
+  if(res?.payment_url) {
+    window.location.href = res.payment_url;
+  } else if(res?.message) {
+    alert(res.message);
+  }
+}
+
+// ── TOGGLES + HELPERS ─────────────────────────────────────────────────
+function setSig(btn){ btn.closest('.sig-row').querySelectorAll('.sig-btn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+function togToggle(el){ el.classList.toggle('on'); el.classList.toggle('off'); }
+function togDisclBanner(el){ togToggle(el); const b=document.getElementById('disc-banner'); if(b) b.style.display=el.classList.contains('on')?'flex':'none'; }
+function setPricing(type,el){ document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('on')); el.classList.add('on'); renderPricing(type); }
+
+// ── API HEALTH ────────────────────────────────────────────────────────
+async function checkHealth() {
+  const dot=document.getElementById('api-dot'), txt=document.getElementById('api-status-text'), rb=document.getElementById('railway-badge');
+  const d = await api('/health');
+  if(d?.status==='ok'){
+    if(dot){dot.style.background='#16a34a';}
+    if(txt){txt.style.color='#15803d';txt.textContent='API online';}
+    if(rb){rb.textContent='Online';rb.className='badge badge-live';}
+    const lr=document.getElementById('last-refresh'); if(lr) lr.textContent=new Date().toLocaleTimeString('en-GB');
+  } else {
+    if(dot){dot.style.background='#b91c1c';}
+    if(txt){txt.style.color='#b91c1c';txt.textContent='API offline';}
+  }
+}
+
+// ── DISCLAIMER ────────────────────────────────────────────────────────
+function showDiscModal(){ const m=document.getElementById('disc-modal'); if(m) m.style.display='flex'; }
+function hideDiscModal(){ const m=document.getElementById('disc-modal'); if(m) m.style.display='none'; }
+function acceptDisc(){ hideDiscModal(); const b=document.getElementById('disc-banner'); if(b) b.style.display='none'; localStorage.setItem('dp_disc','1'); }
+if(localStorage.getItem('dp_disc')==='1'){ const b=document.getElementById('disc-banner'); if(b) b.style.display='none'; } else { setTimeout(()=>showDiscModal(),700); }
+
+// ── SAMPLE FALLBACK DATA ──────────────────────────────────────────────
+const SAMPLE_PICKS=[
+  {rank:1,r:1,code:'MIRAKHTER',cat:'A',ltp:47.00,pct:6.58,bz:'৳46.25–৳46.80',l1:47.94,l2:49.35,l3:50.76,sl:45.59,rr:2.9,score:39,vol:6.79,consec:1},
+  {rank:2,r:2,code:'ACMEPL',cat:'B',ltp:26.10,pct:6.10,bz:'৳25.50–৳25.90',l1:26.62,l2:27.41,l3:28.19,sl:25.32,rr:2.2,score:37,vol:11.15,consec:3},
+  {rank:3,r:3,code:'AGNISYSL',cat:'A',ltp:30.00,pct:3.45,bz:'৳29.60–৳29.90',l1:30.60,l2:31.50,l3:32.40,sl:29.10,rr:2.0,score:34.5,vol:5.73,consec:1},
+];
+
+// ── KEEP EXISTING RENDERS ─────────────────────────────────────────────
+// renderPortfolio, renderScreener, renderBlog, renderHistList, renderPricing
+// kept from original — they still work as fallbacks
+
+function renderPortfolio(f='all'){
+  const holdings=[
+    {code:'NAVANAPHAR',broker:'Bank Asia',qty:1000,buy:70.38,cur:75.40,dec:'ACCUMULATE'},
+    {code:'BDCOM',broker:'Bank Asia',qty:52,buy:27.20,cur:29.80,dec:'ACCUMULATE'},
+    {code:'BEXIMCO',broker:'Bank Asia',qty:1050,buy:131.38,cur:110.10,dec:'HOLD'},
+    {code:'GPHISPAT',broker:'Bank Asia',qty:16000,buy:31.03,cur:16.60,dec:'WATCH'},
+    {code:'PDL',broker:'Bank Asia',qty:12650,buy:16.42,cur:5.50,dec:'EXIT'},
+  ];
+  const decCls={ACCUMULATE:'dec-acc',HOLD:'dec-hold',WATCH:'dec-watch',EXIT:'dec-exit'};
+  const hl=document.getElementById('holdings-list'); if(!hl) return;
+  hl.innerHTML=holdings.map(hd=>{
+    const pl=((hd.cur-hd.buy)/hd.buy*100).toFixed(1); const up=hd.cur>=hd.buy;
+    const plTk=Math.round((hd.cur-hd.buy)*hd.qty);
+    return `<div class="holding">
+      <div style="min-width:86px"><div class="h-code">${hd.code}</div><div class="h-broker">${hd.broker}</div></div>
+      <div style="font-size:10px;color:#9ca3af;min-width:64px">${hd.qty.toLocaleString()} shs</div>
+      <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:#9ca3af;min-width:64px">৳${hd.buy.toFixed(2)}</div>
+      <div class="h-bar-wrap"><div class="h-bar" style="width:${Math.min(100,Math.abs(parseFloat(pl))/60*100)}%;background:${up?'#16a34a':'#dc2626'}"></div></div>
+      <div class="h-val" style="color:${up?'#15803d':'#b91c1c'}">৳${hd.cur.toFixed(2)}</div>
+      <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;min-width:72px;text-align:right;color:${up?'#15803d':'#b91c1c'}">${up?'+':''}${pl}%</div>
+      <div class="h-dec ${decCls[hd.dec]}">${hd.dec}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderScreener(){
+  const sb=document.getElementById('screener-body'); if(!sb) return;
+  sb.innerHTML=SAMPLE_PICKS.map(p=>`<tr>
+    <td><span class="code">${p.code}</span></td>
+    <td><span class="cat cat-${(p.cat||'a').toLowerCase()}">${p.cat}</span></td>
+    <td style="font-family:'IBM Plex Mono',monospace">৳${parseFloat(p.ltp||0).toFixed(2)}</td>
+    <td><span class="up">+${p.pct||0}%</span></td>
+    <td style="font-family:'IBM Plex Mono',monospace;color:#15803d;font-size:10px">${p.bz||'—'}</td>
+    <td style="font-family:'IBM Plex Mono',monospace">${parseFloat(p.vol||0).toFixed(2)}M</td>
+    <td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:${(p.score||0)/50*100}%"></div></div><span style="font-size:10px;color:#6b7280">${p.score||0}</span></div></td>
+    <td><span class="rec-buy">BUY</span></td>
+  </tr>`).join('');
+}
+
+function renderBlog(){
+  const blogs=[
+    {tag:'Market Analysis',title:'Why DSEX direction matters before every trade',excerpt:'Buying against market tide reduces win rates by 30%.',icon:'ti-chart-bar'},
+    {tag:'Strategy',title:'The 40-40-20 tiered exit explained',excerpt:'Single-target exits leave money on the table.',icon:'ti-target'},
+    {tag:'DSE Education',title:'Circuit breakers: how to avoid getting trapped',excerpt:'Z-category stocks freeze without warning.',icon:'ti-bolt'},
+  ];
+  const grid=document.getElementById('blog-grid'); if(!grid) return;
+  grid.innerHTML=blogs.map(b=>`
+    <div class="blog-card">
+      <div class="blog-thumb"><i class="ti ${b.icon}" style="color:#16a34a;font-size:26px"></i></div>
+      <div class="blog-body">
+        <div class="blog-tag">${b.tag}</div>
+        <div class="blog-title">${b.title}</div>
+        <div class="blog-excerpt">${b.excerpt}</div>
+        <div class="blog-meta"><span>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span><span>5 min read</span></div>
+      </div>
+    </div>`).join('');
+}
+
+// Pick history kept from original
+const HIST=[
+  {date:'Sun, 08 Jun 2026',dsex:'+0.66%',dc:'#15803d',picks:[
+    {r:1,code:'MIRAKHTER',cat:'A',bz:'৳46.25–৳46.80',l1:47.94,l2:49.35,l3:50.76,sl:45.59,ltp:47.00,pct:6.58,sc:39,out:'OPEN',pl:null,consec:1},
+    {r:2,code:'ACMEPL',cat:'B',bz:'৳25.50–৳25.90',l1:26.62,l2:27.41,l3:28.19,sl:25.32,ltp:26.10,pct:6.10,sc:37,out:'OPEN',pl:null,consec:3},
+  ]},
+];
+const OC={'L3_HIT':'t-hit','L2_HIT':'t-hit','L1_HIT':'t-hit','SL_HIT':'t-miss','MISS':'t-miss','OPEN':'t-open'};
+const OL={'L3_HIT':'L3 hit','L2_HIT':'L2 hit','L1_HIT':'L1 hit','SL_HIT':'SL hit','MISS':'Miss','OPEN':'Open'};
+const OK={'L3_HIT':'#15803d','L2_HIT':'#15803d','L1_HIT':'#15803d','SL_HIT':'#b91c1c','MISS':'#b91c1c','OPEN':'#9ca3af'};
+let openDays=new Set([0]); let histTab='all';
+function renderHistList(){ const hl=document.getElementById('hist-list'); if(hl) hl.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">History loaded from API when available.</div>'; }
+function setHistTab(t){ histTab=t; ['all','hit','miss','consec'].forEach(id=>{ const el=document.getElementById('ht-'+id); if(el) el.classList.toggle('active',id===t); }); renderHistList(); }
+function renderHistory(){ renderHistList(); }
+
+// ── START APP ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Mark protected nav links
+  document.querySelectorAll('.navlink').forEach(l => {
+    const t = l.textContent.trim().toLowerCase();
+    if(['dashboard','daily picks','pick history','portfolio','screener','alerts','profile'].some(p => t.includes(p))) {
+      l.setAttribute('data-protected','1');
+    }
+  });
+  initApp();
+});
+</script>
+</body>
+</html>

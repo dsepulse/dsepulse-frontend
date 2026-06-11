@@ -420,33 +420,33 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
   <div class="ts-inner">
     <div class="section-eyebrow"><div class="se-line"></div><div class="se-text">How it works</div></div>
     <div class="section-title">Five tools. One daily edge.</div>
-    <div class="section-sub">Every trading day after market close, 5 precision tools run in sequence — each adding a layer of confirmation before a stock makes the final picks list.</div>
+    <div class="section-sub">Every trading day after market close, 5 precision tools run in sequence — each adding a layer of confirmation before a stock makes the final picks list. <span style="color:var(--gold);font-weight:600">Tap any tool to see how it scores.</span></div>
     <div class="tools-grid">
-      <div class="tool-col">
+      <div class="tool-col" onclick="showMethod('picker',this)" style="cursor:pointer">
         <div class="tool-time">4:35 PM</div>
         <div class="tool-num">01</div>
         <div class="tool-name">Daily Picker</div>
         <div class="tool-desc">Momentum scan — ranks all 426 stocks by price action, volume surge, category, PE and spread. Score /45.</div>
       </div>
-      <div class="tool-col">
+      <div class="tool-col" onclick="showMethod('wma',this)" style="cursor:pointer">
         <div class="tool-time">5:00 PM</div>
         <div class="tool-num">02</div>
         <div class="tool-name">WMA Analysis</div>
         <div class="tool-desc">WMA 9/34/89 crossover signals from 150 days of LankaBD data. Trend confirmation with fresh cross alerts.</div>
       </div>
-      <div class="tool-col">
+      <div class="tool-col" onclick="showMethod('tech',this)" style="cursor:pointer">
         <div class="tool-time">5:15 PM</div>
         <div class="tool-num">03</div>
         <div class="tool-name">Tech Analysis</div>
         <div class="tool-desc">Full score /100 combining WMA, MACD 12/26/9, RSI 14, Volume surge and Bollinger Bands.</div>
       </div>
-      <div class="tool-col">
+      <div class="tool-col" onclick="showMethod('combined',this)" style="cursor:pointer">
         <div class="tool-time">5:30 PM</div>
         <div class="tool-num">04</div>
         <div class="tool-name">Combined Signal</div>
         <div class="tool-desc">Triple-confirmation — only stocks where Picker ≥30, WMA = STRONG BUY and Tech ≥70 all agree.</div>
       </div>
-      <div class="tool-col gold-col">
+      <div class="tool-col gold-col" onclick="showMethod('bd',this)" style="cursor:pointer">
         <div class="tool-badge">Final</div>
         <div class="tool-time">5:30 PM</div>
         <div class="tool-num">05</div>
@@ -454,6 +454,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         <div class="tool-desc">BD-optimised /100 — DSEX mood, ATR stop loss, sector bonus, consecutive up days and circuit check.</div>
       </div>
     </div>
+    <div id="method-panel" style="display:none;margin-top:18px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:22px 24px"><div id="method-body"></div></div>
   </div>
 </div>
 
@@ -824,6 +825,43 @@ function switchTab(t){
   document.getElementById('tab-analyse').className='sp-tab'+(t==='analyse'?' active':'');
 }
 
+const METHODOLOGY={
+  picker:{n:"Daily Picker",t:"Momentum Scan · Score /45 · runs first",
+    intro:"The first broad filter. After market close it scans every listed stock and scores momentum and liquidity, ranking the strongest short-term setups.",
+    rows:[["Price action","Today's move plus consecutive up-day streak"],["Volume surge","Today's volume vs its recent average — accumulation signal"],["Category","Quality tier weighting (A &gt; B &gt; Z)"],["Valuation","PE ratio sanity check"],["Liquidity","Bid-ask spread and trade count — is it tradeable"]],
+    out:"Top 3 → BUY recommendations with entry (LTP-based), targets L1–L3, ATR-style stop loss and R/R. Ranks #4–10 → Watchlist to monitor for entry."},
+  wma:{n:"WMA Analysis",t:"Weighted Moving Average 9 / 34 / 89 · runs second",
+    intro:"Pulls 150 trading days of closing prices per stock (weekends and holidays skipped) and computes three weighted moving averages that weight recent prices more heavily.",
+    rows:[["WMA 9","Short-term trend"],["WMA 34","Medium-term trend"],["WMA 89","Long-term trend"],["Stack = STRONG BUY","WMA9 &gt; WMA34 &gt; WMA89 — full bullish alignment"],["Stack = BUY / SELL","WMA9 &gt; WMA34 (buy) or below (sell)"],["Fresh cross","Flags when WMA9 crosses WMA34 today"]],
+    out:"A trend signal per stock (STRONG BUY → STRONG SELL) plus a fresh-crossover alert. Confirms whether the stock is in a real uptrend across every timeframe."},
+  tech:{n:"Tech Analysis",t:"Multi-Indicator Composite · Score /100 · runs third",
+    intro:"Combines five independent indicators into one composite technical score. Each contributes a capped number of points; higher total = stronger setup.",
+    rows:[["WMA alignment","up to 30 pts — full bullish stack scores highest"],["MACD 12/26/9","up to 20 pts — bullish &amp; accelerating scores highest"],["RSI 14","up to 20 pts — oversold / ideal-entry zone best; overbought avoided"],["Volume surge","up to 15 pts — institutional-size surges score high"],["Bollinger Bands","up to 15 pts — position within bands &amp; squeeze"]],
+    out:"A single /100 technical score per stock, feeding the Combined filter and the site's Analyse-any-stock card."},
+  combined:{n:"Combined Signal",t:"Triple Confirmation · runs fourth",
+    intro:"A strict AND filter. A stock only qualifies if all three independent engines agree on the same day — any one failing disqualifies it.",
+    rows:[["Daily Picker","score ≥ 30 / 45"],["WMA Analysis","= STRONG BUY (full bullish stack)"],["Tech Analysis","score ≥ 70 / 100"],["Logic","All three must pass — no partial credit"]],
+    out:"The highest-conviction shortlist — only stocks where momentum, trend and technicals all confirm at once."},
+  bd:{n:"BD Signal",t:"BD-Optimised Final Score · /100 · the final layer",
+    intro:"The last and most market-aware layer, tuned specifically for the Dhaka Stock Exchange. It takes the technical base and applies DSE-specific adjustments.",
+    rows:[["DSEX mood","Overall market direction nudges the score up or down"],["ATR stop loss","Volatility-adaptive stop, not a flat percentage"],["Sector bonus","Hot/leading sectors get a boost"],["Consecutive up days","Sustained momentum rewarded"],["Circuit check","Screens for price-limit / circuit conditions"]],
+    out:"The final BD-optimised signal — the last gate before a stock reaches the picks list."}
+};
+function showMethod(key,el){
+  const m=METHODOLOGY[key];if(!m)return;
+  document.querySelectorAll('.tools-grid .tool-col').forEach(c=>{c.style.boxShadow='';});
+  if(el)el.style.boxShadow='inset 0 0 0 2px var(--gold)';
+  const rows=(m.rows||[]).map(r=>`<div style="display:grid;grid-template-columns:160px 1fr;gap:14px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--navy)">${r[0]}</div><div style="font-size:12px;color:var(--text2);line-height:1.5">${r[1]}</div></div>`).join('');
+  document.getElementById('method-body').innerHTML=
+    `<div style="font-size:10px;font-family:var(--mono);color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px">Methodology</div>`+
+    `<div style="font-size:20px;font-weight:800;color:var(--navy);line-height:1.2">${m.n}</div>`+
+    `<div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:12px">${m.t}</div>`+
+    `<div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px">${m.intro}</div>`+
+    rows+
+    `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-top:14px"><b style="color:var(--navy)">Output:</b> ${m.out}</div>`;
+  const p=document.getElementById('method-panel');p.style.display='block';
+  p.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';

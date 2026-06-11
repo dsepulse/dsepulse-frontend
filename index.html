@@ -653,8 +653,8 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     <div id="dt-picks">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)">BD Signal Picks · 10 Jun 2026</div>
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Updated 17:30 · 21 stocks qualified · GREEN DAY +0.66%</div>
+          <div id="dt-picks-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)">BD Signal Picks · 10 Jun 2026</div>
+          <div id="dt-picks-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Updated 17:30 · 21 stocks qualified · GREEN DAY +0.66%</div>
         </div>
         <div class="trial-toggle">
           <button class="tt-btn active" onclick="setDashTrial('active',this)">Trial active</button>
@@ -827,7 +827,7 @@ function switchTab(t){
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
-  if(v==='dashboard'){buildWMA();buildSectors();}
+  if(v==='dashboard'){buildPicks();buildWMA();buildSectors();}
   window.scrollTo(0,0);
 }
 
@@ -854,6 +854,24 @@ function setDashTrial(s,el){
 const WD=[{code:"PRAGATIINS",cat:"A",ltp:75.60,w9:72.81,w34:72.62,w89:72.43,sig:"STRONG BUY",fresh:"🔔"},{code:"BDAUTOCA",cat:"B",ltp:228.80,w9:225.70,w34:225.18,w89:204.17,sig:"STRONG BUY",fresh:"🔔"},{code:"SAMATALETH",cat:"B",ltp:116.70,w9:110.16,w34:109.77,w89:99.77,sig:"STRONG BUY",fresh:""},{code:"GREENDELT",cat:"A",ltp:63.80,w9:59.49,w34:59.40,w89:57.60,sig:"STRONG BUY",fresh:""},{code:"ACMEPL",cat:"A",ltp:24.40,w9:24.71,w34:24.20,w89:22.15,sig:"BUY",fresh:""},{code:"BEXIMCO",cat:"B",ltp:110.10,w9:107.90,w34:109.47,w89:112.30,sig:"SELL",fresh:"🔴"}];
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
+async function buildPicks(){
+  const el=document.getElementById('dt-picks-active');if(!el||el.dataset.loaded)return;
+  const data=await fetchJSON('/api/picks/today');
+  if(!data||data.status!=='live'||!Array.isArray(data.picks)||!data.picks.length)return; // keep sample cards if no live data
+  el.dataset.loaded='1';
+  const picks=data.picks.slice(0,12);
+  const fmt=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}};
+  const hdr=document.getElementById('dt-picks-hdr');if(hdr)hdr.textContent='Daily Picker · '+fmt(data.date);
+  const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent=picks.length+' picks · updated '+fmt(data.date);
+  const num=v=>Number(v||0);
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'+picks.map(p=>{
+    const rank=num(p.rank),isBuy=rank>0&&rank<=3;
+    const sig=isBuy?'BUY':'WATCH',sigC=isBuy?'var(--green)':'var(--gold)';
+    const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),vol=num(p.vol),score=num(p.score);
+    const tf=isBuy?'1–3 days':'3–5 days';
+    return `<div class="pick-card" style="background:var(--white)"><div class="pc-code">${p.code||''}</div><div class="pc-co">Cat ${p.cat||'A'} · Rank #${rank}</div><div class="pc-score-row"><div class="pc-score">${score.toFixed(0)}</div><div><div class="pc-sig" style="color:${sigC}">${sig}</div><div class="pc-meta">R/R ${rr.toFixed(1)}× · Vol ${vol.toFixed(1)}×</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">৳${ltp.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">৳${l1.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">৳${sl.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">${tf}</div></div></div></div>`;
+  }).join('')+'</div>';
+}
 async function buildWMA(){
   const el=document.getElementById('wma-rows');if(!el||el.dataset.loaded)return;
   el.dataset.loaded='1';

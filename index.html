@@ -646,6 +646,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     <div class="tabs">
       <div class="tab active" onclick="switchDashTab('picks',this)">Today's Picks</div>
       <div class="tab" onclick="switchDashTab('wma',this)">WMA Signals</div>
+      <div class="tab" onclick="switchDashTab('tech',this)">Tech Analysis</div>
       <div class="tab" onclick="switchDashTab('sectors',this)">Sector Ranking</div>
       <div class="tab" onclick="switchDashTab('analyse',this)">Analyse Stock</div>
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
@@ -693,6 +694,14 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:860px">
         <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">WMA9</div><div style="text-align:right">WMA34</div><div style="text-align:right">WMA89</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
         <div id="wma-rows"></div>
+      </div>
+    </div>
+
+    <div id="dt-tech" style="display:none">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">Tech Analysis · Score /100</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:860px">
+        <div style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Score</div><div style="text-align:right">RSI</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
+        <div id="tech-rows"></div>
       </div>
     </div>
 
@@ -865,12 +874,12 @@ function showMethod(key,el){
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
-  if(v==='dashboard'){buildPicks();buildWMA();buildSectors();}
+  if(v==='dashboard'){buildPicks();buildWMA();buildTech();buildSectors();}
   window.scrollTo(0,0);
 }
 
 function switchDashTab(t,el){
-  ['picks','wma','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['picks','wma','tech','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
 }
@@ -921,6 +930,18 @@ async function buildWMA(){
 
 const SEC=[{n:"Finance",s:12,sig:"HOT",sc:78,b:"DBH"},{n:"Engineering",s:8,sig:"HOT",sc:74,b:"PTL"},{n:"Insurance",s:18,sig:"HOT",sc:73,b:"PRAGATIINS"},{n:"Pharma",s:14,sig:"BULLISH",sc:68,b:"ACMELAB"},{n:"IT",s:6,sig:"BULLISH",sc:66,b:"GENEXIL"},{n:"Textile",s:22,sig:"MIXED",sc:61,b:"CRYSTALINS"},{n:"Bank",s:38,sig:"COLD",sc:49,b:"BRACBANK"},{n:"Telecom",s:2,sig:"COLD",sc:41,b:"ROBI"}];
 const scC=s=>s>=70?'var(--green)':s>=55?'var(--gold)':'var(--red)';
+async function buildTech(){
+  const el=document.getElementById('tech-rows');if(!el||el.dataset.loaded)return;
+  const live=await fetchJSON('/api/tech/today');
+  if(!Array.isArray(live)||!live.length)return;
+  el.dataset.loaded='1';
+  const rows=live.slice(0,60);
+  el.innerHTML=rows.map((r,i)=>{
+    const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'';
+    const scC=sc>=70?'var(--green)':sc>=55?'#1A6B3C':sc>=40?'var(--gold)':'var(--red)';
+    return `<div style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:13px;font-weight:800;font-family:var(--mono);color:${scC}">${sc.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/100</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${rsi.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
+  }).join('');
+}
 async function buildSectors(){
   const el=document.getElementById('sector-rows');if(!el||el.dataset.loaded)return;
   el.dataset.loaded='1';

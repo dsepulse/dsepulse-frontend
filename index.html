@@ -647,6 +647,8 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab active" onclick="switchDashTab('picks',this)">Today's Picks</div>
       <div class="tab" onclick="switchDashTab('wma',this)">WMA Signals</div>
       <div class="tab" onclick="switchDashTab('tech',this)">Tech Analysis</div>
+      <div class="tab" onclick="switchDashTab('combined',this)">Combined Signal</div>
+      <div class="tab" onclick="switchDashTab('bd',this)">BD Signal</div>
       <div class="tab" onclick="switchDashTab('sectors',this)">Sector Ranking</div>
       <div class="tab" onclick="switchDashTab('analyse',this)">Analyse Stock</div>
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
@@ -702,6 +704,23 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:860px">
         <div style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Score</div><div style="text-align:right">RSI</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
         <div id="tech-rows"></div>
+      </div>
+    </div>
+
+    <div id="dt-combined" style="display:none">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">Combined Signal · Triple Confirmation</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:920px">
+        <div style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Picker</div><div style="text-align:center">WMA</div><div style="text-align:right">Tech</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
+        <div id="combined-rows"></div>
+      </div>
+      <div id="combined-empty" style="display:none;padding:18px;color:var(--text3);font-size:12px">No triple-confirmed signals today — showing closest near-misses.</div>
+    </div>
+
+    <div id="dt-bd" style="display:none">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">BD Signal · BD-Optimised /100</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:920px">
+        <div style="display:grid;grid-template-columns:1fr 80px 60px 90px 110px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Score</div><div style="text-align:right">RSI</div><div style="text-align:right">LTP</div><div style="text-align:left;padding-left:6px">Sector</div><div style="text-align:center">Signal</div></div>
+        <div id="bd-rows"></div>
       </div>
     </div>
 
@@ -874,12 +893,12 @@ function showMethod(key,el){
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
-  if(v==='dashboard'){buildPicks();buildWMA();buildTech();buildSectors();}
+  if(v==='dashboard'){buildPicks();buildWMA();buildTech();buildCombined();buildBD();buildSectors();}
   window.scrollTo(0,0);
 }
 
 function switchDashTab(t,el){
-  ['picks','wma','tech','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
 }
@@ -940,6 +959,31 @@ async function buildTech(){
     const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'';
     const scC=sc>=70?'var(--green)':sc>=55?'#1A6B3C':sc>=40?'var(--gold)':'var(--red)';
     return `<div style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:13px;font-weight:800;font-family:var(--mono);color:${scC}">${sc.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/100</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${rsi.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
+  }).join('');
+}
+async function buildCombined(){
+  const el=document.getElementById('combined-rows');if(!el||el.dataset.loaded)return;
+  const live=await fetchJSON('/api/combined/today');
+  if(!Array.isArray(live)||!live.length)return;
+  el.dataset.loaded='1';
+  const emp=document.getElementById('combined-empty');
+  if(emp&&!live.some(r=>r.signal==='STRONG BUY'))emp.style.display='block';
+  const rows=live.slice(0,60);
+  el.innerHTML=rows.map((r,i)=>{
+    const pk=Number(r.picker||0),tech=Number(r.tech||0),ltp=Number(r.ltp||0),sig=r.signal||'',wma=r.wma||'';
+    return `<div style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${pk.toFixed(0)}<span style="font-size:8px;color:var(--text3)">/45</span></div><div style="text-align:center"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;color:${sigTxt[wma]||'var(--text3)'};background:${sigBg[wma]||'var(--cream2)'}">${wma||'–'}</span></div><div style="text-align:right;font-size:12px;font-weight:800;font-family:var(--mono);color:${tech>=70?'var(--green)':'var(--navy)'}">${tech.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
+  }).join('');
+}
+async function buildBD(){
+  const el=document.getElementById('bd-rows');if(!el||el.dataset.loaded)return;
+  const live=await fetchJSON('/api/bd/today');
+  if(!Array.isArray(live)||!live.length)return;
+  el.dataset.loaded='1';
+  const rows=live.slice(0,80);
+  el.innerHTML=rows.map((r,i)=>{
+    const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'',sec=r.sector||'';
+    const scC=sc>=70?'var(--green)':sc>=55?'#1A6B3C':sc>=40?'var(--gold)':'var(--red)';
+    return `<div style="display:grid;grid-template-columns:1fr 80px 60px 90px 110px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:13px;font-weight:800;font-family:var(--mono);color:${scC}">${sc.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/100</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${rsi.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:left;padding-left:6px;font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sec}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
   }).join('');
 }
 async function buildSectors(){

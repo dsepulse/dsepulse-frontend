@@ -292,9 +292,9 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="logo-text">DSE<span>Pulse</span></div>
     </div>
     <div class="nav-links">
-      <span class="nav-link active">Home</span>
-      <span class="nav-link" onclick="document.getElementById('tools-section').scrollIntoView({behavior:'smooth'})">Tools</span>
-      <span class="nav-link" onclick="document.getElementById('pricing-section').scrollIntoView({behavior:'smooth'})">Pricing</span>
+      <span class="nav-link active" onclick="showView('landing');window.scrollTo({top:0,behavior:'smooth'})">Home</span>
+      <span class="nav-link" onclick="navTo('tools-section')">Tools</span>
+      <span class="nav-link" onclick="navTo('pricing-section')">Pricing</span>
       <span class="nav-link" onclick="showView('dashboard')">Dashboard</span>
     </div>
     <div class="nav-actions">
@@ -492,7 +492,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
           <div class="ds-nav-item"><i class="ti ti-briefcase"></i> My holdings</div>
         </div>
         <div class="dash-main">
-          <div class="dash-greeting">Good evening, Firoz</div>
+          <div class="dash-greeting">Good evening</div>
           <div class="dash-sub-txt">10 JUN 2026 · MARKET CLOSED · DSEX ▲ +0.66%</div>
           <div class="mkt-strip">
             <div class="mkt-card"><div class="mkt-lbl">DSEX</div><div class="mkt-val" style="color:var(--green)">5,847.2</div></div>
@@ -625,7 +625,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 
 <footer>
   <div class="footer-logo">DSE<span>Pulse</span></div>
-  <div class="footer-copy">Bangladesh Stock Intelligence · Md Fazlul Hoque Firoz · dsepulse.com</div>
+  <div class="footer-copy">Bangladesh Stock Intelligence · dsepulse.com</div>
 </footer>
 
 </div><!-- /landing -->
@@ -635,7 +635,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
   <div style="background:var(--cream);min-height:100vh;padding:28px 40px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
       <div>
-        <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening, Firoz</div>
+        <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening</div>
         <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">10 JUN 2026 · MARKET CLOSED · DSEX ▲ +0.66%</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -644,7 +644,8 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       </div>
     </div>
     <div class="tabs">
-      <div class="tab active" onclick="switchDashTab('picks',this)">Today's Picks</div>
+      <div class="tab active" onclick="switchDashTab('overview',this)">Overview</div>
+      <div class="tab" onclick="switchDashTab('picks',this)">Today's Picks</div>
       <div class="tab" onclick="switchDashTab('wma',this)">WMA Signals</div>
       <div class="tab" onclick="switchDashTab('tech',this)">Tech Analysis</div>
       <div class="tab" onclick="switchDashTab('combined',this)">Combined Signal</div>
@@ -654,7 +655,16 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
     </div>
 
-    <div id="dt-picks">
+    <div id="dt-overview">
+      <div id="ov-market"></div>
+      <div id="ov-top"></div>
+      <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin-top:16px" id="ov-grid">
+        <div id="ov-funnel"></div>
+        <div id="ov-consensus"></div>
+      </div>
+    </div>
+
+    <div id="dt-picks" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div>
           <div id="dt-picks-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)">BD Signal Picks · 10 Jun 2026</div>
@@ -890,15 +900,16 @@ function showMethod(key,el){
   const p=document.getElementById('method-panel');p.style.display='block';
   p.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+function navTo(id){showView('landing');setTimeout(function(){var e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth'});},60);}
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
-  if(v==='dashboard'){buildPicks();buildWMA();buildTech();buildCombined();buildBD();buildSectors();}
+  if(v==='dashboard'){buildOverview();buildPicks();buildWMA();buildTech();buildCombined();buildBD();buildSectors();}
   window.scrollTo(0,0);
 }
 
 function switchDashTab(t,el){
-  ['picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
 }
@@ -920,6 +931,55 @@ function setDashTrial(s,el){
 const WD=[{code:"PRAGATIINS",cat:"A",ltp:75.60,w9:72.81,w34:72.62,w89:72.43,sig:"STRONG BUY",fresh:"🔔"},{code:"BDAUTOCA",cat:"B",ltp:228.80,w9:225.70,w34:225.18,w89:204.17,sig:"STRONG BUY",fresh:"🔔"},{code:"SAMATALETH",cat:"B",ltp:116.70,w9:110.16,w34:109.77,w89:99.77,sig:"STRONG BUY",fresh:""},{code:"GREENDELT",cat:"A",ltp:63.80,w9:59.49,w34:59.40,w89:57.60,sig:"STRONG BUY",fresh:""},{code:"ACMEPL",cat:"A",ltp:24.40,w9:24.71,w34:24.20,w89:22.15,sig:"BUY",fresh:""},{code:"BEXIMCO",cat:"B",ltp:110.10,w9:107.90,w34:109.47,w89:112.30,sig:"SELL",fresh:"🔴"}];
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
+async function buildOverview(){
+  const el=document.getElementById('dt-overview');if(!el||el.dataset.loaded)return;
+  const d=await fetchJSON('/api/dashboard/overview');
+  if(!d||!d.market)return;
+  el.dataset.loaded='1';
+  const m=d.market,fn=d.funnel||{},t=d.top_signal,cons=d.consensus||[];
+  const moodC=m.mood==='Bullish'?'#4ADE80':m.mood==='Bearish'?'#F87171':'var(--gold2)';
+  const sect=(arr,lbl,col)=>arr&&arr.length?`<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">${lbl}</span><span style="font-size:12px;font-weight:600;color:${col}">${arr.join(' · ')}</span></div>`:'';
+  document.getElementById('ov-market').innerHTML=`<div style="background:var(--navy);border-radius:10px;padding:16px 22px;display:flex;align-items:center;gap:26px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">Market Mood</span><span style="font-size:20px;font-weight:800;font-family:var(--serif);color:${moodC}">${m.mood}</span></div>
+    <div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>
+    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">Breadth</span><span style="font-size:14px;font-weight:700;font-family:var(--mono)"><span style="color:#4ADE80">▲${m.adv}</span> <span style="color:rgba(255,255,255,0.4)">/</span> <span style="color:#F87171">▼${m.dec}</span> <span style="color:rgba(255,255,255,0.4);font-size:11px">· ${m.unch} unch</span></span></div>
+    <div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>
+    ${sect(m.hot,'Hot Sectors','#4ADE80')}
+    ${sect(m.cold,'Cold Sectors','#F87171')}
+    <div style="margin-left:auto;text-align:right"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4)">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated||'—'}</span></div>
+  </div>`;
+  if(t){
+    const pc=t.pct>=0?'var(--green)':'var(--red)';
+    const chip=(lbl,val)=>`<div style="display:flex;flex-direction:column;gap:1px;align-items:center;padding:0 14px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)">${lbl}</span><span style="font-size:14px;font-weight:800;font-family:var(--mono);color:var(--navy)">${val}</span></div>`;
+    const lvl=(lbl,val,col)=>`<div style="flex:1;text-align:center;padding:8px 4px;background:var(--white);border:1px solid var(--border);border-radius:6px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)">${lbl}</div><div style="font-size:14px;font-weight:800;font-family:var(--mono);color:${col}">${val}</div></div>`;
+    document.getElementById('ov-top').innerHTML=`<div style="background:linear-gradient(135deg,var(--gold-bg),var(--white));border:1px solid var(--gold-border);border-radius:10px;padding:20px 22px;margin-top:16px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:700;margin-bottom:10px">★ Today's Strongest Signal</div>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <span style="font-size:26px;font-weight:800;font-family:var(--serif);color:var(--navy)">${t.code}</span>
+        <span style="font-size:10px;padding:2px 8px;background:var(--cream2);border:1px solid var(--border);border-radius:4px;color:var(--text3)">${t.cat||''}</span>
+        <span style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${t.ltp.toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:${pc}">${t.pct>=0?'+':''}${t.pct.toFixed(2)}%</span>
+        <div style="margin-left:auto;display:flex;align-items:center;border:1px solid var(--gold-border);border-radius:8px;background:var(--white)">${chip('Picker',t.picker.toFixed(0))}<div style="width:1px;height:24px;background:var(--border)"></div>${chip('WMA',t.wma||'—')}<div style="width:1px;height:24px;background:var(--border)"></div>${chip('Tech',t.tech.toFixed(0))}</div>
+      </div>
+      <div style="display:flex;gap:8px">${lvl('Entry','৳'+t.entry.toFixed(2),'var(--navy)')}${lvl('Target','৳'+t.target.toFixed(2),'var(--green)')}${lvl('Stop Loss','৳'+t.sl.toFixed(2),'var(--red)')}${lvl('Risk : Reward','1:'+t.rr.toFixed(1),'var(--gold)')}</div>
+    </div>`;
+  }else{
+    document.getElementById('ov-top').innerHTML=`<div style="background:var(--cream);border:1px dashed var(--border);border-radius:10px;padding:24px;margin-top:16px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text2)">No triple-confirmed signal today</div><div style="font-size:11px;color:var(--text3);margin-top:4px">In a cautious market the engines hold back — check the BD Signal tab for the watchlist.</div></div>`;
+  }
+  const steps=[['Stocks scanned',fn.scanned||0,'var(--navy)'],['WMA strong buy',fn.wma_strong||0,'var(--gold)'],['Tech 70+',fn.tech70||0,'var(--green-bright)'],['Triple-confirmed',fn.combined||0,'var(--green)']];
+  const mx=Math.max(fn.scanned||1,1);
+  document.getElementById('ov-funnel').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;height:100%">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:14px">Confirmation Funnel</div>
+    ${steps.map(s=>{const w=Math.max((s[1]/mx)*100,6);return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--text2)">${s[0]}</span><span style="font-size:12px;font-weight:800;font-family:var(--mono);color:${s[2]}">${s[1]}</span></div><div style="height:8px;background:var(--cream2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${w}%;background:${s[2]};border-radius:4px"></div></div></div>`;}).join('')}
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic">Each layer filters for higher conviction.</div>
+  </div>`;
+  const eg={Combined:'var(--green)',WMA:'var(--gold)',Tech:'var(--green-bright)',BD:'var(--navy2)'};
+  document.getElementById('ov-consensus').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;height:100%">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:4px">Cross-Tool Consensus</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Stocks flagged by 2+ engines — agreement signals conviction.</div>
+    ${cons.length?cons.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy);width:80px">${c.code}</span><div style="display:flex;gap:4px;flex:1;flex-wrap:wrap">${c.engines.map(e=>`<span style="font-size:8px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:3px;color:#fff;background:${eg[e]||'var(--text3)'}">${e}</span>`).join('')}</div><span style="font-size:13px;font-weight:800;font-family:var(--mono);color:var(--green)">${c.count}<span style="font-size:9px;color:var(--text3)">/4</span></span></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:14px 0;text-align:center">No multi-engine overlaps today.</div>'}
+  </div>`;
+}
 async function buildPicks(){
   const el=document.getElementById('dt-picks-active');if(!el||el.dataset.loaded)return;
   const data=await fetchJSON('/api/picks/today');

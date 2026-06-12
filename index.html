@@ -493,7 +493,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         </div>
         <div class="dash-main">
           <div class="dash-greeting">Good evening</div>
-          <div class="dash-sub-txt">10 JUN 2026 · MARKET CLOSED · DSEX ▲ +0.66%</div>
+          <div class="dash-sub-txt">LIVE · DSE MARKET INTELLIGENCE · 5 DAILY TOOLS</div>
           <div class="mkt-strip">
             <div class="mkt-card"><div class="mkt-lbl">DSEX</div><div class="mkt-val" style="color:var(--green)">5,847.2</div></div>
             <div class="mkt-card"><div class="mkt-lbl">Change</div><div class="mkt-val" style="color:var(--green)">+0.66%</div></div>
@@ -501,7 +501,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
             <div class="mkt-card"><div class="mkt-lbl">Losers</div><div class="mkt-val" style="color:var(--red)">89</div></div>
           </div>
           <div class="picks-header">
-            <div class="ph-title">BD Signal Picks · 10 Jun 2026</div>
+            <div class="ph-title">Today's Signal Picks</div>
             <div class="ph-live">● Live · 17:30</div>
           </div>
           <div id="dash-active">
@@ -636,7 +636,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
       <div>
         <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening</div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">10 JUN 2026 · MARKET CLOSED · DSEX ▲ +0.66%</div>
+        <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
         <span style="padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px">Trial · 7 days left</span>
@@ -702,7 +702,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     </div>
 
     <div id="dt-wma" style="display:none">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">WMA Signals · 10 Jun 2026</div>
+      <div id="wma-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">WMA Signals</div>
       <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:860px">
         <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>Stock</div><div style="text-align:right">WMA9</div><div style="text-align:right">WMA34</div><div style="text-align:right">WMA89</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
         <div id="wma-rows"></div>
@@ -735,7 +735,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     </div>
 
     <div id="dt-sectors" style="display:none">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">Sector Ranking · 10 Jun 2026</div>
+      <div id="sectors-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">Sector Ranking</div>
       <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:680px" id="sector-rows"></div>
     </div>
 
@@ -912,6 +912,8 @@ function switchDashTab(t,el){
   ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
+  const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors};
+  if(fns[t]){try{fns[t]();}catch(e){}}
 }
 
 function setTrial(s,el){
@@ -934,19 +936,34 @@ const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--
 async function buildOverview(){
   const el=document.getElementById('dt-overview');if(!el||el.dataset.loaded)return;
   const d=await fetchJSON('/api/dashboard/overview');
-  if(!d||!d.market)return;
+  if(!d||!d.market){
+    document.getElementById('ov-market').innerHTML='<div style="padding:34px 20px;text-align:center;color:var(--text3);font-size:12px;border:1px dashed var(--border);border-radius:10px">Overview data isn\u2019t available yet. If the backend was just deployed, give it a minute, then click the Overview tab again.</div>';
+    return;
+  }
   el.dataset.loaded='1';
   const m=d.market,fn=d.funnel||{},t=d.top_signal,cons=d.consensus||[];
+  const fmtD=s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();}catch(e){return s||'';}};
+  const dsub=document.getElementById('dash-date-sub');
+  if(dsub){const dx=m.dsex>0?'DSEX '+m.dsex.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+' '+((m.dsex_change||0)>=0?'▲':'▼')+Math.abs(m.dsex_change||0).toFixed(2)+'% · ':'';dsub.textContent=(d.updated?fmtD(d.updated):'—')+' · '+dx+(m.mood||'').toUpperCase()+' MARKET · ▲'+m.adv+' / ▼'+m.dec;}
+  const dlbl=d.updated?fmtD(d.updated):'';
+  const wh=document.getElementById('wma-hdr');if(wh&&dlbl)wh.textContent='WMA Signals · '+dlbl;
+  const sh=document.getElementById('sectors-hdr');if(sh&&dlbl)sh.textContent='Sector Ranking · '+dlbl;
   const moodC=m.mood==='Bullish'?'#4ADE80':m.mood==='Bearish'?'#F87171':'var(--gold2)';
-  const sect=(arr,lbl,col)=>arr&&arr.length?`<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">${lbl}</span><span style="font-size:12px;font-weight:600;color:${col}">${arr.join(' · ')}</span></div>`:'';
-  document.getElementById('ov-market').innerHTML=`<div style="background:var(--navy);border-radius:10px;padding:16px 22px;display:flex;align-items:center;gap:26px;flex-wrap:wrap">
-    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">Market Mood</span><span style="font-size:20px;font-weight:800;font-family:var(--serif);color:${moodC}">${m.mood}</span></div>
-    <div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>
-    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)">Breadth</span><span style="font-size:14px;font-weight:700;font-family:var(--mono)"><span style="color:#4ADE80">▲${m.adv}</span> <span style="color:rgba(255,255,255,0.4)">/</span> <span style="color:#F87171">▼${m.dec}</span> <span style="color:rgba(255,255,255,0.4);font-size:11px">· ${m.unch} unch</span></span></div>
-    <div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>
-    ${sect(m.hot,'Hot Sectors','#4ADE80')}
+  const L='font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)';
+  const DIV='<div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>';
+  const sect=(arr,lbl,col)=>arr&&arr.length?`<div style="display:flex;flex-direction:column;gap:3px"><span style="${L}">${lbl}</span><span style="font-size:12px;font-weight:600;color:${col}">${arr.join(' · ')}</span></div>`:'';
+  const dsexC=(m.dsex_change||0)>=0?'#4ADE80':'#F87171';
+  const dsexBlk=(m.dsex>0)?`<div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">DSEX Index</span><span style="font-size:20px;font-weight:800;font-family:var(--mono);color:#fff;line-height:1.1">${m.dsex.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})} <span style="font-size:12px;color:${dsexC}">${(m.dsex_change||0)>=0?'▲':'▼'}${Math.abs(m.dsex_change||0).toFixed(2)}%</span></span></div>${DIV}`:'';
+  const turnBlk=(m.turnover>0)?`${DIV}<div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">Turnover</span><span style="font-size:14px;font-weight:700;font-family:var(--mono);color:#fff">৳${(m.turnover/10).toLocaleString('en-US',{maximumFractionDigits:0})} cr</span></div>`:'';
+  document.getElementById('ov-market').innerHTML=`<div style="background:var(--navy);border-radius:10px;padding:16px 22px;display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+    ${dsexBlk}
+    <div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">Market Mood</span><span style="font-size:20px;font-weight:800;font-family:var(--serif);color:${moodC}">${m.mood}</span></div>
+    ${DIV}
+    <div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">Breadth</span><span style="font-size:14px;font-weight:700;font-family:var(--mono)"><span style="color:#4ADE80">▲${m.adv}</span> <span style="color:rgba(255,255,255,0.4)">/</span> <span style="color:#F87171">▼${m.dec}</span> <span style="color:rgba(255,255,255,0.4);font-size:11px">· ${m.unch} unch</span></span></div>
+    ${turnBlk}
+    ${m.hot&&m.hot.length?DIV+sect(m.hot,'Hot Sectors','#4ADE80'):''}
     ${sect(m.cold,'Cold Sectors','#F87171')}
-    <div style="margin-left:auto;text-align:right"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4)">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated||'—'}</span></div>
+    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated?fmtD(d.updated):'—'}</span></div>
   </div>`;
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';

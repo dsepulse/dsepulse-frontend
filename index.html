@@ -1527,5 +1527,20 @@ async function buildSectors(){
 })();
 </script>
 <!-- ===== end Cross-Tool Comparison ===== -->
+<!-- ===== DSE Pulse · pricing toggle dedupe ===== -->
+<script>
+(function(){
+  function clean(){
+    var rows=[].slice.call(document.querySelectorAll('div')).filter(function(el){
+      var t=el.textContent.replace(/\s+/g,' ').trim();
+      return /^Monthly/.test(t) && /Quarterly/.test(t) && /Annually/.test(t) && t.length<140;
+    });
+    rows.slice(0,-1).forEach(function(el){ el.remove(); });
+  }
+  function boot(){ clean(); var n=0,iv=setInterval(function(){ clean(); if(++n>10) clearInterval(iv); },400); }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+})();
+</script>
+<!-- ===== end dedupe ===== -->
 </body>
 </html>

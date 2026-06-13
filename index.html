@@ -1295,5 +1295,137 @@ async function buildSectors(){
   } catch (e) {}
 })();
 </script>
+<!-- ===== DSE Pulse · Auth (Google + email/password) ===== -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(function () {
+  const API = "https://dsepulse-backend-production.up.railway.app";
+  const GOOGLE_CLIENT_ID = "258163974767-3v3cfjb3f61cekl2rfuvlqig18kr8mvj.apps.googleusercontent.com";
+  const TOKEN_KEY = "dse_token", NAME_KEY = "dse_name";
+  const getToken = () => localStorage.getItem(TOKEN_KEY);
+  const setSession = (t, n) => { localStorage.setItem(TOKEN_KEY, t); if (n) localStorage.setItem(NAME_KEY, n); };
+  const clearSession = () => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(NAME_KEY); };
+  const $ = id => document.getElementById(id);
+
+  const css = `
+  #dse-auth-ov{position:fixed;inset:0;background:rgba(13,31,60,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+  #dse-auth-ov.show{display:flex}
+  #dse-auth{background:#fff;border-radius:14px;max-width:380px;width:100%;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.2);font-family:'Inter',sans-serif}
+  #dse-auth h3{font-family:'Playfair Display',serif;font-size:22px;color:#0D1F3C;margin:0 0 4px}
+  #dse-auth .sub{font-size:13px;color:#9AA3B0;margin:0 0 18px}
+  #dse-auth .tabs{display:flex;gap:6px;margin-bottom:16px}
+  #dse-auth .tab{flex:1;padding:8px;border:1px solid #D1C9B8;border-radius:6px;background:#fff;color:#4A5568;font-size:13px;font-weight:600;cursor:pointer}
+  #dse-auth .tab.on{background:#0D1F3C;color:#fff;border-color:#0D1F3C}
+  #dse-auth label{display:block;font-size:12px;color:#4A5568;margin:10px 0 4px}
+  #dse-auth input{width:100%;padding:10px 12px;border:1px solid #D1C9B8;border-radius:6px;font-size:14px;color:#1A1A2E;outline:none;box-sizing:border-box}
+  #dse-auth input:focus{border-color:#0D1F3C}
+  #dse-auth .submit{width:100%;margin-top:16px;padding:11px;background:#0D1F3C;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px}
+  #dse-auth .submit:hover{background:#1A3260}
+  #dse-auth .err{color:#B91C1C;font-size:12px;min-height:16px;margin-top:8px}
+  #dse-auth .divider{display:flex;align-items:center;gap:10px;color:#9AA3B0;font-size:11px;margin:16px 0}
+  #dse-auth .divider:before,#dse-auth .divider:after{content:"";flex:1;height:1px;background:#E2DECE}
+  #dse-auth .gbtn{display:flex;justify-content:center;min-height:40px}
+  #dse-auth .x{float:right;cursor:pointer;color:#9AA3B0;font-size:20px;line-height:1}
+  .dse-userchip{display:flex;align-items:center;gap:10px}
+  .dse-userchip .nm{font-size:13px;color:#0D1F3C;font-weight:600}`;
+  const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+  const ov = document.createElement("div"); ov.id = "dse-auth-ov";
+  ov.innerHTML = `
+  <div id="dse-auth">
+    <span class="x" id="dse-x">&times;</span>
+    <h3>Welcome to DSE Pulse</h3>
+    <p class="sub">Sign in or create your free account.</p>
+    <div class="tabs"><button class="tab on" id="tab-login">Sign in</button><button class="tab" id="tab-signup">Sign up</button></div>
+    <div class="gbtn" id="dse-gbtn"></div>
+    <div class="divider">or</div>
+    <div id="fld-name" style="display:none"><label>Name</label><input id="au-name" type="text" placeholder="Your name"></div>
+    <label>Email</label><input id="au-email" type="email" placeholder="you@example.com">
+    <label>Password</label><input id="au-pass" type="password" placeholder="••••••••">
+    <button class="submit" id="au-submit">Sign in</button>
+    <div class="err" id="au-err"></div>
+  </div>`;
+  document.body.appendChild(ov);
+
+  let mode = "login";
+  function setMode(m){ mode = m;
+    $("tab-login").classList.toggle("on", m === "login");
+    $("tab-signup").classList.toggle("on", m === "signup");
+    $("fld-name").style.display = m === "signup" ? "block" : "none";
+    $("au-submit").textContent = m === "signup" ? "Create account" : "Sign in";
+    $("au-err").textContent = ""; }
+  window.openAuth = function(m){ setMode(m || "login"); ov.classList.add("show"); };
+  function closeAuth(){ ov.classList.remove("show"); }
+  $("dse-x").onclick = closeAuth;
+  ov.onclick = e => { if (e.target === ov) closeAuth(); };
+  $("tab-login").onclick = () => setMode("login");
+  $("tab-signup").onclick = () => setMode("signup");
+
+  async function post(path, body){
+    const r = await fetch(API + path, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.detail || ("Error " + r.status));
+    return data;
+  }
+  function setLoggedInNav(name){
+    const na = document.querySelector(".nav-actions"); if (!na) return;
+    na.innerHTML = `<div class="dse-userchip"><span class="nm">${name || "Account"}</span><button class="btn btn-outline" id="dse-logout">Log out</button></div>`;
+    $("dse-logout").onclick = logout;
+  }
+  function onAuthed(data){
+    setSession(data.token, data.name || "");
+    closeAuth();
+    setLoggedInNav(data.name || localStorage.getItem(NAME_KEY) || "");
+    if (window._origShowView) window._origShowView("dashboard");
+  }
+  $("au-submit").onclick = async function(){
+    $("au-err").textContent = "";
+    const email = $("au-email").value.trim(), pass = $("au-pass").value;
+    if (!email || !pass){ $("au-err").textContent = "Email and password required."; return; }
+    try{
+      if (mode === "signup"){
+        const name = $("au-name").value.trim() || email.split("@")[0];
+        onAuthed(await post("/api/auth/register", { name, email, password: pass }));
+      } else { onAuthed(await post("/api/auth/login", { email, password: pass })); }
+    }catch(e){ $("au-err").textContent = e.message; }
+  };
+
+  window.dseGoogle = async function(resp){
+    try{ onAuthed(await post("/api/auth/google", { credential: resp.credential })); }
+    catch(e){ $("au-err").textContent = e.message; }
+  };
+  function initGoogle(){
+    if (!(window.google && google.accounts && google.accounts.id)) return;
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: window.dseGoogle });
+    google.accounts.id.renderButton($("dse-gbtn"), { theme:"outline", size:"large", width:320, text:"continue_with" });
+  }
+  let tries = 0;
+  (function waitG(){ if (window.google && google.accounts) initGoogle(); else if (tries++ < 40) setTimeout(waitG, 150); })();
+
+  function logout(){ clearSession(); if (window._origShowView) window._origShowView("landing"); location.reload(); }
+
+  function boot(){
+    if (typeof window.showView === "function" && !window._origShowView){
+      window._origShowView = window.showView;
+      window.showView = function(v){ if (v === "dashboard" && !getToken()){ window.openAuth("login"); return; } return window._origShowView(v); };
+    }
+    const na = document.querySelector(".nav-actions");
+    if (na){
+      const signIn = na.querySelector(".btn-outline"), getStarted = na.querySelector(".btn-navy");
+      if (signIn) signIn.onclick = () => window.openAuth("login");
+      if (getStarted) getStarted.onclick = () => window.openAuth("signup");
+    }
+    const t = getToken();
+    if (t){
+      fetch(API + "/api/auth/me", { headers:{ "Authorization":"Bearer " + t } })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(u => setLoggedInNav(u.name || localStorage.getItem(NAME_KEY) || ""))
+        .catch(() => clearSession());
+    }
+  }
+  if (document.readyState !== "loading") boot(); else document.addEventListener("DOMContentLoaded", boot);
+})();
+</script>
+<!-- ===== end Auth ===== -->
 </body>
 </html>

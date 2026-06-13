@@ -1633,6 +1633,18 @@ async function buildSectors(){
     const sectorRow=d.sector?('<div class="xc-sectorrow"><span class="xc-mut" style="min-width:46px">Sector</span><span style="font-weight:500">'+d.sector+'</span>'+
       '<div class="xc-bar"><div style="width:'+strength+'%;background:'+sCol+'"></div></div>'+
       (sr?'<span class="xc-pill" style="color:'+sCol+';background:'+(sr>4?'#faf1d8':'#e7f5ee')+'"><i class="ti ti-trending-'+(sr>6?'down':'up')+'"></i> #'+sr+' of '+totalSectors+'</span>':'')+'</div>'):'';
+    if(d.reject_reason){
+      var chartR=(d.prices&&d.prices.length>1)?('<div class="xc-charthead"><span class="xc-mut">Last '+d.prices.length+' sessions · hover for detail</span><button id="xcWmaBtn">WMA 34: on</button></div><div id="xcWrap" class="xc-wrap"><svg id="xcChart" viewBox="0 0 640 175" width="100%" style="display:block"></svg><div id="xcTip" class="xc-tip"></div></div>'):'';
+      var passed=mem.filter(function(t){return t.inn;}).map(function(t){return t.label;}).join(', ');
+      return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">'+(d.cat?'Cat '+d.cat+' · ':'')+(d.sector||'')+' · \u09F3'+d.ltp+'</div></div>'+
+        '<span class="xc-verdict" style="color:#b03030;background:#fbe9e9"><i class="ti ti-ban"></i> Avoid</span></div>'+
+        sectorRow+
+        '<div class="xc-chips">'+chips+'</div>'+
+        '<div class="xc-h2">Why BD Signal skipped it</div>'+
+        '<div class="xc-why"><i class="ti ti-ban" style="color:#b03030"></i><div class="xc-whytext">'+d.reject_reason+' <span class="xc-mut">· filtered out before scoring, so BD never ranked it</span></div></div>'+
+        '<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-info-circle"></i> What this means</div><div>'+(passed?'It cleared '+passed+', but ':'')+'BD\u2019s safety filter removed it before scoring. It re-enters BD automatically once that condition clears.</div></div>'+
+        chartR;
+    }
     const adj=(d.adjustments||[]).filter(function(a){return a.value<0;});
     const why=adj.length?('<div class="xc-h2">Why BD Signal skipped it</div>'+adj.map(function(a){
       const sev=a.value<=-10?'#b03030':'#9a6a00';

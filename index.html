@@ -1071,5 +1071,29 @@ async function buildSectors(){
   el.innerHTML=`<div style="display:grid;grid-template-columns:28px 1fr 55px 70px 90px 50px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)"><div>#</div><div>Sector</div><div>Stocks</div><div>Signal</div><div style="text-align:center">Score</div><div style="text-align:right">Best</div></div>`+SECr.map((s,i)=>`<div style="display:grid;grid-template-columns:28px 1fr 55px 70px 90px 50px;gap:8px;padding:10px 18px;align-items:center;border-bottom:1px solid var(--border)${i===SECr.length-1?';border-bottom:none':''}"><div style="font-size:10px;font-family:var(--mono);color:var(--text3);font-weight:600">${i+1}</div><div style="font-size:12px;font-weight:600;color:var(--navy)">${s.n}</div><div style="font-size:11px;color:var(--text3)">${s.s}</div><div><span style="padding:2px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${s.sig==='HOT'?'var(--green)':s.sig==='BULLISH'?'var(--green)':s.sig==='MIXED'?'var(--gold)':'var(--red)'};background:${s.sig==='HOT'?'var(--green-bg)':s.sig==='BULLISH'?'#F0FDF4':s.sig==='MIXED'?'var(--gold-bg)':'var(--red-bg)'};border-radius:4px">${s.sig}</span></div><div><div style="height:4px;background:var(--cream2);border-radius:2px;overflow:hidden;margin-bottom:3px"><div style="height:100%;width:${s.sc}%;background:${scC(s.sc)};border-radius:2px"></div></div><div style="font-size:11px;font-weight:700;font-family:var(--mono);color:${scC(s.sc)};text-align:center">${s.sc}</div></div><div style="font-size:10px;font-weight:700;font-family:var(--mono);color:var(--gold);text-align:right">${s.b}</div></div>`).join('');
 }
 </script>
-</body>
+<script>
+(async function () {
+  try {
+    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const m = (c && c.pricing && c.pricing.monthly) || {};
+    const trial = (c && c.pricing && c.pricing.trial_days) || 7;
+    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
+    document.querySelectorAll(".plan").forEach(card => {
+      const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
+      const price = card.querySelector(".plan-price");
+      const period = card.querySelector(".plan-period");
+      const cta = card.querySelector(".plan-cta");
+      if (tier === "premium" && m.premium != null) {
+        if (price) price.textContent = fmt(m.premium);
+        if (period) period.textContent = `Per month · ${trial}-day free trial`;
+      }
+      if (tier === "pro" && m.pro != null) {
+        if (price) price.textContent = fmt(m.pro);
+        if (period) period.textContent = `Per month · ${trial}-day free trial`;
+      }
+      if (cta && /trial/i.test(cta.textContent)) cta.textContent = `Start ${trial}-day trial free`;
+    });
+  } catch (e) { /* leave hardcoded values if the backend can't be reached */ }
+})();
+</script></body>
 </html>

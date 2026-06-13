@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSE Pulse · Admin</title>
+<style>
+  :root{--bg:#0a0f1a;--panel:#0e1726;--panel2:#16233a;--border:#1d2b40;--border2:#2a3a52;--text:#e8eef7;--muted:#9fb0c7;--hint:#7b8aa3;--info:#378add;--success:#5fd38a;--danger:#ff8fa3;--amber:#f4c659}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  a{color:var(--info)}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .top h1{font-size:20px;margin:0;font-weight:600}
+  .btn{padding:9px 14px;border:1px solid var(--border2);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer;font-size:14px}
+  .btn:hover{background:#1d2d49}
+  .btn-pri{background:var(--info);border-color:var(--info);color:#04243f;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:18px}
+  .card h2{font-size:13px;margin:0 0 14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px}
+  .stat{background:var(--panel2);border-radius:10px;padding:12px 14px}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .stat .v{font-size:22px;font-weight:600;margin-top:2px}
+  .bar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  input,select{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--panel2);color:var(--text);font-size:14px}
+  .search{flex:1;min-width:180px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid var(--panel2);white-space:nowrap;font-size:13px}
+  th{color:var(--muted);font-weight:600}
+  .sub{color:var(--hint);font-size:11px}
+  .badge{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase}
+  .b-free{background:#243043;color:#9fb0c7}.b-premium{background:#3a2f12;color:var(--amber)}.b-pro{background:#13321f;color:var(--success)}
+  .ban{padding:6px 10px;border:1px solid #4a2230;border-radius:7px;background:#2a141c;color:var(--danger);cursor:pointer;margin-left:6px;font-size:12px}
+  .ban.un{border-color:#234a2f;background:#14271b;color:var(--success)}
+  .msg{font-size:13px;min-height:18px;margin:6px 0;color:var(--muted)}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .fld input{width:100%}
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
+  .gate input{width:100%;margin:14px 0}
+  .hide{display:none}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <h1>DSE Pulse · Admin</h1>
+  <p style="color:#9fb0c7">Enter your admin key to continue.</p>
+  <input id="keyIn" type="password" placeholder="Admin key" onkeydown="if(event.key==='Enter')unlock()">
+  <button class="btn btn-pri" style="width:100%" onclick="unlock()">Unlock</button>
+  <div id="gateMsg" class="msg" style="color:#ff8fa3"></div>
+</div>
+
+<div id="app" class="wrap hide">
+  <div class="top">
+    <h1>DSE Pulse · Admin</h1>
+    <button class="btn" onclick="lock()">Lock</button>
+  </div>
+
+  <div class="card">
+    <h2>Overview</h2>
+    <div class="stats" id="stats"><div class="stat"><div class="l">Loading…</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>User management</h2>
+    <div class="bar">
+      <input class="search" id="search" placeholder="Search name or email…" oninput="renderUsers()">
+      <button class="btn" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+    <div id="uMsg" class="msg"></div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>User</th><th>Plan</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="uRows"><tr><td colspan="5">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Pricing</h2>
+    <div id="pMsg" class="msg"></div>
+    <div class="grid2">
+      <div class="fld"><label>Monthly · Premium (৳)</label><input id="mp" type="number"></div>
+      <div class="fld"><label>Monthly · Pro (৳)</label><input id="mpr" type="number"></div>
+      <div class="fld"><label>Quarterly · Premium (৳)</label><input id="qp" type="number"></div>
+      <div class="fld"><label>Quarterly · Pro (৳)</label><input id="qpr" type="number"></div>
+      <div class="fld"><label>Annual · Premium (৳)</label><input id="ap" type="number"></div>
+      <div class="fld"><label>Annual · Pro (৳)</label><input id="apr" type="number"></div>
+      <div class="fld"><label>Trial days</label><input id="td" type="number"></div>
+    </div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="savePricing()">Save pricing</button>
+  </div>
+</div>
+
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+let KEY=sessionStorage.getItem("dse_admin_key")||"";
+let USERS=[];
+const H=()=>({"Content-Type":"application/json","X-Admin-Key":KEY});
+function $(id){return document.getElementById(id)}
+function fmtDate(s){if(!s)return"—";const d=new Date(s);return isNaN(d)?"—":d.toLocaleDateString()}
+function badge(p){p=(p||"free").toLowerCase();return `<span class="badge b-${p}">${p}</span>`}
+
+async function unlock(){
+  KEY=$("keyIn").value.trim();
+  if(!KEY){$("gateMsg").textContent="Enter a key.";return}
+  $("gateMsg").textContent="Checking…";
+  try{
+    const r=await fetch(`${API}/api/admin/stats`,{headers:H()});
+    if(r.status===401||r.status===403){$("gateMsg").textContent="Wrong admin key.";return}
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    sessionStorage.setItem("dse_admin_key",KEY);
+    $("gate").classList.add("hide");$("app").classList.remove("hide");boot();
+  }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
+}
+function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
+function boot(){loadStats();loadUsers();loadPricing()}
+
+async function loadStats(){
+  try{
+    const s=await(await fetch(`${API}/api/admin/stats`,{headers:H()})).json();
+    $("stats").innerHTML=[["Total",s.total],["Free",s.free],["Premium",s.premium],["Pro",s.pro],["MRR","৳"+(s.mrr||0).toLocaleString()]]
+      .map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v??0}</div></div>`).join("");
+  }catch(e){$("stats").innerHTML=`<div class="stat"><div class="l">Failed: ${e.message}</div></div>`}
+}
+
+async function loadUsers(){
+  $("uMsg").textContent="Loading users…";
+  try{
+    const r=await fetch(`${API}/api/admin/users`,{headers:H()});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    USERS=(await r.json()).users||[];
+    renderUsers();$("uMsg").textContent=`${USERS.length} users.`;
+  }catch(e){$("uMsg").textContent="Failed: "+e.message}
+}
+
+function renderUsers(){
+  const q=($("search").value||"").toLowerCase();
+  const rows=USERS.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||(u.name||"").toLowerCase().includes(q));
+  const tb=$("uRows");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="5">No users.</td></tr>`;return}
+  tb.innerHTML=rows.map(u=>{
+    const plan=(u.plan||"free").toLowerCase(),banned=u.status==="banned";
+    const opts=["free","premium","pro"].map(p=>`<option value="${p}" ${p===plan?"selected":""}>${p[0].toUpperCase()+p.slice(1)}</option>`).join("");
+    return `<tr>
+      <td><div>${u.name||"—"}</div><div class="sub">${u.email||""}</div></td>
+      <td>${badge(plan)}</td>
+      <td>${banned?'<span style="color:#ff8fa3">banned</span>':"active"}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><select onchange="setPlan('${u.id}',this.value)">${opts}</select>
+      <button class="ban ${banned?"un":""}" onclick="ban('${u.id}',${banned?"false":"true"})">${banned?"Unban":"Ban"}</button></td></tr>`;
+  }).join("");
+}
+
+async function setPlan(id,plan){
+  $("uMsg").textContent=`Updating to ${plan}…`;
+  try{
+    const r=await fetch(`${API}/api/admin/user/plan`,{method:"POST",headers:H(),body:JSON.stringify({user_id:id,plan})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const u=USERS.find(x=>x.id===id);if(u)u.plan=plan;
+    renderUsers();loadStats();$("uMsg").textContent=`Plan set to ${plan}.`;
+  }catch(e){$("uMsg").textContent="Failed: "+e.message;loadUsers()}
+}
+
+async function ban(id,b){
+  try{
+    const r=await fetch(`${API}/api/admin/user/ban`,{method:"POST",headers:H(),body:JSON.stringify({user_id:id,ban:b})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const u=USERS.find(x=>x.id===id);if(u)u.status=b?"banned":"active";
+    renderUsers();$("uMsg").textContent=b?"User banned.":"User unbanned.";
+  }catch(e){$("uMsg").textContent="Failed: "+e.message}
+}
+
+async function loadPricing(){
+  try{
+    const c=await(await fetch(`${API}/api/config`)).json();const p=c.pricing||{};
+    $("mp").value=(p.monthly&&p.monthly.premium)??499;$("mpr").value=(p.monthly&&p.monthly.pro)??999;
+    $("qp").value=(p.quarterly&&p.quarterly.premium)??1347;$("qpr").value=(p.quarterly&&p.quarterly.pro)??2697;
+    $("ap").value=(p.annual&&p.annual.premium)??4790;$("apr").value=(p.annual&&p.annual.pro)??9590;
+    $("td").value=p.trial_days??7;
+  }catch(e){$("pMsg").textContent="Could not load current pricing: "+e.message}
+}
+
+async function savePricing(){
+  $("pMsg").textContent="Saving…";
+  const body={monthly_premium:+$("mp").value,monthly_pro:+$("mpr").value,quarterly_premium:+$("qp").value,quarterly_pro:+$("qpr").value,annual_premium:+$("ap").value,annual_pro:+$("apr").value,trial_days:+$("td").value};
+  try{
+    const r=await fetch(`${API}/api/admin/pricing`,{method:"POST",headers:H(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    $("pMsg").textContent="Pricing saved. Hard-refresh the public site to see new prices.";
+  }catch(e){$("pMsg").textContent="Failed: "+e.message}
+}
+
+if(KEY){fetch(`${API}/api/admin/stats`,{headers:H()}).then(r=>{if(r.ok){$("gate").classList.add("hide");$("app").classList.remove("hide");boot();}}).catch(()=>{});}
+</script>
+</body>
+</html>

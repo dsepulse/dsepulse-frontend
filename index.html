@@ -1542,5 +1542,177 @@ async function buildSectors(){
 })();
 </script>
 <!-- ===== end dedupe ===== -->
+<!-- ===== DSE Pulse · BD decision card (Cross-Tool click-through) ===== -->
+<style>
+  #dt-xtool tbody tr{cursor:pointer}
+  #dt-xtool tbody tr:hover{background:#faf7f0}
+  .xcard-ov{position:fixed;inset:0;background:rgba(20,30,50,.45);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:28px 16px;overflow-y:auto}
+  .xcard-box{position:relative;background:#fff;border-radius:14px;max-width:620px;width:100%;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.18);color:#1a2740}
+  .xcard-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:24px;line-height:1;color:#9aa0aa;cursor:pointer}
+  .xcard-load,.xcard-note{font-size:13px;color:#6b7280;padding:18px 4px;line-height:1.6}
+  .xcard-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-right:24px}
+  .xcard-code{font-size:17px;font-weight:600;font-family:monospace}
+  .xcard-sub{font-size:13px;color:#6b7280;margin-top:2px}
+  .xc-verdict{font-size:13px;font-weight:600;padding:5px 13px;border-radius:8px;white-space:nowrap}
+  .xc-verdict i,.xc-pill i,.xc-chip i,.xc-why i,.xc-unlock-h i{font-size:14px;vertical-align:-2px}
+  .xc-mut{color:#6b7280}
+  .xc-sectorrow{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px}
+  .xc-bar{flex:1;height:7px;background:#f1efe8;border-radius:4px;overflow:hidden}
+  .xc-bar div{height:100%}
+  .xc-pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap}
+  .xc-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .xc-tile{background:#f7f4ec;border-radius:8px;padding:9px 11px;text-align:center}
+  .xc-tv{font-size:19px;font-weight:600;font-family:monospace;margin-top:2px}
+  .xc-charthead{display:flex;align-items:center;justify-content:space-between;margin:16px 0 4px;font-size:12px}
+  .xc-charthead button,.xc-riskin button{font-size:11px;padding:4px 9px;border:1px solid #e0ddd2;border-radius:6px;background:#fff;color:#1a2740;cursor:pointer}
+  .xc-wrap{position:relative;border:1px solid #ece9df;border-radius:8px;padding:6px 4px}
+  .xc-tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-130%);background:#fff;border:1px solid #d9d6cc;border-radius:6px;padding:4px 8px;font-size:11px;font-family:monospace;white-space:nowrap}
+  .xc-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+  .xc-chip{font-size:11px;font-family:monospace;padding:3px 9px;border-radius:8px}
+  .xc-chip.ok{color:#1d8a5e;background:#e7f5ee}
+  .xc-chip.no{color:#9aa0aa;background:#f1efe8}
+  .xc-h2{font-size:13px;font-weight:600;margin:16px 0 10px;border-top:1px solid #ece9df;padding-top:14px}
+  .xc-why{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px;font-size:13px}
+  .xc-whytext{flex:1}
+  .xc-adj{font-family:monospace}
+  .xc-scorebox{display:flex;align-items:center;justify-content:space-between;background:#f7f4ec;border-radius:8px;padding:9px 12px;margin-top:12px;font-size:13px}
+  .xc-scoreval{font-size:16px;font-weight:600;font-family:monospace}
+  .xc-unlock{background:#e8f0fb;border-radius:8px;padding:11px 13px;margin-top:12px;font-size:13px;color:#1f5fa5;line-height:1.6}
+  .xc-unlock-h{font-weight:600;margin-bottom:5px}
+  .xc-risk{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #ece9df;font-size:12px}
+  .xc-riskin{display:flex;align-items:center;gap:6px}
+  .xc-riskin input{width:90px;padding:4px 7px;border:1px solid #e0ddd2;border-radius:6px;font-size:12px;font-family:monospace}
+</style>
+<script>
+(function(){
+  const API="https://dsepulse-backend-production.up.railway.app";
+  const TOOLS=["Picker","WMA","Tech","Combined","BD"];
+  function ensureModal(){
+    if(document.getElementById('xcardModal'))return;
+    const m=document.createElement('div'); m.id='xcardModal'; m.className='xcard-ov'; m.style.display='none';
+    m.innerHTML='<div class="xcard-box"><button class="xcard-x" id="xcardX" aria-label="Close">&times;</button><div id="xcardBody"></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',function(e){ if(e.target===m) hide(); });
+    document.getElementById('xcardX').onclick=hide;
+  }
+  function hide(){ const m=document.getElementById('xcardModal'); if(m)m.style.display='none'; }
+  document.addEventListener('click',function(e){
+    const tr=e.target.closest('#dt-xtool tbody tr'); if(!tr)return;
+    const tds=tr.querySelectorAll('td'); if(tds.length<6)return;
+    const code=(tds[0].textContent||'').trim(); if(!code||code.length>12)return;
+    const mem=[]; for(let i=1;i<=5;i++){ const v=(tds[i].textContent||'').trim(); mem.push({label:TOOLS[i-1],val:v,inn:v!=='—'&&v!==''}); }
+    openCard(code,mem);
+  });
+  async function openCard(code,mem){
+    ensureModal();
+    const body=document.getElementById('xcardBody');
+    body.innerHTML='<div class="xcard-load">Loading '+code+'…</div>';
+    document.getElementById('xcardModal').style.display='flex';
+    let d=null;
+    try{ const r=await fetch(API+'/api/bd/eval/'+encodeURIComponent(code)); d=await r.json(); }catch(e){}
+    if(!d){ body.innerHTML='<div class="xcard-load">Could not load '+code+'.</div>'; return; }
+    body.innerHTML=renderCard(code,mem,d);
+    wireChart(d); wireRisk(d); wireWatch(code);
+  }
+  function vColor(l){ return l==='success'?'#1d8a5e':l==='warning'?'#9a6a00':l==='danger'?'#b03030':'#1f5fa5'; }
+  function vBg(l){ return l==='success'?'#e7f5ee':l==='warning'?'#faf1d8':l==='danger'?'#fbe9e9':'#e8f0fb'; }
+  function vIcon(l){ return l==='success'?'ti-circle-check':l==='warning'?'ti-clock-pause':'ti-circle-x'; }
+  function renderCard(code,mem,d){
+    if(d.status==='not_found'){
+      return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">BD did not evaluate this stock today</div></div></div>'+
+        '<div class="xcard-note">No BD record for '+code+' on the latest trade date. Once your BD tool uploads every evaluated stock, the full breakdown shows here.</div>';
+    }
+    const chips=mem.map(function(t){
+      return t.inn
+        ? '<span class="xc-chip ok"><i class="ti ti-check"></i> '+t.label+(t.label==='Picker'||t.label==='Combined'?'':' '+t.val)+'</span>'
+        : '<span class="xc-chip no"><i class="ti ti-x"></i> '+t.label+'</span>';
+    }).join('');
+    const totalSectors=12, sr=d.sector_rank||null;
+    const strength=sr?Math.max(6,Math.round((totalSectors-sr+1)/totalSectors*100)):60;
+    const sCol=sr&&sr>4?'#9a6a00':'#1d8a5e';
+    const sectorRow=d.sector?('<div class="xc-sectorrow"><span class="xc-mut" style="min-width:46px">Sector</span><span style="font-weight:500">'+d.sector+'</span>'+
+      '<div class="xc-bar"><div style="width:'+strength+'%;background:'+sCol+'"></div></div>'+
+      (sr?'<span class="xc-pill" style="color:'+sCol+';background:'+(sr>4?'#faf1d8':'#e7f5ee')+'"><i class="ti ti-trending-'+(sr>6?'down':'up')+'"></i> #'+sr+' of '+totalSectors+'</span>':'')+'</div>'):'';
+    const adj=(d.adjustments||[]).filter(function(a){return a.value<0;});
+    const why=adj.length?('<div class="xc-h2">Why BD Signal skipped it</div>'+adj.map(function(a){
+      const sev=a.value<=-10?'#b03030':'#9a6a00';
+      return '<div class="xc-why"><i class="ti ti-alert-triangle" style="color:'+sev+'"></i><div class="xc-whytext">'+a.label+' <span class="xc-mut">· '+a.note+'</span></div><div class="xc-adj" style="color:'+sev+'">'+a.value+'</div></div>';
+    }).join('')):'';
+    const cut=!d.qualified?' · below cut':'';
+    const diff=d.final_score-d.base_score;
+    const scoreBox='<div class="xc-scorebox"><div>Estimated BD score <span class="xc-mut">('+d.base_score+' base '+(diff>=0?'+':'−')+Math.abs(diff)+')</span></div><div class="xc-scoreval" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+cut+'</div></div>';
+    const unlock=d.unlock?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> What unlocks BD</div><div>Clears the cut if '+d.unlock+'. Watch, don\u2019t chase.</div></div>'):'';
+    const hasChart=d.prices&&d.prices.length>1;
+    const chart=hasChart?('<div class="xc-charthead"><span class="xc-mut">Last '+d.prices.length+' sessions · hover for detail</span><button id="xcWmaBtn">WMA 34: on</button></div>'+
+      '<div id="xcWrap" class="xc-wrap"><svg id="xcChart" viewBox="0 0 640 175" width="100%" style="display:block"></svg><div id="xcTip" class="xc-tip"></div></div>'):'';
+    return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">'+(d.cat?'Cat '+d.cat+' · ':'')+(d.sector||'')+' · \u09F3'+d.ltp+'</div></div>'+
+      '<span class="xc-verdict" style="color:'+vColor(d.verdict_level)+';background:'+vBg(d.verdict_level)+'"><i class="ti '+vIcon(d.verdict_level)+'"></i> '+d.verdict+'</span></div>'+
+      sectorRow+
+      '<div class="xc-tiles"><div class="xc-tile"><div class="xc-mut">Tech score</div><div class="xc-tv">'+d.base_score+'</div></div>'+
+      '<div class="xc-tile"><div class="xc-mut">RSI</div><div class="xc-tv" style="color:'+(d.rsi>70?'#b03030':'#1a2740')+'">'+d.rsi+'</div></div>'+
+      '<div class="xc-tile"><div class="xc-mut">'+(d.qualified?'BD score':'Est. BD')+'</div><div class="xc-tv" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+'</div></div></div>'+
+      chart+
+      '<div class="xc-chips">'+chips+'</div>'+
+      why+scoreBox+unlock+
+      '<div class="xc-risk"><div class="xc-mut" id="xcRiskText"></div><div class="xc-riskin"><span class="xc-mut">Capital \u09F3</span><input id="xcCap" type="number" value="100000"><button id="xcWatch">Add to watch</button></div></div>';
+  }
+  function wireChart(d){
+    if(!(d.prices&&d.prices.length>1))return;
+    const price=d.prices, wma=(d.wma34&&d.wma34.length===price.length)?d.wma34:null;
+    const TGT=d.target||0,ENT=d.entry||0,STP=d.sl||0;
+    const vals=price.concat(wma||[]).concat([TGT,ENT,STP].filter(Boolean));
+    let pmin=Math.min.apply(null,vals),pmax=Math.max.apply(null,vals);
+    const pad=(pmax-pmin)*0.08||0.1; pmin-=pad; pmax+=pad;
+    const L=14,R=556,T=16,B=150,VBW=640,VBH=175,n=price.length;
+    function X(i){return L+i*(R-L)/(n-1);}
+    function Y(p){return B-(p-pmin)/(pmax-pmin)*(B-T);}
+    function pts(a){let s="";for(let i=0;i<n;i++){s+=(i?" ":"")+X(i).toFixed(1)+","+Y(a[i]).toFixed(1);}return s;}
+    function lvl(p,c,lbl){ if(!p)return ""; return '<line x1="'+L+'" y1="'+Y(p).toFixed(1)+'" x2="'+R+'" y2="'+Y(p).toFixed(1)+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="4 4"/><text x="'+(R+5)+'" y="'+(Y(p)+3).toFixed(1)+'" font-size="10" fill="'+c+'" font-family="monospace">'+lbl+'</text>'; }
+    const run=Math.min(d.consec_up||0,n-1), runX=run>0?X(n-1-run):null;
+    const svg=document.getElementById('xcChart');
+    svg.innerHTML=
+      (runX!==null?'<rect x="'+runX.toFixed(1)+'" y="'+T+'" width="'+(R-runX).toFixed(1)+'" height="'+(B-T)+'" fill="#faf1d8" opacity="0.6"/><text x="'+(runX+5).toFixed(1)+'" y="'+(T+12)+'" font-size="10" fill="#9a6a00">'+run+'-day run</text>':'')+
+      lvl(TGT,'#1d8a5e','Target \u09F3'+TGT)+lvl(ENT,'#6b7280','Entry \u09F3'+ENT)+lvl(STP,'#b03030','Stop \u09F3'+STP)+
+      (wma?'<polyline id="xcW" fill="none" stroke="#b4b2a9" stroke-width="1.5" points="'+pts(wma)+'"/>':'')+
+      '<polyline fill="none" stroke="#1a2740" stroke-width="2" points="'+pts(price)+'"/>'+
+      '<circle cx="'+X(n-1).toFixed(1)+'" cy="'+Y(price[n-1]).toFixed(1)+'" r="3.5" fill="#1a2740"/>'+
+      '<line id="xcCross" x1="0" y1="'+T+'" x2="0" y2="'+B+'" stroke="#c9c6bb" stroke-width="1" opacity="0"/>'+
+      '<circle id="xcHov" r="4" fill="#1a2740" stroke="#fff" stroke-width="1.5" opacity="0"/>'+
+      '<rect id="xcHit" x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'" fill="transparent"/>';
+    const tip=document.getElementById('xcTip'),cross=document.getElementById('xcCross'),hov=document.getElementById('xcHov'),hit=document.getElementById('xcHit');
+    hit.addEventListener('pointermove',function(e){
+      const r=svg.getBoundingClientRect(); const cx=(e.clientX-r.left)/r.width*VBW;
+      let i=Math.round((cx-L)/((R-L)/(n-1))); if(i<0)i=0; if(i>n-1)i=n-1;
+      const px=X(i),py=Y(price[i]);
+      cross.setAttribute('x1',px); cross.setAttribute('x2',px); cross.setAttribute('opacity','1');
+      hov.setAttribute('cx',px); hov.setAttribute('cy',py); hov.setAttribute('opacity','1');
+      tip.style.left=(px/VBW*100)+'%'; tip.style.top=(py/VBH*100)+'%'; tip.style.opacity='1';
+      const ago=n-1-i; tip.textContent='\u09F3'+price[i].toFixed(2)+' · '+(ago===0?'now':ago+' sess ago');
+    });
+    hit.addEventListener('pointerleave',function(){ cross.setAttribute('opacity','0'); hov.setAttribute('opacity','0'); tip.style.opacity='0'; });
+    let on=true; const btn=document.getElementById('xcWmaBtn'),wl=document.getElementById('xcW');
+    if(btn&&wl){ btn.addEventListener('click',function(){ on=!on; wl.style.opacity=on?'1':'0'; btn.textContent='WMA 34: '+(on?'on':'off'); }); }
+  }
+  function wireRisk(d){
+    const cap=document.getElementById('xcCap'),txt=document.getElementById('xcRiskText'); if(!cap||!txt)return;
+    function calc(){
+      const e=d.entry||0,s=d.sl||0,c=parseFloat(cap.value)||0;
+      const risk=e-s; if(risk<=0||e<=0){ txt.textContent='No entry/stop levels available.'; return; }
+      const pct=(risk/e*100).toFixed(1); const sh=Math.floor((c*0.01)/risk);
+      txt.innerHTML='Per-share risk \u09F3'+risk.toFixed(2)+' ('+pct+'%) · at 1% risk \u2192 ~'+sh.toLocaleString()+' sh';
+    }
+    cap.addEventListener('input',calc); calc();
+  }
+  function wireWatch(code){
+    const b=document.getElementById('xcWatch'); if(!b)return;
+    b.addEventListener('click',function(){
+      try{ const w=JSON.parse(localStorage.getItem('dse_watch')||'[]'); if(w.indexOf(code)<0)w.push(code); localStorage.setItem('dse_watch',JSON.stringify(w)); }catch(e){}
+      b.textContent='Added \u2713'; b.disabled=true;
+    });
+  }
+})();
+</script>
+<!-- ===== end BD decision card ===== -->
+
 </body>
 </html>

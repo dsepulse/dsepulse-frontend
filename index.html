@@ -1628,11 +1628,13 @@ async function buildSectors(){
         : '<span class="xc-chip no"><i class="ti ti-x"></i> '+t.label+'</span>';
     }).join('');
     const totalSectors=12, sr=d.sector_rank||null;
-    const strength=sr?Math.max(6,Math.round((totalSectors-sr+1)/totalSectors*100)):60;
     const sCol=sr&&sr>4?'#9a6a00':'#1d8a5e';
+    const strength=sr?Math.max(6,Math.round((totalSectors-sr+1)/totalSectors*100)):0;
     const sectorRow=d.sector?('<div class="xc-sectorrow"><span class="xc-mut" style="min-width:46px">Sector</span><span style="font-weight:500">'+d.sector+'</span>'+
-      '<div class="xc-bar"><div style="width:'+strength+'%;background:'+sCol+'"></div></div>'+
-      (sr?'<span class="xc-pill" style="color:'+sCol+';background:'+(sr>4?'#faf1d8':'#e7f5ee')+'"><i class="ti ti-trending-'+(sr>6?'down':'up')+'"></i> #'+sr+' of '+totalSectors+'</span>':'')+'</div>'):'';
+      (sr?('<div class="xc-bar"><div style="width:'+strength+'%;background:'+sCol+'"></div></div>'+
+           '<span class="xc-pill" style="color:'+sCol+';background:'+(sr>4?'#faf1d8':'#e7f5ee')+'"><i class="ti ti-trending-'+(sr>6?'down':'up')+'"></i> #'+sr+' of '+totalSectors+'</span>')
+          :'<span class="xc-mut" style="font-size:11px;font-style:italic">not ranked this session</span>')+
+      '</div>'):'';
     if(d.reject_reason){
       var chartR=(d.prices&&d.prices.length>1)?('<div class="xc-charthead"><span class="xc-mut">Last '+d.prices.length+' sessions · hover for detail</span><button id="xcWmaBtn">WMA 34: on</button></div><div id="xcWrap" class="xc-wrap"><svg id="xcChart" viewBox="0 0 640 175" width="100%" style="display:block"></svg><div id="xcTip" class="xc-tip"></div></div>'):'';
       var passed=mem.filter(function(t){return t.inn;}).map(function(t){return t.label;}).join(', ');

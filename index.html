@@ -1222,5 +1222,78 @@ async function buildSectors(){
   } catch (e) {}
 })();
 </script>
+<script>
+(async function () {
+  try {
+    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const pr = (c && c.pricing) || {};
+    const trial = pr.trial_days || 7;
+    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
+    const plans = document.querySelector(".plans");
+    if (!plans) return;
+
+    Array.from(plans.parentNode.children).forEach(el => {
+      if (el !== plans && el.tagName === "DIV" && el.querySelector("button") &&
+          /Monthly/.test(el.textContent) && /Quarterly|Annually/.test(el.textContent)) el.remove();
+    });
+
+    const save = (pd, months) => {
+      const mp = Number((pr.monthly || {}).premium || 0);
+      const pp = Number((pd || {}).premium || 0);
+      if (!mp || !pp) return "";
+      const pct = Math.round((1 - pp / (mp * months)) * 100);
+      return pct > 0 ? "Save " + pct + "%" : "";
+    };
+
+    const periods = {
+      monthly:   { label: "Monthly",   span: "Per month",   data: pr.monthly   || {}, save: "" },
+      quarterly: { label: "Quarterly", span: "Per quarter", data: pr.quarterly || {}, save: save(pr.quarterly, 3) },
+      annual:    { label: "Annually",  span: "Per year",    data: pr.annual    || {}, save: save(pr.annual, 12) }
+    };
+
+    let active = "monthly";
+    const wrap = document.createElement("div");
+    wrap.dataset.dseToggle = "1";
+    wrap.style.cssText = "display:flex;justify-content:center;gap:8px;margin:0 0 28px;flex-wrap:wrap";
+    const buttons = {};
+    Object.keys(periods).forEach(key => {
+      const b = document.createElement("button");
+      b.textContent = periods[key].label + (periods[key].save ? " · " + periods[key].save : "");
+      b.style.cssText = "padding:8px 16px;border-radius:999px;border:1px solid #0D1F3C;background:transparent;color:#0D1F3C;cursor:pointer;font:inherit;font-size:13px;font-weight:600";
+      b.onclick = () => { active = key; render(); };
+      buttons[key] = b;
+      wrap.appendChild(b);
+    });
+    plans.parentNode.insertBefore(wrap, plans);
+
+    function render() {
+      Object.keys(buttons).forEach(k => {
+        const on = k === active;
+        buttons[k].style.background = on ? "#0D1F3C" : "transparent";
+        buttons[k].style.color = on ? "#FFFFFF" : "#0D1F3C";
+      });
+      const p = periods[active];
+      document.querySelectorAll(".plan").forEach(card => {
+        const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
+        if (tier === "free") return;
+        const amt = p.data[tier];
+        if (amt == null) return;
+        const priceEl = card.querySelector(".plan-price");
+        const periodEl = card.querySelector(".plan-period");
+        const cta = card.querySelector(".plan-cta");
+        if (priceEl) priceEl.textContent = fmt(amt);
+        if (periodEl) {
+          let txt = p.span;
+          if (active === "monthly") txt += " · " + trial + "-day free trial";
+          else if (p.save) txt += " · " + p.save;
+          periodEl.textContent = txt;
+        }
+        if (cta && /trial/i.test(cta.textContent)) cta.textContent = "Start " + trial + "-day trial free";
+      });
+    }
+    render();
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>

@@ -1510,7 +1510,12 @@ async function buildSectors(){
       return true;
     }).sort();
     const body=document.getElementById('xt-body');
-    if(!codes.length){ body.innerHTML='<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">No stocks match.</td></tr>'; }
+    if(!codes.length){
+      const qc=q.trim();
+      body.innerHTML = qc.length>=2
+        ? '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">No tool flagged <b style="color:var(--navy)">'+qc+'</b> today — <a href="#" class="xt-lookup" data-code="'+qc+'" style="color:var(--navy);font-weight:700;text-decoration:underline">look up '+qc+' &rarr;</a></td></tr>'
+        : '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">No stocks match.</td></tr>';
+    }
     else { body.innerHTML=codes.map(code=>{
       const cells=TOOLS.map(t=>{ const v=DATA[code][t.key];
         return v===undefined
@@ -1602,6 +1607,12 @@ async function buildSectors(){
     const code=(tds[0].textContent||'').trim(); if(!code||code.length>12)return;
     const mem=[]; for(let i=1;i<=5;i++){ const v=(tds[i].textContent||'').trim(); mem.push({label:TOOLS[i-1],val:v,inn:v!=='—'&&v!==''}); }
     openCard(code,mem);
+  });
+  document.addEventListener('click',function(e){
+    var lk=e.target.closest('.xt-lookup'); if(!lk)return;
+    e.preventDefault();
+    var c=(lk.getAttribute('data-code')||'').toUpperCase().trim();
+    if(c) openCard(c,[]);
   });
   async function openCard(code,mem){
     ensureModal();

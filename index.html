@@ -1577,6 +1577,11 @@ async function buildSectors(){
   .xc-chip.ok{color:#1d8a5e;background:#e7f5ee}
   .xc-chip.no{color:#9aa0aa;background:#f1efe8}
   .xc-h2{font-size:13px;font-weight:600;margin:16px 0 10px;border-top:1px solid #ece9df;padding-top:14px}
+  .xc-br{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px}
+  .xc-bl{width:112px;color:#5b6470;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xc-bt{flex:1;height:8px;background:#efece2;border-radius:4px;overflow:hidden}
+  .xc-bf{display:block;height:100%;border-radius:4px}
+  .xc-bv{width:36px;text-align:right;font-family:monospace;font-weight:600;flex-shrink:0}
   .xc-why{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px;font-size:13px}
   .xc-whytext{flex:1}
   .xc-adj{font-family:monospace}
@@ -1628,6 +1633,26 @@ async function buildSectors(){
   function vColor(l){ return l==='success'?'#1d8a5e':l==='warning'?'#9a6a00':l==='danger'?'#b03030':'#1f5fa5'; }
   function vBg(l){ return l==='success'?'#e7f5ee':l==='warning'?'#faf1d8':l==='danger'?'#fbe9e9':'#e8f0fb'; }
   function vIcon(l){ return l==='success'?'ti-circle-check':l==='warning'?'ti-clock-pause':'ti-circle-x'; }
+  function bdBreakdown(d){
+    if(!d.breakdown||!d.breakdown.length) return '';
+    var base=d.breakdown.filter(function(b){return b.value;});
+    if(!base.length) return '';
+    var adj=(d.adjustments||[]).filter(function(a){return a.value;});
+    function bar(label,val,col){
+      var w=Math.max(4,Math.min(100,Math.round(Math.abs(val)/25*100)));
+      return '<div class="xc-br"><span class="xc-bl">'+label+'</span><span class="xc-bt"><span class="xc-bf" style="width:'+w+'%;background:'+col+'"></span></span><span class="xc-bv" style="color:'+col+'">'+(val>=0?'+':'\u2212')+Math.abs(val)+'</span></div>';
+    }
+    var h='<div class="xc-h2">Why it scored '+d.final_score+'</div>';
+    h+='<div class="xc-mut" style="margin-bottom:8px">Base '+d.base_score+' \u2014 the stock\u2019s own technicals</div>';
+    h+=base.map(function(b){return bar(b.label,b.value,'#1d8a5e');}).join('');
+    if(adj.length){
+      var sum=adj.reduce(function(s,a){return s+a.value;},0);
+      h+='<div class="xc-mut" style="margin:10px 0 8px">Adjustments '+(sum>=0?'+':'\u2212')+Math.abs(sum)+' \u2014 context BD layers on</div>';
+      h+=adj.map(function(a){return bar(a.label,a.value,a.value<0?'#b03030':'#9a6a00');}).join('');
+    }
+    h+='<div class="xc-br" style="margin-top:9px;font-weight:600"><span class="xc-bl" style="color:#1a2740">BD score</span><span class="xc-bt" style="background:transparent"></span><span class="xc-bv" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+';font-size:14px">'+d.final_score+'</span></div>';
+    return h;
+  }
   function renderCard(code,mem,d){
     if(d.status==='not_found'){
       return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">BD did not evaluate this stock today</div></div></div>'+
@@ -1667,6 +1692,7 @@ async function buildSectors(){
     const diff=d.final_score-d.base_score;
     const scoreLbl=d.qualified?'BD score':'Estimated BD score';
     const scoreBox='<div class="xc-scorebox"><div>'+scoreLbl+' <span class="xc-mut">('+d.base_score+' base '+(diff>=0?'+':'−')+Math.abs(diff)+')</span></div><div class="xc-scoreval" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+cut+'</div></div>';
+    const breakdownHtml=bdBreakdown(d)||scoreBox;
     const unlock=(!d.qualified&&d.unlock)?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> What unlocks BD</div><div>Clears the cut if '+d.unlock+'. Watch, don\u2019t chase.</div></div>'):'';
     const tpct=d.entry?(((d.target-d.entry)/d.entry)*100):0;
     const plan=d.qualified?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> Trade plan</div><div>Entry \u09F3'+d.entry+' \u2192 target \u09F3'+d.target+' (+'+tpct.toFixed(1)+'%) \u00b7 stop \u09F3'+d.sl+' \u00b7 R/R '+d.rr+'</div></div>'):'';
@@ -1681,7 +1707,7 @@ async function buildSectors(){
       '<div class="xc-tile"><div class="xc-mut">'+(d.qualified?'BD score':'Est. BD')+'</div><div class="xc-tv" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+'</div></div></div>'+
       chart+
       '<div class="xc-chips">'+chips+'</div>'+
-      why+scoreBox+unlock+plan+
+      why+breakdownHtml+unlock+plan+
       '<div class="xc-risk"><div class="xc-mut" id="xcRiskText"></div><div class="xc-riskin"><span class="xc-mut">Capital \u09F3</span><input id="xcCap" type="number" value="100000"><button id="xcWatch">Add to watch</button></div></div>';
   }
   function wireChart(d){
@@ -1697,9 +1723,19 @@ async function buildSectors(){
     function pts(a){let s="";for(let i=0;i<n;i++){s+=(i?" ":"")+X(i).toFixed(1)+","+Y(a[i]).toFixed(1);}return s;}
     function lvl(p,c,lbl){ if(!p)return ""; return '<line x1="'+L+'" y1="'+Y(p).toFixed(1)+'" x2="'+R+'" y2="'+Y(p).toFixed(1)+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="4 4"/><text x="'+(R+5)+'" y="'+(Y(p)+3).toFixed(1)+'" font-size="10" fill="'+c+'" font-family="monospace">'+lbl+'</text>'; }
     const run=Math.min(d.consec_up||0,n-1), runX=run>0?X(n-1-run):null;
+    let volBars='';
+    if(d.volumes&&d.volumes.length===n){
+      const vmax=Math.max.apply(null,d.volumes)||1, vavg=d.volumes.reduce(function(a,b){return a+b;},0)/n;
+      const VT=152,VHB=20,bw=Math.max(2,(R-L)/n*0.55);
+      volBars=d.volumes.map(function(v,i){
+        const hh=Math.max(1,v/vmax*VHB), x=X(i)-bw/2, y=VT+VHB-hh;
+        return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+(v>=1.5*vavg?'#9a6a00':'#cdd4df')+'"/>';
+      }).join('');
+    }
     const svg=document.getElementById('xcChart');
     svg.innerHTML=
       (runX!==null?'<rect x="'+runX.toFixed(1)+'" y="'+T+'" width="'+(R-runX).toFixed(1)+'" height="'+(B-T)+'" fill="#faf1d8" opacity="0.6"/><text x="'+(runX+5).toFixed(1)+'" y="'+(T+12)+'" font-size="10" fill="#9a6a00">'+run+'-day run</text>':'')+
+      volBars+
       lvl(TGT,'#1d8a5e','Target \u09F3'+TGT)+lvl(ENT,'#6b7280','Entry \u09F3'+ENT)+lvl(STP,'#b03030','Stop \u09F3'+STP)+
       (wma?'<polyline id="xcW" fill="none" stroke="#b4b2a9" stroke-width="1.5" points="'+pts(wma)+'"/>':'')+
       '<polyline fill="none" stroke="#1a2740" stroke-width="2" points="'+pts(price)+'"/>'+

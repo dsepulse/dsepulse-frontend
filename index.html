@@ -1630,8 +1630,12 @@ async function buildSectors(){
     let d=null;
     try{ const r=await fetch(API+'/api/bd/eval/'+encodeURIComponent(code)); d=await r.json(); }catch(e){}
     if(!d){ body.innerHTML='<div class="xcard-load">Could not load '+code+'.</div>'; return; }
-    body.innerHTML=renderCard(code,mem,d);
-    wireChart(d); wireRisk(d); wireWatch(code);
+    try{
+      body.innerHTML=renderCard(code,mem,d);
+      wireChart(d); wireRisk(d); wireWatch(code);
+    }catch(err){
+      body.innerHTML='<div class="xcard-load">Couldn\u2019t display '+code+'. '+((err&&err.message)?'('+err.message+')':'')+'</div>';
+    }
   }
   function vColor(l){ return l==='success'?'#1d8a5e':l==='warning'?'#9a6a00':l==='danger'?'#b03030':'#1f5fa5'; }
   function vBg(l){ return l==='success'?'#e7f5ee':l==='warning'?'#faf1d8':l==='danger'?'#fbe9e9':'#e8f0fb'; }
@@ -1678,6 +1682,7 @@ async function buildSectors(){
         actNote='<div class="xc-actnote" style="color:'+ac.c+';background:'+ac.bg+'"><i class="ti ti-bolt"></i><div><b>Activity:</b> '+d.activity.note+'</div></div>';
       }
     }
+    const totalSectors=12, sr=d.sector_rank||null;
     const sCol=sr&&sr>4?'#9a6a00':'#1d8a5e';
     const strength=sr?Math.max(6,Math.round((totalSectors-sr+1)/totalSectors*100)):0;
     const sectorRow=d.sector?('<div class="xc-sectorrow"><span class="xc-mut" style="min-width:46px">Sector</span><span style="font-weight:500">'+d.sector+'</span>'+

@@ -1576,6 +1576,9 @@ async function buildSectors(){
   .xc-chip{font-size:11px;font-family:monospace;padding:3px 9px;border-radius:8px}
   .xc-chip.ok{color:#1d8a5e;background:#e7f5ee}
   .xc-chip.no{color:#9aa0aa;background:#f1efe8}
+  .xc-chip.act{font-family:inherit;font-weight:500}
+  .xc-actnote{border-radius:10px;padding:10px 13px;font-size:11.5px;line-height:1.5;margin-top:12px;display:flex;gap:7px;align-items:flex-start}
+  .xc-actnote i{font-size:15px;flex-shrink:0;margin-top:1px}
   .xc-h2{font-size:13px;font-weight:600;margin:16px 0 10px;border-top:1px solid #ece9df;padding-top:14px}
   .xc-br{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px}
   .xc-bl{width:112px;color:#5b6470;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1663,7 +1666,18 @@ async function buildSectors(){
         ? '<span class="xc-chip ok"><i class="ti ti-check"></i> '+t.label+(t.label==='Picker'||t.label==='Combined'?'':' '+t.val)+'</span>'
         : '<span class="xc-chip no"><i class="ti ti-x"></i> '+t.label+'</span>';
     }).join('');
-    const totalSectors=12, sr=d.sector_rank||null;
+    var actChip='', actNote='';
+    if(d.activity && d.activity.read){
+      var ad=(d.activity.direction||'').toLowerCase(), rd=(d.activity.read||'').toLowerCase();
+      var ac = (ad.indexOf('bull')>=0||rd.indexOf('accum')>=0) ? {c:'#0F6E56',bg:'#E1F5EE'}
+             : (ad.indexOf('bear')>=0||rd.indexOf('distrib')>=0) ? {c:'#b03030',bg:'#fbe9e9'}
+             : (ad.indexOf('caution')>=0||rd.indexOf('frenzy')>=0) ? {c:'#854F0B',bg:'#FAEEDA'}
+             : {c:'#5b6470',bg:'#eef1f6'};
+      actChip='<span class="xc-chip act" style="color:'+ac.c+';background:'+ac.bg+'"><i class="ti ti-bolt"></i> '+d.activity.read+'</span>';
+      if(d.activity.note){
+        actNote='<div class="xc-actnote" style="color:'+ac.c+';background:'+ac.bg+'"><i class="ti ti-bolt"></i><div><b>Activity:</b> '+d.activity.note+'</div></div>';
+      }
+    }
     const sCol=sr&&sr>4?'#9a6a00':'#1d8a5e';
     const strength=sr?Math.max(6,Math.round((totalSectors-sr+1)/totalSectors*100)):0;
     const sectorRow=d.sector?('<div class="xc-sectorrow"><span class="xc-mut" style="min-width:46px">Sector</span><span style="font-weight:500">'+d.sector+'</span>'+
@@ -1677,11 +1691,11 @@ async function buildSectors(){
       return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">'+(d.cat?'Cat '+d.cat+' · ':'')+(d.sector||'')+' · \u09F3'+d.ltp+'</div></div>'+
         '<span class="xc-verdict" style="color:#b03030;background:#fbe9e9"><i class="ti ti-ban"></i> Avoid</span></div>'+
         sectorRow+
-        '<div class="xc-chips">'+chips+'</div>'+
+        '<div class="xc-chips">'+chips+actChip+'</div>'+
         '<div class="xc-h2">Why BD Signal skipped it</div>'+
         '<div class="xc-why"><i class="ti ti-ban" style="color:#b03030"></i><div class="xc-whytext">'+d.reject_reason+' <span class="xc-mut">· filtered out before scoring, so BD never ranked it</span></div></div>'+
         '<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-info-circle"></i> What this means</div><div>'+(passed?'It cleared '+passed+', but ':'')+'BD\u2019s safety filter removed it before scoring. It re-enters BD automatically once that condition clears.</div></div>'+
-        chartR;
+        actNote+chartR;
     }
     const adj=(d.adjustments||[]).filter(function(a){return a.value<0;});
     const why=adj.length?('<div class="xc-h2">Why BD Signal skipped it</div>'+adj.map(function(a){
@@ -1706,8 +1720,8 @@ async function buildSectors(){
       '<div class="xc-tile"><div class="xc-mut">RSI</div><div class="xc-tv" style="color:'+(d.rsi>70?'#b03030':'#1a2740')+'">'+d.rsi+'</div></div>'+
       '<div class="xc-tile"><div class="xc-mut">'+(d.qualified?'BD score':'Est. BD')+'</div><div class="xc-tv" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+'</div></div></div>'+
       chart+
-      '<div class="xc-chips">'+chips+'</div>'+
-      why+breakdownHtml+unlock+plan+
+      '<div class="xc-chips">'+chips+actChip+'</div>'+
+      why+breakdownHtml+actNote+unlock+plan+
       '<div class="xc-risk"><div class="xc-mut" id="xcRiskText"></div><div class="xc-riskin"><span class="xc-mut">Capital \u09F3</span><input id="xcCap" type="number" value="100000"><button id="xcWatch">Add to watch</button></div></div>';
   }
   function wireChart(d){

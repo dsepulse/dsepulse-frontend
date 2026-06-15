@@ -1654,20 +1654,23 @@ async function buildSectors(){
     }).join('')):'';
     const cut=!d.qualified?' · below cut':'';
     const diff=d.final_score-d.base_score;
-    const scoreBox='<div class="xc-scorebox"><div>Estimated BD score <span class="xc-mut">('+d.base_score+' base '+(diff>=0?'+':'−')+Math.abs(diff)+')</span></div><div class="xc-scoreval" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+cut+'</div></div>';
-    const unlock=d.unlock?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> What unlocks BD</div><div>Clears the cut if '+d.unlock+'. Watch, don\u2019t chase.</div></div>'):'';
+    const scoreLbl=d.qualified?'BD score':'Estimated BD score';
+    const scoreBox='<div class="xc-scorebox"><div>'+scoreLbl+' <span class="xc-mut">('+d.base_score+' base '+(diff>=0?'+':'−')+Math.abs(diff)+')</span></div><div class="xc-scoreval" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+cut+'</div></div>';
+    const unlock=(!d.qualified&&d.unlock)?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> What unlocks BD</div><div>Clears the cut if '+d.unlock+'. Watch, don\u2019t chase.</div></div>'):'';
+    const tpct=d.entry?(((d.target-d.entry)/d.entry)*100):0;
+    const plan=d.qualified?('<div class="xc-unlock"><div class="xc-unlock-h"><i class="ti ti-target-arrow"></i> Trade plan</div><div>Entry \u09F3'+d.entry+' \u2192 target \u09F3'+d.target+' (+'+tpct.toFixed(1)+'%) \u00b7 stop \u09F3'+d.sl+' \u00b7 R/R '+d.rr+'</div></div>'):'';
     const hasChart=d.prices&&d.prices.length>1;
     const chart=hasChart?('<div class="xc-charthead"><span class="xc-mut">Last '+d.prices.length+' sessions · hover for detail</span><button id="xcWmaBtn">WMA 34: on</button></div>'+
       '<div id="xcWrap" class="xc-wrap"><svg id="xcChart" viewBox="0 0 640 175" width="100%" style="display:block"></svg><div id="xcTip" class="xc-tip"></div></div>'):'';
     return '<div class="xcard-h"><div><div class="xcard-code">'+code+'</div><div class="xcard-sub">'+(d.cat?'Cat '+d.cat+' · ':'')+(d.sector||'')+' · \u09F3'+d.ltp+'</div></div>'+
       '<span class="xc-verdict" style="color:'+vColor(d.verdict_level)+';background:'+vBg(d.verdict_level)+'"><i class="ti '+vIcon(d.verdict_level)+'"></i> '+d.verdict+'</span></div>'+
       sectorRow+
-      '<div class="xc-tiles"><div class="xc-tile"><div class="xc-mut">Tech score</div><div class="xc-tv">'+d.base_score+'</div></div>'+
+      '<div class="xc-tiles"><div class="xc-tile"><div class="xc-mut">BD base</div><div class="xc-tv">'+d.base_score+'</div></div>'+
       '<div class="xc-tile"><div class="xc-mut">RSI</div><div class="xc-tv" style="color:'+(d.rsi>70?'#b03030':'#1a2740')+'">'+d.rsi+'</div></div>'+
       '<div class="xc-tile"><div class="xc-mut">'+(d.qualified?'BD score':'Est. BD')+'</div><div class="xc-tv" style="color:'+(d.qualified?'#1d8a5e':'#b03030')+'">'+d.final_score+'</div></div></div>'+
       chart+
       '<div class="xc-chips">'+chips+'</div>'+
-      why+scoreBox+unlock+
+      why+scoreBox+unlock+plan+
       '<div class="xc-risk"><div class="xc-mut" id="xcRiskText"></div><div class="xc-riskin"><span class="xc-mut">Capital \u09F3</span><input id="xcCap" type="number" value="100000"><button id="xcWatch">Add to watch</button></div></div>';
   }
   function wireChart(d){

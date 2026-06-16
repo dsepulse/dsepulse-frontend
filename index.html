@@ -2042,7 +2042,7 @@ async function buildSectors(){
     const cell=(n,o)=>'<div class="ms-ic"><div class="in">'+n+'</div><div class="iv">'+o.v+'</div><div class="ir '+o.dir+'">'+o.read+'</div></div>';
     const inds=[["Trend \u00b7 WMA",t.trend],["MACD",t.macd],["RSI 14",t.rsi],["Volume",t.vol],["Bollinger",t.boll]].map(x=>cell(x[0],x[1])).join('');
     const c=t.ctx;
-    return '<div class="ms-lbl">Technical indicators</div><div class="ms-ind">'+inds+'</div><div class="ms-ctx"><span>Category <b>'+c.cat+'</b></span><span>PE <b>'+c.pe+'</b></span><span><b>'+c.circuit+'</b> to circuit</span><span>DSEX <b>'+c.mood+'</b></span><span><b>'+c.updays+'</b> up-days</span></div>';
+    return '<div class="ms-lbl">Technical indicators</div><div class="ms-ind">'+inds+'</div><div class="ms-ctx"><span>Category <b>'+c.cat+'</b></span><span>PE <b>'+c.pe+'</b></span><span><b>'+c.circuit+'</b> to circuit</span><span>DSEX <b>'+c.mood+'</b></span><span><b>'+c.updays+'</b> up-days</span><span>Last move <b>'+(c.move||'\u2014')+'</b></span></div>';
   }
   function stripHTML(s){
     const t=s.tech,chips=[];
@@ -2092,6 +2092,45 @@ async function buildSectors(){
     '</div>';
   }
 
+  async function enrich(code){
+    const s=STOCKS.find(x=>x.code===code); if(!s||s._enriched||s._loading||s.veto) return;
+    s._loading=true;
+    const d=await fj('/api/bd/eval/'+encodeURIComponent(code));
+    s._loading=false;
+    if(!d || typeof d!=='object'){ return; }
+    // flatten breakdown + adjustments into {label,val}
+    const items=[];
+    const push=arr=>{ (Array.isArray(arr)?arr:[]).forEach(it=>{ if(it==null)return; let label,val;
+      if(Array.isArray(it)){ label=String(it[0]||''); val=num(it[1]); }
+      else if(typeof it==='object'){ label=String(F(it,['label','name','factor','k','key'])||''); val=num(F(it,['points','value','pts','score','v'])); }
+      if(label)items.push({label:label,val:val}); }); };
+    push(d.breakdown); push(d.base_breakdown); push(d.adjustments); push(d.adj);
+    const find=re=>items.find(x=>re.test(x.label));
+    const m=find(/macd/i);      if(m&&m.val!=null) s.tech.macd={v:(m.val>=0?'+':'')+m.val,read:m.val>0?'Bullish':m.val<0?'Bearish':'Neutral',dir:m.val>0?'bull':m.val<0?'bear':'neu'};
+    // Volume: latest trading session vs the previous session. The series holds only trading days,
+    // so this is automatically "last transaction date vs the one before" even on a weekend/holiday.
+    const vser=F(d,['volumes','vols','volume_history','volume_series']);
+    if(Array.isArray(vser)&&vser.length>=2){ const tv=num(vser[vser.length-1]),pv=num(vser[vser.length-2]);
+      if(tv!=null&&pv!=null&&pv>0){ const ch=((tv-pv)/pv)*100; s.volDelta=ch;
+        s.tech.vol={v:(ch>=0?'+':'')+ch.toFixed(0)+'%',read:'vs prev session',dir:ch>=15?'bull':ch<=-20?'warn':'neu'}; } }
+    else { const vb=find(/volume|vol\b/i); if(vb&&vb.val!=null) s.tech.vol={v:(vb.val>=0?'+':'')+vb.val,read:'BD vol score',dir:vb.val>0?'bull':'neu'}; }
+    // Price: latest close vs previous close (same last-two-sessions logic) -> shown in context line.
+    const pser=F(d,['prices','closes','price_history']);
+    if(Array.isArray(pser)&&pser.length>=2){ const tp=num(pser[pser.length-1]),pp=num(pser[pser.length-2]);
+      if(tp!=null&&pp!=null&&pp>0){ const pc=((tp-pp)/pp)*100; s.tech.ctx.move=(pc>=0?'+':'')+pc.toFixed(2)+'%'; } }
+    const bo=find(/bollinger|band/i); if(bo&&bo.val!=null) s.tech.boll={v:(bo.val>=0?'+':'')+bo.val,read:bo.val>0?'Expanding':'Tight',dir:bo.val>0?'bull':'neu'};
+    const rsi=num(F(d,['rsi'])); if(rsi!=null){ s.rsi=rsi; s.tech.rsi={v:rsi.toFixed(1),read:rsi>=80?'Overbought':rsi<=30?'Oversold':'Neutral',dir:rsi>=80?'bear':rsi<=30?'warn':'neu'}; }
+    const pe=num(F(d,['pe','pe_ratio'])); if(pe!=null) s.tech.ctx.pe=pe.toFixed(1);
+    const cd=num(F(d,['circuit_dist','circuit'])); if(cd!=null) s.tech.ctx.circuit=cd.toFixed(1)+'%';
+    let cu=num(F(d,['consec_up','consecutive','up_days'])); if(cu==null){ const u=find(/up.?day|consecutive/i); if(u&&u.val!=null) cu=u.val; } if(cu!=null) s.tech.ctx.updays=cu;
+    const cat=F(d,['cat','category']); if(cat) s.tech.ctx.cat=cat;
+    const mood=F(d,['mood','dsex_mood','market_mood']); if(mood) s.tech.ctx.mood=mood;
+    if(d.activity&&typeof d.activity==='object'){ const a2=readAct(d.activity); if(a2.read&&a2.read!=='Normal'){ s.act=a2; s.reads.ACT=a2.read; } else { const an=F(d.activity,['note','reason']); if(an) s.act.note=an; } }
+    const e=num(F(d,['entry'])),t=num(F(d,['target','target_l1'])),sl=num(F(d,['sl','stop'])),rr=num(F(d,['rr']));
+    if(e!=null) s.plan={entry:e,target:t!=null?t:(s.plan?s.plan.target:+(e*1.05).toFixed(2)),stop:sl!=null?sl:(s.plan?s.plan.stop:+(e*0.97).toFixed(2)),rr:rr!=null?rr:(s.plan?s.plan.rr:0)};
+    s._enriched=true;
+    render();
+  }
   function render(){
     const board=document.getElementById('ms-board'); if(!board)return;
     if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day.</div>'; document.getElementById('ms-count').textContent=''; return; }
@@ -2150,7 +2189,7 @@ async function buildSectors(){
         if(full){ e.stopPropagation(); const code=full.getAttribute('data-full'); const s=STOCKS.find(x=>x.code===code); if(window.__openBDCard) window.__openBDCard(code, s?s.mem:[]); return; }
         const card=e.target.closest('.ms-card[data-code]'); if(!card)return;
         const code=card.getAttribute('data-code');
-        if(open.has(code))open.delete(code); else open.add(code);
+        if(open.has(code)){open.delete(code);}else{open.add(code);enrich(code);}
         card.classList.toggle('open');
       });
       const cap=p.querySelector('#ms-cap'); if(cap) cap.addEventListener('input',function(e){ capital=Math.max(0,+e.target.value||0); if(STOCKS.length)render(); });

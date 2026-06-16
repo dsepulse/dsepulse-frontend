@@ -1973,12 +1973,24 @@ async function buildSectors(){
     if(f.tech){tsc=num(F(f.tech,["score"]));agree.TCH=(tsc!=null&&tsc>=70)?1:0;reads.TCH=tsc!=null?Math.round(tsc)+"/100":"listed";}else reads.TCH="\u2014";
     if(f.combined){agree.CMB=1;reads.CMB="Aligned";}else reads.CMB="Not aligned";
     let veto=null,bdScore=null;
-    if(f.bd){bdScore=num(F(f.bd,["final_score","score"]));
+    if(f.bd){
+      const rawScore=num(F(f.bd,["final_score","score"]));
       const rj=String(F(f.bd,["reject_reason"])||"").trim();
-      if(rj && !/^(no price history|not enough history)/i.test(rj)) veto=rj;
-      const q=F(f.bd,["qualified"]); const qualified=(q===true||q==="true"||q===1||q==="1");
-      reads.BD=veto?"veto":(bdScore!=null?String(Math.round(bdScore)):"listed");
-      agree.BD=(!veto&&(qualified||(bdScore!=null&&bdScore>=65)))?1:0;
+      const rejected = rj.length>0 || String(F(f.bd,["signal"])||"").toUpperCase()==="REJECTED";
+      // Only GENUINE risk flags are an Avoid veto. Universe/coverage filters
+      // ("Price below 20", "No price history", "No upward momentum") are NOT a veto —
+      // they just mean BD doesn't cover the name, so it shows "—" and stays neutral.
+      if(rj && /illiquid|low volume|turnover|circuit|category z|above .*limit|pe \d/i.test(rj)) veto=rj;
+      if(rejected){
+        bdScore=null;                       // BD filtered it out pre-scoring -> no conviction nudge
+        reads.BD = veto ? "veto" : "\u2014";
+        agree.BD = 0;
+      } else {
+        bdScore = rawScore;
+        const q=F(f.bd,["qualified"]); const qualified=(q===true||q==="true"||q===1||q==="1");
+        reads.BD = bdScore!=null?String(Math.round(bdScore)):"listed";
+        agree.BD = (qualified||(bdScore!=null&&bdScore>=65))?1:0;
+      }
     }else reads.BD="\u2014";
     let act={dir:"neutral",read:"Normal",delta:0,note:""};
     if(f.act){act=readAct(f.act);agree.ACT=(act.dir==="bullish"||act.dir==="stealth")?1:0;reads.ACT=act.read;}else reads.ACT="Normal";

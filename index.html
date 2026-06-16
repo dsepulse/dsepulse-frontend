@@ -1986,7 +1986,7 @@ async function buildSectors(){
     const any=f.bd||f.tech||f.wma||f.picker||{};
     const ltp=num(F(any,["ltp","last","close"]));
     const sector=F(f.bd||f.tech||f.picker||{},["sector","industry"])||"";
-    const rsi=num(F(f.bd||f.tech||{},["rsi"]));
+    let rsi=num(F(f.bd||f.tech||{},["rsi"])); if(rsi!=null&&(rsi<=0||rsi>=100))rsi=null;
     const vol=num(F(f.act||f.bd||{},["vol_ratio","volume_ratio"]));
     // technical indicators panel
     const rsiDir=rsi==null?"neu":rsi>=80?"bear":rsi<=30?"warn":"neu";
@@ -2009,7 +2009,7 @@ async function buildSectors(){
     let s=num(F(psrc,["sl","stop","stoploss"]));
     let rr=num(F(psrc,["rr"]));
     let plan=null;
-    if(e!=null){ if(t==null)t=+(e*1.05).toFixed(2); if(s==null)s=+(e*0.97).toFixed(2); if(rr==null||!isFinite(rr))rr=(t-e)>0&&(e-s)>0?+((t-e)/(e-s)).toFixed(1):0; plan={entry:e,target:t,stop:s,rr:rr}; }
+    if(e!=null&&e>0){ if(t==null)t=+(e*1.05).toFixed(2); if(s==null)s=+(e*0.97).toFixed(2); if(rr==null||!isFinite(rr))rr=(t-e)>0&&(e-s)>0?+((t-e)/(e-s)).toFixed(1):0; plan={entry:e,target:t,stop:s,rr:rr}; }
     // conviction
     let conv=Math.round((agreeN/6)*82 + act.delta + clamp(((bdScore!=null?bdScore:50)-50)/5,-8,10));
     conv=clamp(conv,1,99);
@@ -2034,7 +2034,8 @@ async function buildSectors(){
 
   function sizeLine(s){
     const pct=VPCT[s.verdict]||0;
-    if(s.verdict==="Avoid"||pct===0||!s.plan)return '<div class="ms-size zero"><span class="lab">Position size</span><span class="big">\u2014 do not enter</span></div>';
+    if(s.verdict==="Avoid"||pct===0)return '<div class="ms-size zero"><span class="lab">Position size</span><span class="big">\u2014 do not enter</span></div>';
+    if(!s.plan||!(s.plan.entry>0))return '<div class="ms-size"><span class="lab">Position size</span><span class="big" style="color:var(--text3)">\u2014 no trade levels</span></div>';
     const sh=Math.floor((capital*pct)/s.plan.entry);
     return '<div class="ms-size"><span class="lab">Suggested size ('+Math.round(pct*100)+'% of capital)</span><span class="big">\u2248 '+fmt(sh)+' shares</span><span class="amt">\u09F3'+fmt(Math.round(sh*s.plan.entry))+'</span></div>';
   }
@@ -2048,7 +2049,7 @@ async function buildSectors(){
     const t=s.tech,chips=[];
     const td=t.trend.dir,ta=td==="bull"?"\u2197":td==="bear"?"\u2198":"\u2192";
     chips.push('<span class="ms-chip '+(td==="bull"?"g":td==="bear"?"r":"")+'">'+ta+' '+t.trend.read+'</span>');
-    if(s.rsi!=null)chips.push('<span class="ms-chip '+(s.rsi>=80?"r":s.rsi<=30?"gold":"")+'">RSI '+s.rsi.toFixed(1)+'</span>');
+    if(s.rsi!=null)chips.push('<span class="ms-chip '+(s.rsi>=70?"r":s.rsi<=30?"gold":"")+'">RSI '+s.rsi.toFixed(1)+'</span>');
     if(s.reads.TCH!=="\u2014"&&s.reads.TCH!=="listed")chips.push('<span class="ms-chip">Tech '+s.reads.TCH+'</span>');
     if(s.vol!=null)chips.push('<span class="ms-chip '+(s.vol>=2?"g":"")+'">Vol '+s.vol.toFixed(1)+'\u00d7</span>');
     chips.push('<span class="ms-chip '+ACTCHIP[s.act.dir]+'">'+ACTICO[s.act.dir]+' '+s.act.read+'</span>');
@@ -2092,6 +2093,11 @@ async function buildSectors(){
     '</div>';
   }
 
+  // ---- vanilla TA computed from the raw close series (engine-independent) ----
+  function _ema(arr,n){ if(arr.length<n)return null; const k=2/(n+1); let e=0; for(let i=0;i<n;i++)e+=arr[i]; e/=n; const out=[]; for(let i=0;i<n-1;i++)out.push(null); out.push(e); for(let i=n;i<arr.length;i++){ e=arr[i]*k+e*(1-k); out.push(e);} return out; }
+  function _rsi(c,n){ n=n||14; if(c.length<n+1)return null; let g=0,l=0; for(let i=1;i<=n;i++){const d=c[i]-c[i-1]; if(d>=0)g+=d; else l-=d;} let ag=g/n,al=l/n; for(let i=n+1;i<c.length;i++){const d=c[i]-c[i-1],gp=d>0?d:0,lp=d<0?-d:0; ag=(ag*(n-1)+gp)/n; al=(al*(n-1)+lp)/n;} if(al===0)return 100; const rs=ag/al; return 100-100/(1+rs); }
+  function _macd(c){ if(c.length<27)return null; const e12=_ema(c,12),e26=_ema(c,26); if(!e12||!e26)return null; const line=[]; for(let i=0;i<c.length;i++){ line.push((e12[i]!=null&&e26[i]!=null)?e12[i]-e26[i]:null);} const lv=line.filter(x=>x!=null); const mline=line[line.length-1]; if(lv.length<9)return {line:mline,signal:null,hist:null}; const sig=_ema(lv,9); const signal=sig?sig[sig.length-1]:null; return {line:mline,signal:signal,hist:signal!=null?mline-signal:null}; }
+  function _boll(c,n){ n=n||20; if(c.length<n)return null; const s=c.slice(-n); const m=s.reduce((a,b)=>a+b,0)/n; const v=s.reduce((a,b)=>a+(b-m)*(b-m),0)/n; const sd=Math.sqrt(v); const up=m+2*sd,lo=m-2*sd,last=c[c.length-1]; const pb=(up-lo)>0?(last-lo)/(up-lo):0.5; return {up:up,lo:lo,mid:m,last:last,pctB:pb}; }
   async function enrich(code){
     const s=STOCKS.find(x=>x.code===code); if(!s||s._enriched||s._loading||s.veto) return;
     s._loading=true;
@@ -2106,20 +2112,20 @@ async function buildSectors(){
       if(label)items.push({label:label,val:val}); }); };
     push(d.breakdown); push(d.base_breakdown); push(d.adjustments); push(d.adj);
     const find=re=>items.find(x=>re.test(x.label));
-    const m=find(/macd/i);      if(m&&m.val!=null) s.tech.macd={v:(m.val>=0?'+':'')+m.val,read:m.val>0?'Bullish':m.val<0?'Bearish':'Neutral',dir:m.val>0?'bull':m.val<0?'bear':'neu'};
+    const m=find(/macd/i);      if(m&&m.val!=null&&m.val!==0) s.tech.macd={v:(m.val>=0?'+':'')+m.val,read:m.val>0?'Bullish':'Bearish',dir:m.val>0?'bull':'bear'};
     // Volume: latest trading session vs the previous session. The series holds only trading days,
     // so this is automatically "last transaction date vs the one before" even on a weekend/holiday.
     const vser=F(d,['volumes','vols','volume_history','volume_series']);
     if(Array.isArray(vser)&&vser.length>=2){ const tv=num(vser[vser.length-1]),pv=num(vser[vser.length-2]);
       if(tv!=null&&pv!=null&&pv>0){ const ch=((tv-pv)/pv)*100; s.volDelta=ch;
         s.tech.vol={v:(ch>=0?'+':'')+ch.toFixed(0)+'%',read:'vs prev session',dir:ch>=15?'bull':ch<=-20?'warn':'neu'}; } }
-    else { const vb=find(/volume|vol\b/i); if(vb&&vb.val!=null) s.tech.vol={v:(vb.val>=0?'+':'')+vb.val,read:'BD vol score',dir:vb.val>0?'bull':'neu'}; }
+    else { const vb=find(/volume|vol\b/i); if(vb&&vb.val!=null&&vb.val>0) s.tech.vol={v:'+'+vb.val,read:'BD vol score',dir:'bull'}; }
     // Price: latest close vs previous close (same last-two-sessions logic) -> shown in context line.
     const pser=F(d,['prices','closes','price_history']);
     if(Array.isArray(pser)&&pser.length>=2){ const tp=num(pser[pser.length-1]),pp=num(pser[pser.length-2]);
       if(tp!=null&&pp!=null&&pp>0){ const pc=((tp-pp)/pp)*100; s.tech.ctx.move=(pc>=0?'+':'')+pc.toFixed(2)+'%'; } }
     const bo=find(/bollinger|band/i); if(bo&&bo.val!=null) s.tech.boll={v:(bo.val>=0?'+':'')+bo.val,read:bo.val>0?'Expanding':'Tight',dir:bo.val>0?'bull':'neu'};
-    const rsi=num(F(d,['rsi'])); if(rsi!=null){ s.rsi=rsi; s.tech.rsi={v:rsi.toFixed(1),read:rsi>=80?'Overbought':rsi<=30?'Oversold':'Neutral',dir:rsi>=80?'bear':rsi<=30?'warn':'neu'}; }
+    const rsi=num(F(d,['rsi'])); if(rsi!=null&&rsi>0&&rsi<100){ s.rsi=rsi; s.tech.rsi={v:rsi.toFixed(1),read:rsi>=80?'Overbought':rsi<=30?'Oversold':'Neutral',dir:rsi>=80?'bear':rsi<=30?'warn':'neu'}; }
     const pe=num(F(d,['pe','pe_ratio'])); if(pe!=null) s.tech.ctx.pe=pe.toFixed(1);
     const cd=num(F(d,['circuit_dist','circuit'])); if(cd!=null) s.tech.ctx.circuit=cd.toFixed(1)+'%';
     let cu=num(F(d,['consec_up','consecutive','up_days'])); if(cu==null){ const u=find(/up.?day|consecutive/i); if(u&&u.val!=null) cu=u.val; } if(cu!=null) s.tech.ctx.updays=cu;
@@ -2127,7 +2133,13 @@ async function buildSectors(){
     const mood=F(d,['mood','dsex_mood','market_mood']); if(mood) s.tech.ctx.mood=mood;
     if(d.activity&&typeof d.activity==='object'){ const a2=readAct(d.activity); if(a2.read&&a2.read!=='Normal'){ s.act=a2; s.reads.ACT=a2.read; } else { const an=F(d.activity,['note','reason']); if(an) s.act.note=an; } }
     const e=num(F(d,['entry'])),t=num(F(d,['target','target_l1'])),sl=num(F(d,['sl','stop'])),rr=num(F(d,['rr']));
-    if(e!=null) s.plan={entry:e,target:t!=null?t:(s.plan?s.plan.target:+(e*1.05).toFixed(2)),stop:sl!=null?sl:(s.plan?s.plan.stop:+(e*0.97).toFixed(2)),rr:rr!=null?rr:(s.plan?s.plan.rr:0)};
+    if(e!=null&&e>0) s.plan={entry:e,target:(t!=null&&t>0)?t:(s.plan?s.plan.target:+(e*1.05).toFixed(2)),stop:(sl!=null&&sl>0)?sl:(s.plan?s.plan.stop:+(e*0.97).toFixed(2)),rr:(rr!=null&&rr>0)?rr:(s.plan?s.plan.rr:0)};
+    // ---- override RSI / MACD / Bollinger with values computed straight from the close series ----
+    const closes=(Array.isArray(pser)?pser:[]).map(function(x){return num(x!=null&&typeof x==='object'?F(x,['close','c','price','ltp','value','y']):x);}).filter(function(v){return v!=null;});
+    if(closes.length>=15){ const r=_rsi(closes,14); if(r!=null){ s.rsi=r; s.tech.rsi={v:r.toFixed(1),read:r>=70?'Overbought':r<=30?'Oversold':'Neutral',dir:r>=70?'bear':r<=30?'warn':'neu'}; } }
+    if(closes.length>=27){ const mc=_macd(closes); if(mc){ if(mc.hist!=null){ s.tech.macd={v:(mc.hist>=0?'+':'')+mc.hist.toFixed(2),read:mc.hist>0?'Bullish':'Bearish',dir:mc.hist>0?'bull':'bear'}; } else if(mc.line!=null){ s.tech.macd={v:(mc.line>=0?'+':'')+mc.line.toFixed(2),read:mc.line>0?'Above zero':'Below zero',dir:mc.line>0?'bull':'bear'}; } } }
+    if(closes.length>=20){ const bb=_boll(closes,20); if(bb){ const p=bb.pctB; s.tech.boll={v:(p*100).toFixed(0)+'% B',read:p>=0.95?'At upper':p>=0.8?'Upper half':p<=0.05?'At lower':p<=0.2?'Lower half':'Mid-band',dir:(p>=0.95||p<=0.05)?'warn':'neu'}; } }
+    s._taSelf=closes.length>=27;
     s._enriched=true;
     render();
   }

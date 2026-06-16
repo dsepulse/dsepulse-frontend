@@ -1819,12 +1819,18 @@ async function buildSectors(){
 <!-- ===== DSE Pulse · Master Signal (conviction board) ===== -->
 <style>
   #dt-mastersignal .ms-wrap{max-width:900px}
-  #dt-mastersignal .ms-lede{font-size:10px;color:var(--text3);margin-bottom:14px;max-width:70ch;line-height:1.5}
+  #dt-mastersignal .ms-lede{font-size:10px;color:var(--text3);margin-bottom:12px;max-width:72ch;line-height:1.5}
   #dt-mastersignal .ms-bar2{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
   #dt-mastersignal .ms-count{font-size:11px;color:var(--text3)}
+  #dt-mastersignal .ms-cap{display:flex;align-items:center;gap:8px}
+  #dt-mastersignal .ms-cap label{font-size:11px;color:var(--text3)}
+  #dt-mastersignal .ms-cap .box{display:flex;align-items:center;border:1px solid var(--border2);border-radius:6px;overflow:hidden;background:var(--white)}
+  #dt-mastersignal .ms-cap .box span{padding:6px 8px;color:var(--text3);font-family:var(--mono);border-right:1px solid var(--border)}
+  #dt-mastersignal .ms-cap input{border:0;outline:none;padding:6px 9px;width:92px;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--navy);background:transparent}
   #dt-mastersignal .ms-reload{padding:6px 11px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--text2);font-size:11px;cursor:pointer}
   #dt-mastersignal .ms-card{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
-  #dt-mastersignal .ms-card:hover{border-color:var(--navy);box-shadow:0 2px 10px rgba(20,30,50,.06)}
+  #dt-mastersignal .ms-card:hover{border-color:var(--navy)}
+  #dt-mastersignal .ms-card.open{border-color:var(--navy);box-shadow:0 2px 12px rgba(20,30,50,.07)}
   #dt-mastersignal .ms-card.avoid{opacity:.92}
   #dt-mastersignal .ms-row{display:grid;grid-template-columns:26px 1.35fr 1.5fr 96px 104px 16px;gap:12px;align-items:center;padding:12px 14px 6px;cursor:pointer}
   #dt-mastersignal .ms-rank{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text3);text-align:center}
@@ -1847,7 +1853,8 @@ async function buildSectors(){
   #dt-mastersignal .ms-v.watch{color:var(--gold);background:var(--gold-bg)}
   #dt-mastersignal .ms-v.spec{color:#5b4bd0;background:#efecfb}
   #dt-mastersignal .ms-v.avoid{color:var(--red);background:var(--red-bg)}
-  #dt-mastersignal .ms-arrow{color:var(--text3);justify-self:center;font-size:14px}
+  #dt-mastersignal .ms-chev{color:var(--text3);justify-self:center;font-size:15px;transition:transform .25s}
+  #dt-mastersignal .ms-card.open .ms-chev{transform:rotate(90deg)}
   #dt-mastersignal .ms-strip{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:0 14px 12px 52px}
   #dt-mastersignal .ms-dg{font-size:9px;font-weight:700;color:var(--red);margin-top:2px}
   #dt-mastersignal .ms-chip{font-family:var(--mono);font-weight:700;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:var(--cream)}
@@ -1859,10 +1866,43 @@ async function buildSectors(){
   #dt-mastersignal .ms-empty{padding:30px;text-align:center;color:var(--text3);font-size:12px;border:1px dashed var(--border);border-radius:10px}
   #dt-mastersignal .ms-legend{margin-top:14px;font-size:10px;color:var(--text3);line-height:1.7}
   #dt-mastersignal .ms-legend b{color:var(--text2)}
+  /* expand body */
+  #dt-mastersignal .ms-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  #dt-mastersignal .ms-card.open .ms-body{max-height:1500px}
+  #dt-mastersignal .ms-bin{padding:2px 14px 16px;border-top:1px solid var(--border)}
+  #dt-mastersignal .ms-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+  #dt-mastersignal .ms-lbl::after{content:"";flex:1;height:1px;background:var(--border)}
+  #dt-mastersignal .ms-eng,#dt-mastersignal .ms-ind{display:grid;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  #dt-mastersignal .ms-eng{grid-template-columns:repeat(3,1fr)} #dt-mastersignal .ms-ind{grid-template-columns:repeat(5,1fr)}
+  #dt-mastersignal .ms-ec,#dt-mastersignal .ms-ic{background:var(--white);padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+  #dt-mastersignal .ms-ec .en{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+  #dt-mastersignal .ms-ec .en i{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block}
+  #dt-mastersignal .ms-ec.ag .en i{background:var(--green)} #dt-mastersignal .ms-ec.bdc .en i{background:var(--red)}
+  #dt-mastersignal .ms-ec .ev{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text3)} #dt-mastersignal .ms-ec.ag .ev{color:var(--navy)}
+  #dt-mastersignal .ms-ic .in{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase}
+  #dt-mastersignal .ms-ic .iv{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--navy)}
+  #dt-mastersignal .ms-ic .ir{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;align-self:flex-start}
+  #dt-mastersignal .ms-ic .ir.bull{color:var(--green);background:var(--green-bg)} #dt-mastersignal .ms-ic .ir.bear{color:var(--red);background:var(--red-bg)} #dt-mastersignal .ms-ic .ir.warn{color:var(--gold);background:var(--gold-bg)} #dt-mastersignal .ms-ic .ir.neu{color:var(--text3);background:var(--cream2)}
+  #dt-mastersignal .ms-ctx{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:9px;font-size:11px;color:var(--text3)} #dt-mastersignal .ms-ctx b{color:var(--navy);font-family:var(--mono)}
+  #dt-mastersignal .ms-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0;padding:10px 12px;border-radius:9px;font-size:12px;border:1px solid}
+  #dt-mastersignal .ms-act b{font-weight:700} #dt-mastersignal .ms-act .dl{margin-left:auto;font-family:var(--mono);font-weight:700;font-size:11px;padding:2px 7px;border-radius:5px}
+  #dt-mastersignal .ms-act.bullish{background:var(--green-bg);border-color:var(--green-border);color:#0f6b46} #dt-mastersignal .ms-act.bullish b{color:var(--green)} #dt-mastersignal .ms-act.bullish .dl{color:var(--green);background:#d6f5e6}
+  #dt-mastersignal .ms-act.stealth{background:#eaf3ff;border-color:#bcd9ff;color:#1b5a99} #dt-mastersignal .ms-act.stealth b{color:#2f7fd0} #dt-mastersignal .ms-act.stealth .dl{color:#2f7fd0;background:#dbeafe}
+  #dt-mastersignal .ms-act.bearish{background:var(--red-bg);border-color:var(--red-border);color:#8a2222} #dt-mastersignal .ms-act.bearish b{color:var(--red)} #dt-mastersignal .ms-act.bearish .dl{color:var(--red);background:#fbdcdc}
+  #dt-mastersignal .ms-act.caution{background:var(--gold-bg);border-color:var(--gold-border);color:#7a5500} #dt-mastersignal .ms-act.caution b{color:var(--gold)} #dt-mastersignal .ms-act.caution .dl{color:var(--gold);background:#f7eccf}
+  #dt-mastersignal .ms-act.neutral{background:var(--cream);border-color:var(--border);color:var(--text2)} #dt-mastersignal .ms-act.neutral b{color:var(--navy)} #dt-mastersignal .ms-act.neutral .dl{color:var(--text3);background:var(--cream2)}
+  #dt-mastersignal .ms-plan{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-top:4px}
+  #dt-mastersignal .ms-plan div{background:var(--white);padding:9px 11px} #dt-mastersignal .ms-plan .pk{font-size:9px;text-transform:uppercase;color:var(--text3)} #dt-mastersignal .ms-plan .pv{font-family:var(--mono);font-weight:700;font-size:14px;margin-top:2px;color:var(--navy)} #dt-mastersignal .ms-plan .pv.t{color:var(--green)} #dt-mastersignal .ms-plan .pv.s{color:var(--red)}
+  #dt-mastersignal .ms-size{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px dashed var(--border2);border-radius:9px;background:var(--cream);margin-top:10px}
+  #dt-mastersignal .ms-size .lab{font-size:11px;color:var(--text3)} #dt-mastersignal .ms-size .big{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--green)} #dt-mastersignal .ms-size .amt{font-family:var(--mono);color:var(--text3);font-size:12px} #dt-mastersignal .ms-size.zero .big{color:var(--red)}
+  #dt-mastersignal .ms-why{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.5}
+  #dt-mastersignal .ms-full{margin-top:12px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--navy);border-radius:7px;background:var(--white);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer}
+  #dt-mastersignal .ms-full:hover{background:var(--navy);color:#fff}
   @media(max-width:680px){
     #dt-mastersignal .ms-row{grid-template-columns:22px 1fr auto 14px;grid-template-areas:"rk id verdict ar" "rk pips pips pips";row-gap:9px;align-items:center}
-    #dt-mastersignal .ms-rank{grid-area:rk}#dt-mastersignal .ms-id{grid-area:id}#dt-mastersignal .ms-pips{grid-area:pips}#dt-mastersignal .ms-conv{display:none}#dt-mastersignal .ms-v{grid-area:verdict}#dt-mastersignal .ms-arrow{grid-area:ar}
+    #dt-mastersignal .ms-rank{grid-area:rk}#dt-mastersignal .ms-id{grid-area:id}#dt-mastersignal .ms-pips{grid-area:pips}#dt-mastersignal .ms-conv{display:none}#dt-mastersignal .ms-v{grid-area:verdict}#dt-mastersignal .ms-chev{grid-area:ar}
     #dt-mastersignal .ms-strip{padding-left:14px}
+    #dt-mastersignal .ms-eng{grid-template-columns:repeat(2,1fr)} #dt-mastersignal .ms-ind{grid-template-columns:repeat(2,1fr)}
   }
 </style>
 <script>
@@ -1878,33 +1918,59 @@ async function buildSectors(){
   ];
   const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
   const ENGINES=["PK","WMA","TCH","CMB","BD","ACT"];
-  let DATA=null, loaded=false, STOCKS=[];
+  const VPCT={"Strong Buy":.20,"Buy":.12,"Watch":.06,"Speculative":.03,"Avoid":0};
+  const VC={"Strong Buy":"strong","Buy":"buy","Watch":"watch","Speculative":"spec","Avoid":"avoid"};
+  const convCol=c=>c>=80?"var(--green)":c>=60?"var(--green-bright)":c>=45?"var(--gold)":c>0?"#5b4bd0":"var(--red)";
+  const ACTPIP={stealth:"stealth",bullish:"on",bearish:"bear",caution:"warn",neutral:""};
+  const ACTICO={stealth:"\u25C6",bullish:"\u25B2",bearish:"\u25BC",caution:"\u25CF",neutral:"\u25CB"};
+  const ACTCHIP={stealth:"blue",bullish:"g",bearish:"r",caution:"gold",neutral:""};
+  let DATA=null, loaded=false, STOCKS=[], capital=100000; const open=new Set();
 
   const num=v=>{ if(v==null)return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; };
   const F=(o,ks)=>{ if(!o)return undefined; for(const k of ks){ if(o[k]!=null&&o[k]!=="")return o[k]; } return undefined; };
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const fmt=n=>Number(n).toLocaleString("en-US");
   async function fj(p){ try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;} }
   function sigAbbr(s){s=(s||"").toUpperCase();return s==="STRONG BUY"?"SB":s==="BUY"?"B":s==="NEUTRAL"?"N":s==="SELL"?"S":s.slice(0,2);}
 
   function readAct(r){
     const raw=String(F(r,["read","profile"])||"").toLowerCase();
     const dir=String(F(r,["direction","dir"])||"").toLowerCase();
-    if(/stealth/.test(raw))return{dir:"stealth",read:"Stealth accum.",delta:8};
-    if(/distribution|insider sell/.test(raw))return{dir:"bearish",read:"Distribution",delta:-14};
-    if(/accumulation|insider buy/.test(raw))return{dir:"bullish",read:"Accumulation",delta:6};
-    if(/frenzy|retail/.test(raw))return{dir:"caution",read:"Retail frenzy",delta:0};
-    if(dir==="bullish")return{dir:"bullish",read:"Bullish",delta:6};
-    if(dir==="bearish")return{dir:"bearish",read:"Bearish",delta:-12};
-    return{dir:"neutral",read:"Normal",delta:0};
+    const note=String(F(r,["note","reason"])||"");
+    if(/stealth/.test(raw))return{dir:"stealth",read:"Stealth accumulation",delta:8,note:note||"volume surging while price stays flat — positioning before the move."};
+    if(/distribution|insider sell/.test(raw))return{dir:"bearish",read:"Distribution",delta:-14,note:note||"a block sold into the move — someone offloading."};
+    if(/accumulation|insider buy/.test(raw))return{dir:"bullish",read:"Accumulation",delta:6,note:note||"a block bought above market — strong hands paying up."};
+    if(/frenzy|retail/.test(raw))return{dir:"caution",read:"Retail frenzy",delta:0,note:note||"big volume from tiny trades near the circuit — the late crowd."};
+    if(dir==="bullish")return{dir:"bullish",read:"Bullish",delta:6,note:note};
+    if(dir==="bearish")return{dir:"bearish",read:"Bearish",delta:-12,note:note};
+    return{dir:"neutral",read:"Normal",delta:0,note:note||"nothing unusual in volume or blocks today."};
+  }
+  function trendOf(wma,wsig){
+    const w9=num(F(wma,["w9","wma9"])),w34=num(F(wma,["w34","wma34"])),w89=num(F(wma,["w89","wma89"]));
+    if(w9!=null&&w34!=null&&w89!=null){
+      if(w9>=w34&&w34>=w89)return{v:"9 \u25B8 34 \u25B8 89",read:"Uptrend",dir:"bull"};
+      if(w9<=w34&&w34<=w89)return{v:"9 \u25C2 34 \u25C2 89",read:"Downtrend",dir:"bear"};
+      return{v:"crossing",read:"Mixed",dir:"warn"};
+    }
+    if(/STRONG BUY|BUY/.test(wsig))return{v:wsig,read:"Uptrend",dir:"bull"};
+    if(/SELL/.test(wsig))return{v:wsig,read:"Downtrend",dir:"bear"};
+    return{v:wsig||"\u2014",read:"Flat",dir:"neu"};
+  }
+  function macdOf(o){
+    const raw=F(o,["macd","macd_hist","macd_state","macd_signal"]);
+    if(raw==null)return{v:"\u2014",read:"\u2014",dir:"neu"};
+    const mn=num(raw);
+    if(mn!=null)return{v:(mn>=0?"+":"")+mn.toFixed(2),read:mn>=0?"Bullish":"Bearish",dir:mn>=0?"bull":"bear"};
+    const s=String(raw);return{v:s,read:/bull|up|cross/i.test(s)?"Bullish":/bear|down/i.test(s)?"Bearish":"Neutral",dir:/bull|up|cross/i.test(s)?"bull":/bear|down/i.test(s)?"bear":"neu"};
   }
 
   function compute(code,f){
     const agree={PK:0,WMA:0,TCH:0,CMB:0,BD:0,ACT:0}, reads={};
-    if(f.picker){agree.PK=1;reads.PK="#"+(F(f.picker,["rank"])||"?");}else reads.PK="—";
+    if(f.picker){agree.PK=1;reads.PK="#"+(F(f.picker,["rank"])||"?");}else reads.PK="\u2014";
     let wsig="";
-    if(f.wma){wsig=String(F(f.wma,["signal","verdict"])||"").toUpperCase();agree.WMA=/STRONG BUY|BUY/.test(wsig)?1:0;reads.WMA=wsig||"listed";}else reads.WMA="—";
+    if(f.wma){wsig=String(F(f.wma,["signal","verdict"])||"").toUpperCase();agree.WMA=/STRONG BUY|BUY/.test(wsig)?1:0;reads.WMA=wsig||"listed";}else reads.WMA="\u2014";
     let tsc=null;
-    if(f.tech){tsc=num(F(f.tech,["score"]));agree.TCH=(tsc!=null&&tsc>=70)?1:0;reads.TCH=tsc!=null?Math.round(tsc)+"/100":"listed";}else reads.TCH="—";
+    if(f.tech){tsc=num(F(f.tech,["score"]));agree.TCH=(tsc!=null&&tsc>=70)?1:0;reads.TCH=tsc!=null?Math.round(tsc)+"/100":"listed";}else reads.TCH="\u2014";
     if(f.combined){agree.CMB=1;reads.CMB="Aligned";}else reads.CMB="Not aligned";
     let veto=null,bdScore=null;
     if(f.bd){bdScore=num(F(f.bd,["final_score","score"]));
@@ -1913,21 +1979,49 @@ async function buildSectors(){
       const q=F(f.bd,["qualified"]); const qualified=(q===true||q==="true"||q===1||q==="1");
       reads.BD=veto?"veto":(bdScore!=null?String(Math.round(bdScore)):"listed");
       agree.BD=(!veto&&(qualified||(bdScore!=null&&bdScore>=65)))?1:0;
-    }else reads.BD="—";
-    let act={dir:"neutral",read:"Normal",delta:0};
+    }else reads.BD="\u2014";
+    let act={dir:"neutral",read:"Normal",delta:0,note:""};
     if(f.act){act=readAct(f.act);agree.ACT=(act.dir==="bullish"||act.dir==="stealth")?1:0;reads.ACT=act.read;}else reads.ACT="Normal";
     const agreeN=ENGINES.reduce((a,e)=>a+agree[e],0);
     const any=f.bd||f.tech||f.wma||f.picker||{};
     const ltp=num(F(any,["ltp","last","close"]));
     const sector=F(f.bd||f.tech||f.picker||{},["sector","industry"])||"";
     const rsi=num(F(f.bd||f.tech||{},["rsi"]));
-    const vol=num(F(f.act||{},["vol_ratio"]));
+    const vol=num(F(f.act||f.bd||{},["vol_ratio","volume_ratio"]));
+    // technical indicators panel
+    const rsiDir=rsi==null?"neu":rsi>=80?"bear":rsi<=30?"warn":"neu";
+    const tech={
+      trend:trendOf(f.wma,wsig),
+      macd:macdOf(f.tech||f.bd||{}),
+      rsi:{v:rsi!=null?rsi.toFixed(1):"\u2014",read:rsi==null?"\u2014":rsi>=80?"Overbought":rsi<=30?"Oversold":"Neutral",dir:rsiDir},
+      vol:{v:vol!=null?vol.toFixed(1)+"\u00d7":"\u2014",read:vol==null?"\u2014":vol>=3?"Surging":vol>=1.5?"Above avg":"Normal",dir:vol!=null&&vol>=1.5?"bull":"neu"},
+      boll:(function(){const bv=F(f.bd||f.tech||{},["bollinger","bb","bb_pos","band"]);return bv?{v:String(bv),read:String(bv),dir:"neu"}:{v:"\u2014",read:"\u2014",dir:"neu"};})(),
+      ctx:{cat:F(f.bd||f.tech||f.picker||{},["cat","category"])||"\u2014",
+           pe:(num(F(f.bd||{},["pe","pe_ratio"]))!=null?num(F(f.bd||{},["pe","pe_ratio"])).toFixed(1):"\u2014"),
+           circuit:(num(F(f.bd||{},["circuit_dist","circuit"]))!=null?num(F(f.bd||{},["circuit_dist","circuit"])).toFixed(1)+"%":"\u2014"),
+           mood:F(f.bd||{},["mood","dsex_mood"])||"\u2014",
+           updays:(num(F(f.bd||f.picker||{},["consec_up","consecutive","up_days"]))!=null?num(F(f.bd||f.picker||{},["consec_up","consecutive","up_days"])):"\u2014")}
+    };
+    // trade plan
+    const psrc=f.bd||f.picker||{};
+    let e=num(F(psrc,["entry","entry_price"])); if(e==null)e=ltp;
+    let t=num(F(psrc,["target","target_l1","target1"]));
+    let s=num(F(psrc,["sl","stop","stoploss"]));
+    let rr=num(F(psrc,["rr"]));
+    let plan=null;
+    if(e!=null){ if(t==null)t=+(e*1.05).toFixed(2); if(s==null)s=+(e*0.97).toFixed(2); if(rr==null||!isFinite(rr))rr=(t-e)>0&&(e-s)>0?+((t-e)/(e-s)).toFixed(1):0; plan={entry:e,target:t,stop:s,rr:rr}; }
+    // conviction
     let conv=Math.round((agreeN/6)*82 + act.delta + clamp(((bdScore!=null?bdScore:50)-50)/5,-8,10));
     conv=clamp(conv,1,99);
     let verdict=agreeN>=5?"Strong Buy":agreeN>=3?"Buy":agreeN===2?"Watch":agreeN===1?"Speculative":"Watch";
     let downgraded=false;
     if(act.dir==="bearish"&&(verdict==="Strong Buy"||verdict==="Buy")){verdict="Watch";downgraded=true;conv=Math.min(conv,55);}
     if(veto){verdict="Avoid";conv=0;}
+    // narrative
+    let why;
+    if(veto)why="BD\u2019s safety filter flagged this: "+veto+". The exit is the problem, not the entry \u2014 avoid.";
+    else if(downgraded)why="Technicals point up, but the Activity layer read Distribution \u2014 a block being sold into the move. The leading signal overrides, so this drops to Watch.";
+    else why=agreeN+" of 6 engines agree."+(act.dir==="bullish"||act.dir==="stealth"?" Activity confirms ("+act.read.toLowerCase()+"), adding conviction.":act.dir==="neutral"?" Activity is quiet today.":"");
     const mem=[
       {label:"Picker",val:"",inn:!!f.picker},
       {label:"WMA",val:sigAbbr(wsig),inn:agree.WMA===1},
@@ -1935,47 +2029,72 @@ async function buildSectors(){
       {label:"Combined",val:"",inn:!!f.combined},
       {label:"BD",val:bdScore!=null?Math.round(bdScore):"",inn:agree.BD===1},
     ];
-    return {code,sector,ltp,rsi,vol,conv,verdict,downgraded,veto,act,agree,agreeN,reads,wsig,mem};
+    return {code,sector,ltp,rsi,vol,conv,verdict,downgraded,veto,act,agree,agreeN,reads,wsig,tech,plan,why,mem};
   }
 
-  const VC={"Strong Buy":"strong","Buy":"buy","Watch":"watch","Speculative":"spec","Avoid":"avoid"};
-  const convCol=c=>c>=80?"var(--green)":c>=60?"var(--green-bright)":c>=45?"var(--gold)":c>0?"#5b4bd0":"var(--red)";
-  const ACTPIP={stealth:"stealth",bullish:"on",bearish:"bear",caution:"warn",neutral:""};
-  const ACTICO={stealth:"\u25C6",bullish:"\u25B2",bearish:"\u25BC",caution:"\u25CF",neutral:"\u25CB"};
-  const ACTCHIP={stealth:"blue",bullish:"g",bearish:"r",caution:"gold",neutral:""};
-
+  function sizeLine(s){
+    const pct=VPCT[s.verdict]||0;
+    if(s.verdict==="Avoid"||pct===0||!s.plan)return '<div class="ms-size zero"><span class="lab">Position size</span><span class="big">\u2014 do not enter</span></div>';
+    const sh=Math.floor((capital*pct)/s.plan.entry);
+    return '<div class="ms-size"><span class="lab">Suggested size ('+Math.round(pct*100)+'% of capital)</span><span class="big">\u2248 '+fmt(sh)+' shares</span><span class="amt">\u09F3'+fmt(Math.round(sh*s.plan.entry))+'</span></div>';
+  }
+  function indHTML(t){
+    const cell=(n,o)=>'<div class="ms-ic"><div class="in">'+n+'</div><div class="iv">'+o.v+'</div><div class="ir '+o.dir+'">'+o.read+'</div></div>';
+    const inds=[["Trend \u00b7 WMA",t.trend],["MACD",t.macd],["RSI 14",t.rsi],["Volume",t.vol],["Bollinger",t.boll]].map(x=>cell(x[0],x[1])).join('');
+    const c=t.ctx;
+    return '<div class="ms-lbl">Technical indicators</div><div class="ms-ind">'+inds+'</div><div class="ms-ctx"><span>Category <b>'+c.cat+'</b></span><span>PE <b>'+c.pe+'</b></span><span><b>'+c.circuit+'</b> to circuit</span><span>DSEX <b>'+c.mood+'</b></span><span><b>'+c.updays+'</b> up-days</span></div>';
+  }
+  function stripHTML(s){
+    const t=s.tech,chips=[];
+    const td=t.trend.dir,ta=td==="bull"?"\u2197":td==="bear"?"\u2198":"\u2192";
+    chips.push('<span class="ms-chip '+(td==="bull"?"g":td==="bear"?"r":"")+'">'+ta+' '+t.trend.read+'</span>');
+    if(s.rsi!=null)chips.push('<span class="ms-chip '+(s.rsi>=80?"r":s.rsi<=30?"gold":"")+'">RSI '+s.rsi.toFixed(1)+'</span>');
+    if(s.reads.TCH!=="\u2014"&&s.reads.TCH!=="listed")chips.push('<span class="ms-chip">Tech '+s.reads.TCH+'</span>');
+    if(s.vol!=null)chips.push('<span class="ms-chip '+(s.vol>=2?"g":"")+'">Vol '+s.vol.toFixed(1)+'\u00d7</span>');
+    chips.push('<span class="ms-chip '+ACTCHIP[s.act.dir]+'">'+ACTICO[s.act.dir]+' '+s.act.read+'</span>');
+    return '<div class="ms-strip">'+chips.join('')+'<span class="ms-hint">tap to expand</span></div>';
+  }
+  function engHTML(s){
+    return ENGINES.map(e=>{
+      const bear=e==="ACT"&&s.act.dir==="bearish";
+      const ag=s.agree[e]&&!(s.veto&&e==="BD");
+      return '<div class="ms-ec '+(bear?"bdc":ag?"ag":"")+'"><div class="en"><i></i>'+e+'</div><div class="ev">'+s.reads[e]+'</div></div>';
+    }).join('');
+  }
   function rowHTML(s,i){
-    const veto=!!s.veto;
+    const veto=!!s.veto, isOpen=open.has(s.code);
     const pips=ENGINES.map(e=>{
       if(veto&&e==="BD")return '<div class="ms-pip veto">BD</div>';
       if(e==="ACT")return '<div class="ms-pip '+ACTPIP[s.act.dir]+'">ACT</div>';
-      return '<div class="ms-pip '+(s.agree[e]?'on':'')+'">'+e+'</div>';
+      return '<div class="ms-pip '+(s.agree[e]?"on":"")+'">'+e+'</div>';
     }).join('');
-    const trendDir=/STRONG BUY|BUY/.test(s.wsig)?"g":/SELL/.test(s.wsig)?"r":"";
-    const trendTxt=/STRONG BUY|BUY/.test(s.wsig)?"\u2197 Uptrend":/SELL/.test(s.wsig)?"\u2198 Down":"\u2192 Flat";
-    const chips=[];
-    chips.push('<span class="ms-chip '+trendDir+'">'+trendTxt+'</span>');
-    if(s.rsi!=null)chips.push('<span class="ms-chip '+(s.rsi>=80?'r':s.rsi<=30?'g':'')+'">RSI '+s.rsi.toFixed(1)+'</span>');
-    if(s.reads.TCH!=="—"&&s.reads.TCH!=="listed")chips.push('<span class="ms-chip">Tech '+s.reads.TCH+'</span>');
-    if(s.vol!=null)chips.push('<span class="ms-chip '+(s.vol>=2?'g':'')+'">Vol '+s.vol.toFixed(1)+'\u00d7</span>');
-    chips.push('<span class="ms-chip '+ACTCHIP[s.act.dir]+'">'+ACTICO[s.act.dir]+' '+s.act.read+'</span>');
     const sub=(s.sector||'')+(s.ltp!=null?' \u00b7 \u09F3'+s.ltp.toFixed(2):'');
-    return '<div class="ms-card '+(veto?'avoid':'')+'" data-code="'+s.code+'">'+
+    const a=s.act;
+    const actCall='<div class="ms-act '+(a.dir==="stealth"?"stealth":a.dir)+'">'+ACTICO[a.dir]+' Activity \u00b7 <b>'+a.read+'</b>'+(a.note?' \u2014 '+a.note:'')+'<span class="dl">'+(a.delta>0?'+':'')+(a.delta||0)+' conv</span></div>';
+    const planBlock=veto?'<div class="ms-act bearish"><b>BD safety veto.</b>&nbsp;'+s.veto+'</div>':(s.plan?'<div class="ms-plan"><div><div class="pk">Entry</div><div class="pv">\u09F3'+s.plan.entry.toFixed(2)+'</div></div><div><div class="pk">Target</div><div class="pv t">\u09F3'+s.plan.target.toFixed(2)+'</div></div><div><div class="pk">Stop</div><div class="pv s">\u09F3'+s.plan.stop.toFixed(2)+'</div></div><div><div class="pk">Risk/Reward</div><div class="pv">'+s.plan.rr.toFixed(1)+'\u00d7</div></div></div>':'');
+    return '<div class="ms-card '+(veto?"avoid ":"")+(isOpen?"open":"")+'" data-code="'+s.code+'">'+
       '<div class="ms-row">'+
         '<div class="ms-rank">'+(i+1)+'</div>'+
         '<div class="ms-id"><div class="ms-tk">'+s.code+'</div><div class="ms-sub">'+sub+'</div></div>'+
         '<div class="ms-pips">'+pips+'</div>'+
         '<div class="ms-conv"><span class="ms-cn" style="color:'+convCol(s.conv)+'">'+(veto?'\u2014':s.conv)+'</span><div class="ms-cbar"><i style="width:'+(veto?0:s.conv)+'%;background:'+convCol(s.conv)+'"></i></div><span class="ms-cl">conviction</span></div>'+
         '<div style="justify-self:end;text-align:right"><span class="ms-v '+VC[s.verdict]+'">'+s.verdict+'</span>'+(s.downgraded?'<div class="ms-dg">\u2193 Activity override</div>':'')+'</div>'+
-        '<i class="ti ti-chevron-right ms-arrow"></i>'+
+        '<i class="ti ti-chevron-right ms-chev"></i>'+
       '</div>'+
-      '<div class="ms-strip">'+chips.join('')+'<span class="ms-hint">tap for full card \u2197</span></div>'+
+      stripHTML(s)+
+      '<div class="ms-body"><div class="ms-bin">'+
+        '<div class="ms-lbl">Six engines</div><div class="ms-eng">'+engHTML(s)+'</div>'+
+        indHTML(s.tech)+
+        '<div class="ms-lbl">Activity &amp; plan</div>'+actCall+planBlock+sizeLine(s)+
+        '<p class="ms-why">'+s.why+'</p>'+
+        '<button class="ms-full" data-full="'+s.code+'"><i class="ti ti-chart-candle"></i> Full BD card</button>'+
+      '</div></div>'+
     '</div>';
   }
 
   function render(){
     const board=document.getElementById('ms-board'); if(!board)return;
-    if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day, or open the Cross-Tool tab to confirm the feeds are live.</div>'; document.getElementById('ms-count').textContent=''; return; }
+    if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day.</div>'; document.getElementById('ms-count').textContent=''; return; }
     const top=STOCKS.slice(0,60);
     board.innerHTML=top.map(rowHTML).join('');
     document.getElementById('ms-count').textContent=STOCKS.length+' ranked'+(STOCKS.length>60?' \u00b7 showing top 60':'');
@@ -1995,15 +2114,20 @@ async function buildSectors(){
   function panelHTML(){
     return '<div class="ms-wrap">'+
       '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Master Signal \u00b7 Conviction Board</div>'+
-      '<div class="ms-lede">One verdict per stock, fused from all six engines and ranked by agreement. The Activity layer is directional \u2014 a bullish read adds conviction, Distribution can drop a technical buy to Watch \u2014 and BD\u2019s safety filter holds the Avoid veto. Tap any row for the full decision card.</div>'+
-      '<div class="ms-bar2"><span class="ms-count" id="ms-count">Loading\u2026</span><button class="ms-reload" id="ms-reload">Reload</button></div>'+
+      '<div class="ms-lede">One verdict per stock, fused from all six engines and ranked by agreement. The Activity layer is directional \u2014 a bullish read adds conviction, Distribution can drop a technical buy to Watch \u2014 and BD\u2019s safety filter holds the Avoid veto. Tap any row for the full breakdown.</div>'+
+      '<div class="ms-bar2">'+
+        '<span class="ms-count" id="ms-count">Loading\u2026</span>'+
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          '<div class="ms-cap"><label>Capital</label><div class="box"><span>\u09F3</span><input id="ms-cap" type="number" value="100000" min="0" step="1000" inputmode="numeric"></div></div>'+
+          '<button class="ms-reload" id="ms-reload">Reload</button>'+
+        '</div>'+
+      '</div>'+
       '<div id="ms-board"></div>'+
       '<div class="ms-legend"><b>Verdict:</b> 5\u20136 engines agree \u2192 Strong Buy \u00b7 3\u20134 \u2192 Buy \u00b7 2 \u2192 Watch \u00b7 1 \u2192 Speculative \u00b7 BD veto \u2192 Avoid. &nbsp; <b>Engines:</b> PK Picker \u00b7 WMA \u00b7 TCH Tech \u00b7 CMB Combined \u00b7 BD \u00b7 ACT Activity. Conviction is a v1 equal-weight blend until the backtester sets earned weights.</div>'+
     '</div>';
   }
 
   function hideMaster(){ const mp=document.getElementById('dt-mastersignal'); if(mp)mp.style.display='none'; const tb=document.getElementById('tab-mastersignal'); if(tb)tb.classList.remove('active'); }
-
   function openMS(el){
     STD.forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display='none';});
     const xp=document.getElementById('dt-xtool'); if(xp)xp.style.display='none';
@@ -2012,7 +2136,6 @@ async function buildSectors(){
     el.classList.add('active');
     buildMS();
   }
-
   function injectTab(){
     if(document.getElementById('tab-mastersignal')) return;
     const tabs=[...document.querySelectorAll('#view-dashboard .tab')]; const anyTab=tabs[0]; if(!anyTab) return;
@@ -2022,13 +2145,20 @@ async function buildSectors(){
     if(bdTab) bdTab.parentNode.insertBefore(tab, bdTab.nextSibling); else anyTab.parentNode.appendChild(tab);
     const host=document.getElementById('dt-overview')?document.getElementById('dt-overview').parentNode:null;
     if(host){ const p=document.createElement('div'); p.id='dt-mastersignal'; p.style.display='none'; p.innerHTML=panelHTML(); host.appendChild(p);
-      p.addEventListener('click',function(e){ const card=e.target.closest('.ms-card[data-code]'); if(!card)return; const code=card.getAttribute('data-code'); const s=STOCKS.find(x=>x.code===code); if(window.__openBDCard){ window.__openBDCard(code, s?s.mem:[]); } });
-      const rb=p.querySelector('#ms-reload'); if(rb) rb.onclick=function(){ loaded=false; buildMS(); };
+      p.addEventListener('click',function(e){
+        const full=e.target.closest('[data-full]');
+        if(full){ e.stopPropagation(); const code=full.getAttribute('data-full'); const s=STOCKS.find(x=>x.code===code); if(window.__openBDCard) window.__openBDCard(code, s?s.mem:[]); return; }
+        const card=e.target.closest('.ms-card[data-code]'); if(!card)return;
+        const code=card.getAttribute('data-code');
+        if(open.has(code))open.delete(code); else open.add(code);
+        card.classList.toggle('open');
+      });
+      const cap=p.querySelector('#ms-cap'); if(cap) cap.addEventListener('input',function(e){ capital=Math.max(0,+e.target.value||0); if(STOCKS.length)render(); });
+      const rb=p.querySelector('#ms-reload'); if(rb) rb.onclick=function(){ loaded=false; open.clear(); buildMS(); };
     }
     if(window.switchDashTab && !window._msWrapped){ window._msWrapped=true; const orig=window.switchDashTab; window.switchDashTab=function(tt,el){ hideMaster(); return orig(tt,el); }; }
     const xtab=document.getElementById('tab-xtool'); if(xtab && !xtab._msHook){ xtab._msHook=true; const oc=xtab.onclick; xtab.onclick=function(){ hideMaster(); if(oc) return oc.apply(this,arguments); }; }
   }
-
   function boot(){ injectTab(); }
   if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 })();

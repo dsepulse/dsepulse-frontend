@@ -1879,6 +1879,15 @@ async function buildSectors(){
   #dt-mastersignal .ms-ec .en i{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block}
   #dt-mastersignal .ms-ec.ag .en i{background:var(--green)} #dt-mastersignal .ms-ec.bdc .en i{background:var(--red)}
   #dt-mastersignal .ms-ec .ev{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text3)} #dt-mastersignal .ms-ec.ag .ev{color:var(--navy)}
+  #dt-mastersignal .ms-ec.ms-flow{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  #dt-mastersignal .ms-ec.ms-flow .fv{display:flex;align-items:baseline;gap:8px;text-align:right}
+  #dt-mastersignal .ms-ec.ms-flow .fl{font-family:var(--mono);font-weight:800;font-size:13px}
+  #dt-mastersignal .ms-ec.ms-flow .fs{font-size:10px;color:var(--text3)}
+  #dt-mastersignal .ms-ec.ms-flow.buy   .en i{background:var(--green)} #dt-mastersignal .ms-ec.ms-flow.buy   .fl{color:var(--green)}
+  #dt-mastersignal .ms-ec.ms-flow.watch .en i{background:var(--gold)}  #dt-mastersignal .ms-ec.ms-flow.watch .fl{color:var(--gold)}
+  #dt-mastersignal .ms-ec.ms-flow.info  .en i{background:#1D4ED8}      #dt-mastersignal .ms-ec.ms-flow.info  .fl{color:#1D4ED8}
+  #dt-mastersignal .ms-ec.ms-flow.sell  .en i{background:var(--red)}   #dt-mastersignal .ms-ec.ms-flow.sell  .fl{color:var(--red)}
+  #dt-mastersignal .ms-ec.ms-flow.muted .en i{background:var(--text3)} #dt-mastersignal .ms-ec.ms-flow.muted .fl{color:var(--text3)}
   #dt-mastersignal .ms-ic .in{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase}
   #dt-mastersignal .ms-ic .iv{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--navy)}
   #dt-mastersignal .ms-ic .ir{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;align-self:flex-start}
@@ -2067,12 +2076,17 @@ async function buildSectors(){
     chips.push('<span class="ms-chip '+ACTCHIP[s.act.dir]+'">'+ACTICO[s.act.dir]+' '+s.act.read+'</span>');
     return '<div class="ms-strip">'+chips.join('')+'<span class="ms-hint">tap to expand</span></div>';
   }
+  function flowCell(s){
+    if(!s.flow||typeof s.flow!=='object')return '';
+    const lv=s.flow.level||'muted';
+    return '<div class="ms-ec ms-flow '+lv+'" style="grid-column:1/-1"><div class="en"><i></i>Smart-money flow</div><div class="fv"><span class="fl">'+(s.flow.label||'\u2014')+'</span><span class="fs">'+(s.flow.sub||'')+'</span></div></div>';
+  }
   function engHTML(s){
     return ENGINES.map(e=>{
       const bear=e==="ACT"&&s.act.dir==="bearish";
       const ag=s.agree[e]&&!(s.veto&&e==="BD");
       return '<div class="ms-ec '+(bear?"bdc":ag?"ag":"")+'"><div class="en"><i></i>'+e+'</div><div class="ev">'+s.reads[e]+'</div></div>';
-    }).join('');
+    }).join('')+flowCell(s);
   }
   function rowHTML(s,i){
     const veto=!!s.veto, isOpen=open.has(s.code);
@@ -2096,7 +2110,7 @@ async function buildSectors(){
       '</div>'+
       stripHTML(s)+
       '<div class="ms-body"><div class="ms-bin">'+
-        '<div class="ms-lbl">Six engines</div><div class="ms-eng">'+engHTML(s)+'</div>'+
+        '<div class="ms-lbl">Engines &amp; smart-money flow</div><div class="ms-eng">'+engHTML(s)+'</div>'+
         indHTML(s.tech)+
         '<div class="ms-lbl">Activity &amp; plan</div>'+actCall+planBlock+sizeLine(s)+
         '<p class="ms-why">'+s.why+'</p>'+
@@ -2116,6 +2130,7 @@ async function buildSectors(){
     const d=await fj('/api/bd/eval/'+encodeURIComponent(code));
     s._loading=false;
     if(!d || typeof d!=='object'){ return; }
+    s.flow=(d.flow&&typeof d.flow==='object')?d.flow:null;
     // flatten breakdown + adjustments into {label,val}
     const items=[];
     const push=arr=>{ (Array.isArray(arr)?arr:[]).forEach(it=>{ if(it==null)return; let label,val;
@@ -2186,7 +2201,7 @@ async function buildSectors(){
         '</div>'+
       '</div>'+
       '<div id="ms-board"></div>'+
-      '<div class="ms-legend"><b>Verdict:</b> 5\u20136 engines agree \u2192 Strong Buy \u00b7 3\u20134 \u2192 Buy \u00b7 2 \u2192 Watch \u00b7 1 \u2192 Speculative \u00b7 BD veto \u2192 Avoid. &nbsp; <b>Engines:</b> PK Picker \u00b7 WMA \u00b7 TCH Tech \u00b7 CMB Combined \u00b7 BD \u00b7 ACT Activity. Conviction is a v1 equal-weight blend until the backtester sets earned weights.</div>'+
+      '<div class="ms-legend"><b>Verdict:</b> 5\u20136 engines agree \u2192 Strong Buy \u00b7 3\u20134 \u2192 Buy \u00b7 2 \u2192 Watch \u00b7 1 \u2192 Speculative \u00b7 BD veto \u2192 Avoid. &nbsp; <b>Engines:</b> PK Picker \u00b7 WMA \u00b7 TCH Tech \u00b7 CMB Combined \u00b7 BD \u00b7 ACT Activity \u00b7 FLOW Smart-money. Conviction is a v1 equal-weight blend until the backtester sets earned weights.</div>'+
     '</div>';
   }
 

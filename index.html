@@ -1793,6 +1793,7 @@ async function buildSectors(){
       b.textContent='Added \u2713'; b.disabled=true;
     });
   }
+  window.__openBDCard = openCard;
 })();
 </script>
 <!-- ===== end BD decision card ===== -->
@@ -1814,5 +1815,225 @@ async function buildSectors(){
   setInterval(setGreeting, 60000);
 })();
 </script>
+
+<!-- ===== DSE Pulse · Master Signal (conviction board) ===== -->
+<style>
+  #dt-mastersignal .ms-wrap{max-width:900px}
+  #dt-mastersignal .ms-lede{font-size:10px;color:var(--text3);margin-bottom:14px;max-width:70ch;line-height:1.5}
+  #dt-mastersignal .ms-bar2{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  #dt-mastersignal .ms-count{font-size:11px;color:var(--text3)}
+  #dt-mastersignal .ms-reload{padding:6px 11px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--text2);font-size:11px;cursor:pointer}
+  #dt-mastersignal .ms-card{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+  #dt-mastersignal .ms-card:hover{border-color:var(--navy);box-shadow:0 2px 10px rgba(20,30,50,.06)}
+  #dt-mastersignal .ms-card.avoid{opacity:.92}
+  #dt-mastersignal .ms-row{display:grid;grid-template-columns:26px 1.35fr 1.5fr 96px 104px 16px;gap:12px;align-items:center;padding:12px 14px 6px;cursor:pointer}
+  #dt-mastersignal .ms-rank{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text3);text-align:center}
+  #dt-mastersignal .ms-tk{font-weight:800;font-size:15px;color:var(--navy);font-family:var(--mono)}
+  #dt-mastersignal .ms-sub{font-size:11px;color:var(--text3);margin-top:2px}
+  #dt-mastersignal .ms-pips{display:flex;gap:4px}
+  #dt-mastersignal .ms-pip{flex:1;min-width:0;text-align:center;font-family:var(--mono);font-weight:700;font-size:9px;padding:4px 0 3px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:var(--white)}
+  #dt-mastersignal .ms-pip.on{color:#fff;background:var(--green);border-color:transparent}
+  #dt-mastersignal .ms-pip.bear,#dt-mastersignal .ms-pip.veto{color:#fff;background:var(--red);border-color:transparent}
+  #dt-mastersignal .ms-pip.warn{color:#fff;background:var(--gold);border-color:transparent}
+  #dt-mastersignal .ms-pip.stealth{color:#fff;background:#2f7fd0;border-color:transparent}
+  #dt-mastersignal .ms-conv{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  #dt-mastersignal .ms-cn{font-family:var(--mono);font-weight:800;font-size:22px;line-height:1}
+  #dt-mastersignal .ms-cbar{width:64px;height:4px;border-radius:3px;background:var(--cream2);overflow:hidden}
+  #dt-mastersignal .ms-cbar i{display:block;height:100%;border-radius:3px}
+  #dt-mastersignal .ms-cl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)}
+  #dt-mastersignal .ms-v{justify-self:end;font-weight:800;font-size:11px;padding:5px 10px;border-radius:7px;white-space:nowrap}
+  #dt-mastersignal .ms-v.strong{color:var(--green);background:var(--green-bg)}
+  #dt-mastersignal .ms-v.buy{color:var(--green);background:#F0FDF4}
+  #dt-mastersignal .ms-v.watch{color:var(--gold);background:var(--gold-bg)}
+  #dt-mastersignal .ms-v.spec{color:#5b4bd0;background:#efecfb}
+  #dt-mastersignal .ms-v.avoid{color:var(--red);background:var(--red-bg)}
+  #dt-mastersignal .ms-arrow{color:var(--text3);justify-self:center;font-size:14px}
+  #dt-mastersignal .ms-strip{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:0 14px 12px 52px}
+  #dt-mastersignal .ms-dg{font-size:9px;font-weight:700;color:var(--red);margin-top:2px}
+  #dt-mastersignal .ms-chip{font-family:var(--mono);font-weight:700;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:var(--cream)}
+  #dt-mastersignal .ms-chip.g{color:var(--green);border-color:var(--green-border);background:var(--green-bg)}
+  #dt-mastersignal .ms-chip.r{color:var(--red);border-color:var(--red-border);background:var(--red-bg)}
+  #dt-mastersignal .ms-chip.gold{color:var(--gold);border-color:var(--gold-border);background:var(--gold-bg)}
+  #dt-mastersignal .ms-chip.blue{color:#2f7fd0;border-color:#bcd9ff;background:#eaf3ff}
+  #dt-mastersignal .ms-hint{font-size:10px;color:var(--text3);margin-left:auto;font-style:italic}
+  #dt-mastersignal .ms-empty{padding:30px;text-align:center;color:var(--text3);font-size:12px;border:1px dashed var(--border);border-radius:10px}
+  #dt-mastersignal .ms-legend{margin-top:14px;font-size:10px;color:var(--text3);line-height:1.7}
+  #dt-mastersignal .ms-legend b{color:var(--text2)}
+  @media(max-width:680px){
+    #dt-mastersignal .ms-row{grid-template-columns:22px 1fr auto 14px;grid-template-areas:"rk id verdict ar" "rk pips pips pips";row-gap:9px;align-items:center}
+    #dt-mastersignal .ms-rank{grid-area:rk}#dt-mastersignal .ms-id{grid-area:id}#dt-mastersignal .ms-pips{grid-area:pips}#dt-mastersignal .ms-conv{display:none}#dt-mastersignal .ms-v{grid-area:verdict}#dt-mastersignal .ms-arrow{grid-area:ar}
+    #dt-mastersignal .ms-strip{padding-left:14px}
+  }
+</style>
+<script>
+(function(){
+  const API="https://dsepulse-backend-production.up.railway.app";
+  const FEEDS=[
+    {key:"picker",  path:"/api/picks/today",   pick:d=>(d&&d.picks)||[]},
+    {key:"wma",     path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[]},
+    {key:"tech",    path:"/api/tech/today",     pick:d=>Array.isArray(d)?d:[]},
+    {key:"combined",path:"/api/combined/today", pick:d=>Array.isArray(d)?d:[]},
+    {key:"bd",      path:"/api/bd/today",       pick:d=>Array.isArray(d)?d:[]},
+    {key:"act",     path:"/api/activity/today", pick:d=>Array.isArray(d)?d:((d&&d.data)||[])},
+  ];
+  const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
+  const ENGINES=["PK","WMA","TCH","CMB","BD","ACT"];
+  let DATA=null, loaded=false, STOCKS=[];
+
+  const num=v=>{ if(v==null)return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; };
+  const F=(o,ks)=>{ if(!o)return undefined; for(const k of ks){ if(o[k]!=null&&o[k]!=="")return o[k]; } return undefined; };
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  async function fj(p){ try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;} }
+  function sigAbbr(s){s=(s||"").toUpperCase();return s==="STRONG BUY"?"SB":s==="BUY"?"B":s==="NEUTRAL"?"N":s==="SELL"?"S":s.slice(0,2);}
+
+  function readAct(r){
+    const raw=String(F(r,["read","profile"])||"").toLowerCase();
+    const dir=String(F(r,["direction","dir"])||"").toLowerCase();
+    if(/stealth/.test(raw))return{dir:"stealth",read:"Stealth accum.",delta:8};
+    if(/distribution|insider sell/.test(raw))return{dir:"bearish",read:"Distribution",delta:-14};
+    if(/accumulation|insider buy/.test(raw))return{dir:"bullish",read:"Accumulation",delta:6};
+    if(/frenzy|retail/.test(raw))return{dir:"caution",read:"Retail frenzy",delta:0};
+    if(dir==="bullish")return{dir:"bullish",read:"Bullish",delta:6};
+    if(dir==="bearish")return{dir:"bearish",read:"Bearish",delta:-12};
+    return{dir:"neutral",read:"Normal",delta:0};
+  }
+
+  function compute(code,f){
+    const agree={PK:0,WMA:0,TCH:0,CMB:0,BD:0,ACT:0}, reads={};
+    if(f.picker){agree.PK=1;reads.PK="#"+(F(f.picker,["rank"])||"?");}else reads.PK="—";
+    let wsig="";
+    if(f.wma){wsig=String(F(f.wma,["signal","verdict"])||"").toUpperCase();agree.WMA=/STRONG BUY|BUY/.test(wsig)?1:0;reads.WMA=wsig||"listed";}else reads.WMA="—";
+    let tsc=null;
+    if(f.tech){tsc=num(F(f.tech,["score"]));agree.TCH=(tsc!=null&&tsc>=70)?1:0;reads.TCH=tsc!=null?Math.round(tsc)+"/100":"listed";}else reads.TCH="—";
+    if(f.combined){agree.CMB=1;reads.CMB="Aligned";}else reads.CMB="Not aligned";
+    let veto=null,bdScore=null;
+    if(f.bd){bdScore=num(F(f.bd,["final_score","score"]));
+      const rj=String(F(f.bd,["reject_reason"])||"").trim();
+      if(rj && !/^(no price history|not enough history)/i.test(rj)) veto=rj;
+      const q=F(f.bd,["qualified"]); const qualified=(q===true||q==="true"||q===1||q==="1");
+      reads.BD=veto?"veto":(bdScore!=null?String(Math.round(bdScore)):"listed");
+      agree.BD=(!veto&&(qualified||(bdScore!=null&&bdScore>=65)))?1:0;
+    }else reads.BD="—";
+    let act={dir:"neutral",read:"Normal",delta:0};
+    if(f.act){act=readAct(f.act);agree.ACT=(act.dir==="bullish"||act.dir==="stealth")?1:0;reads.ACT=act.read;}else reads.ACT="Normal";
+    const agreeN=ENGINES.reduce((a,e)=>a+agree[e],0);
+    const any=f.bd||f.tech||f.wma||f.picker||{};
+    const ltp=num(F(any,["ltp","last","close"]));
+    const sector=F(f.bd||f.tech||f.picker||{},["sector","industry"])||"";
+    const rsi=num(F(f.bd||f.tech||{},["rsi"]));
+    const vol=num(F(f.act||{},["vol_ratio"]));
+    let conv=Math.round((agreeN/6)*82 + act.delta + clamp(((bdScore!=null?bdScore:50)-50)/5,-8,10));
+    conv=clamp(conv,1,99);
+    let verdict=agreeN>=5?"Strong Buy":agreeN>=3?"Buy":agreeN===2?"Watch":agreeN===1?"Speculative":"Watch";
+    let downgraded=false;
+    if(act.dir==="bearish"&&(verdict==="Strong Buy"||verdict==="Buy")){verdict="Watch";downgraded=true;conv=Math.min(conv,55);}
+    if(veto){verdict="Avoid";conv=0;}
+    const mem=[
+      {label:"Picker",val:"",inn:!!f.picker},
+      {label:"WMA",val:sigAbbr(wsig),inn:agree.WMA===1},
+      {label:"Tech",val:tsc!=null?Math.round(tsc):"",inn:agree.TCH===1},
+      {label:"Combined",val:"",inn:!!f.combined},
+      {label:"BD",val:bdScore!=null?Math.round(bdScore):"",inn:agree.BD===1},
+    ];
+    return {code,sector,ltp,rsi,vol,conv,verdict,downgraded,veto,act,agree,agreeN,reads,wsig,mem};
+  }
+
+  const VC={"Strong Buy":"strong","Buy":"buy","Watch":"watch","Speculative":"spec","Avoid":"avoid"};
+  const convCol=c=>c>=80?"var(--green)":c>=60?"var(--green-bright)":c>=45?"var(--gold)":c>0?"#5b4bd0":"var(--red)";
+  const ACTPIP={stealth:"stealth",bullish:"on",bearish:"bear",caution:"warn",neutral:""};
+  const ACTICO={stealth:"\u25C6",bullish:"\u25B2",bearish:"\u25BC",caution:"\u25CF",neutral:"\u25CB"};
+  const ACTCHIP={stealth:"blue",bullish:"g",bearish:"r",caution:"gold",neutral:""};
+
+  function rowHTML(s,i){
+    const veto=!!s.veto;
+    const pips=ENGINES.map(e=>{
+      if(veto&&e==="BD")return '<div class="ms-pip veto">BD</div>';
+      if(e==="ACT")return '<div class="ms-pip '+ACTPIP[s.act.dir]+'">ACT</div>';
+      return '<div class="ms-pip '+(s.agree[e]?'on':'')+'">'+e+'</div>';
+    }).join('');
+    const trendDir=/STRONG BUY|BUY/.test(s.wsig)?"g":/SELL/.test(s.wsig)?"r":"";
+    const trendTxt=/STRONG BUY|BUY/.test(s.wsig)?"\u2197 Uptrend":/SELL/.test(s.wsig)?"\u2198 Down":"\u2192 Flat";
+    const chips=[];
+    chips.push('<span class="ms-chip '+trendDir+'">'+trendTxt+'</span>');
+    if(s.rsi!=null)chips.push('<span class="ms-chip '+(s.rsi>=80?'r':s.rsi<=30?'g':'')+'">RSI '+s.rsi.toFixed(1)+'</span>');
+    if(s.reads.TCH!=="—"&&s.reads.TCH!=="listed")chips.push('<span class="ms-chip">Tech '+s.reads.TCH+'</span>');
+    if(s.vol!=null)chips.push('<span class="ms-chip '+(s.vol>=2?'g':'')+'">Vol '+s.vol.toFixed(1)+'\u00d7</span>');
+    chips.push('<span class="ms-chip '+ACTCHIP[s.act.dir]+'">'+ACTICO[s.act.dir]+' '+s.act.read+'</span>');
+    const sub=(s.sector||'')+(s.ltp!=null?' \u00b7 \u09F3'+s.ltp.toFixed(2):'');
+    return '<div class="ms-card '+(veto?'avoid':'')+'" data-code="'+s.code+'">'+
+      '<div class="ms-row">'+
+        '<div class="ms-rank">'+(i+1)+'</div>'+
+        '<div class="ms-id"><div class="ms-tk">'+s.code+'</div><div class="ms-sub">'+sub+'</div></div>'+
+        '<div class="ms-pips">'+pips+'</div>'+
+        '<div class="ms-conv"><span class="ms-cn" style="color:'+convCol(s.conv)+'">'+(veto?'\u2014':s.conv)+'</span><div class="ms-cbar"><i style="width:'+(veto?0:s.conv)+'%;background:'+convCol(s.conv)+'"></i></div><span class="ms-cl">conviction</span></div>'+
+        '<div style="justify-self:end;text-align:right"><span class="ms-v '+VC[s.verdict]+'">'+s.verdict+'</span>'+(s.downgraded?'<div class="ms-dg">\u2193 Activity override</div>':'')+'</div>'+
+        '<i class="ti ti-chevron-right ms-arrow"></i>'+
+      '</div>'+
+      '<div class="ms-strip">'+chips.join('')+'<span class="ms-hint">tap for full card \u2197</span></div>'+
+    '</div>';
+  }
+
+  function render(){
+    const board=document.getElementById('ms-board'); if(!board)return;
+    if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day, or open the Cross-Tool tab to confirm the feeds are live.</div>'; document.getElementById('ms-count').textContent=''; return; }
+    const top=STOCKS.slice(0,60);
+    board.innerHTML=top.map(rowHTML).join('');
+    document.getElementById('ms-count').textContent=STOCKS.length+' ranked'+(STOCKS.length>60?' \u00b7 showing top 60':'');
+  }
+
+  async function buildMS(){
+    if(loaded){render();return;}
+    document.getElementById('ms-count').textContent='Loading engines\u2026';
+    const res=await Promise.all(FEEDS.map(x=>fj(x.path)));
+    DATA={};
+    FEEDS.forEach((x,i)=>{ (x.pick(res[i])||[]).forEach(r=>{ const code=String(r.code||'').toUpperCase(); if(!code)return; (DATA[code]||(DATA[code]={}))[x.key]=r; }); });
+    loaded=true;
+    STOCKS=Object.keys(DATA).map(c=>compute(c,DATA[c])).filter(s=>s.veto||s.agreeN>=1).sort((a,b)=>b.conv-a.conv);
+    render();
+  }
+
+  function panelHTML(){
+    return '<div class="ms-wrap">'+
+      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Master Signal \u00b7 Conviction Board</div>'+
+      '<div class="ms-lede">One verdict per stock, fused from all six engines and ranked by agreement. The Activity layer is directional \u2014 a bullish read adds conviction, Distribution can drop a technical buy to Watch \u2014 and BD\u2019s safety filter holds the Avoid veto. Tap any row for the full decision card.</div>'+
+      '<div class="ms-bar2"><span class="ms-count" id="ms-count">Loading\u2026</span><button class="ms-reload" id="ms-reload">Reload</button></div>'+
+      '<div id="ms-board"></div>'+
+      '<div class="ms-legend"><b>Verdict:</b> 5\u20136 engines agree \u2192 Strong Buy \u00b7 3\u20134 \u2192 Buy \u00b7 2 \u2192 Watch \u00b7 1 \u2192 Speculative \u00b7 BD veto \u2192 Avoid. &nbsp; <b>Engines:</b> PK Picker \u00b7 WMA \u00b7 TCH Tech \u00b7 CMB Combined \u00b7 BD \u00b7 ACT Activity. Conviction is a v1 equal-weight blend until the backtester sets earned weights.</div>'+
+    '</div>';
+  }
+
+  function hideMaster(){ const mp=document.getElementById('dt-mastersignal'); if(mp)mp.style.display='none'; const tb=document.getElementById('tab-mastersignal'); if(tb)tb.classList.remove('active'); }
+
+  function openMS(el){
+    STD.forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display='none';});
+    const xp=document.getElementById('dt-xtool'); if(xp)xp.style.display='none';
+    const mp=document.getElementById('dt-mastersignal'); if(mp)mp.style.display='block';
+    document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    buildMS();
+  }
+
+  function injectTab(){
+    if(document.getElementById('tab-mastersignal')) return;
+    const tabs=[...document.querySelectorAll('#view-dashboard .tab')]; const anyTab=tabs[0]; if(!anyTab) return;
+    const tab=document.createElement('div'); tab.className='tab'; tab.id='tab-mastersignal'; tab.textContent='Master Signal';
+    tab.onclick=function(){ openMS(tab); };
+    const bdTab=tabs.find(t=>/BD Signal/i.test(t.textContent));
+    if(bdTab) bdTab.parentNode.insertBefore(tab, bdTab.nextSibling); else anyTab.parentNode.appendChild(tab);
+    const host=document.getElementById('dt-overview')?document.getElementById('dt-overview').parentNode:null;
+    if(host){ const p=document.createElement('div'); p.id='dt-mastersignal'; p.style.display='none'; p.innerHTML=panelHTML(); host.appendChild(p);
+      p.addEventListener('click',function(e){ const card=e.target.closest('.ms-card[data-code]'); if(!card)return; const code=card.getAttribute('data-code'); const s=STOCKS.find(x=>x.code===code); if(window.__openBDCard){ window.__openBDCard(code, s?s.mem:[]); } });
+      const rb=p.querySelector('#ms-reload'); if(rb) rb.onclick=function(){ loaded=false; buildMS(); };
+    }
+    if(window.switchDashTab && !window._msWrapped){ window._msWrapped=true; const orig=window.switchDashTab; window.switchDashTab=function(tt,el){ hideMaster(); return orig(tt,el); }; }
+    const xtab=document.getElementById('tab-xtool'); if(xtab && !xtab._msHook){ xtab._msHook=true; const oc=xtab.onclick; xtab.onclick=function(){ hideMaster(); if(oc) return oc.apply(this,arguments); }; }
+  }
+
+  function boot(){ injectTab(); }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+})();
+</script>
+<!-- ===== end Master Signal ===== -->
+
 </body>
 </html>

@@ -1913,7 +1913,7 @@ async function buildSectors(){
     {key:"wma",     path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[]},
     {key:"tech",    path:"/api/tech/today",     pick:d=>Array.isArray(d)?d:[]},
     {key:"combined",path:"/api/combined/today", pick:d=>Array.isArray(d)?d:[]},
-    {key:"bd",      path:"/api/bd/today",       pick:d=>Array.isArray(d)?d:[]},
+    {key:"bd",      path:"/api/bd/all",         pick:d=>Array.isArray(d)?d:[]},
     {key:"act",     path:"/api/activity/today", pick:d=>Array.isArray(d)?d:((d&&d.data)||[])},
   ];
   const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
@@ -2158,7 +2158,7 @@ async function buildSectors(){
     DATA={};
     FEEDS.forEach((x,i)=>{ (x.pick(res[i])||[]).forEach(r=>{ const code=String(r.code||'').toUpperCase(); if(!code)return; (DATA[code]||(DATA[code]={}))[x.key]=r; }); });
     loaded=true;
-    STOCKS=Object.keys(DATA).map(c=>compute(c,DATA[c])).filter(s=>s.veto||s.agreeN>=1).sort((a,b)=>b.conv-a.conv);
+    STOCKS=Object.keys(DATA).map(c=>compute(c,DATA[c])).filter(s=>s.agreeN>=1).sort((a,b)=>b.conv-a.conv);
     render();
   }
 

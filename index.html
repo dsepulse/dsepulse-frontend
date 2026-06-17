@@ -2541,5 +2541,122 @@ async function buildSectors(){
 </script>
 <!-- ===== end My Holdings ===== -->
 
+<!-- ===== DSE Pulse · Smart Money (Activity engine) ===== -->
+<style>
+  #dt-smartmoney .sm-lede{font-size:10px;color:var(--text3);margin-bottom:14px;max-width:760px;line-height:1.6}
+  #dt-smartmoney .sm-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+  #dt-smartmoney .sm-count{font-size:11px;color:var(--text3)}
+  #dt-smartmoney .sm-reload{padding:7px 12px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--text2);font-size:12px;cursor:pointer}
+  #dt-smartmoney .sm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+  #dt-smartmoney .sm-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:4px solid var(--text3)}
+  #dt-smartmoney .sm-card.bull{border-left-color:var(--green)} #dt-smartmoney .sm-card.blue{border-left-color:#2f7fd0}
+  #dt-smartmoney .sm-card.bear{border-left-color:var(--red)} #dt-smartmoney .sm-card.warn{border-left-color:var(--gold)}
+  #dt-smartmoney .sm-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  #dt-smartmoney .sm-code{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--navy)}
+  #dt-smartmoney .sm-sec{font-size:10px;color:var(--text3)}
+  #dt-smartmoney .sm-px{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);text-align:right}
+  #dt-smartmoney .sm-px small{display:block;font-size:10px;font-weight:700}
+  #dt-smartmoney .sm-px small.up{color:var(--green)} #dt-smartmoney .sm-px small.dn{color:var(--red)}
+  #dt-smartmoney .sm-read{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:3px 8px;border-radius:5px;margin-bottom:7px}
+  #dt-smartmoney .sm-read.bull{color:var(--green);background:var(--green-bg);border:1px solid var(--green-border)}
+  #dt-smartmoney .sm-read.blue{color:#2f7fd0;background:#eaf3ff;border:1px solid #bcd9ff}
+  #dt-smartmoney .sm-read.bear{color:var(--red);background:var(--red-bg);border:1px solid var(--red-border)}
+  #dt-smartmoney .sm-read.warn{color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold-border)}
+  #dt-smartmoney .sm-read.neu{color:var(--text3);background:var(--cream2);border:1px solid var(--border)}
+  #dt-smartmoney .sm-note{font-size:11px;color:var(--text2);line-height:1.5}
+  #dt-smartmoney .sm-empty{padding:34px;text-align:center;color:var(--text3);font-size:12px;background:var(--white);border:1px solid var(--border);border-radius:10px}
+  #dt-smartmoney .sm-foot{font-size:10px;color:var(--text3);margin-top:12px}
+</style>
+<script>
+(function(){
+  const API="https://dsepulse-backend-production.up.railway.app";
+  const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
+  let loaded=false, ROWS=[];
+  async function fj(p){ try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;} }
+  const num=v=>{ if(v==null)return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; };
+  const F=(o,ks)=>{ if(!o)return undefined; for(const k of ks){ if(o[k]!=null&&o[k]!=="")return o[k]; } return undefined; };
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // same reading the Master Signal ACT pip uses
+  function readAct(r){
+    const raw=String(F(r,["read","profile"])||"").toLowerCase();
+    const dir=String(F(r,["direction","dir"])||"").toLowerCase();
+    const note=String(F(r,["note","reason"])||"");
+    if(/stealth/.test(raw))return{kind:"blue",label:"Stealth accumulation",note:note||"volume surging while price stays flat \u2014 positioning before the move."};
+    if(/distribution|insider sell/.test(raw))return{kind:"bear",label:"Distribution",note:note||"a block sold into the move \u2014 someone offloading."};
+    if(/accumulation|insider buy/.test(raw))return{kind:"bull",label:"Accumulation",note:note||"a block bought above market \u2014 strong hands paying up."};
+    if(/frenzy|retail/.test(raw))return{kind:"warn",label:"Retail frenzy",note:note||"big volume from tiny trades near the circuit \u2014 the late crowd."};
+    if(dir==="bullish")return{kind:"bull",label:"Bullish",note:note};
+    if(dir==="bearish")return{kind:"bear",label:"Bearish",note:note};
+    return{kind:"neu",label:"Normal",note:note||""};
+  }
+
+  function panelHTML(){
+    return '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Smart Money \u00b7 Activity Detector</div>'+
+      '<div class="sm-lede">Where the big hands are moving. This engine watches block trades and volume vs price to flag <b>stealth accumulation</b> (heavy buying while price stays flat), <b>distribution</b> (blocks sold into a rally), <b>accumulation</b> (blocks bought above market) and <b>retail frenzy</b>. It\u2019s the directional ACT layer inside Master Signal \u2014 here you see it on its own.</div>'+
+      '<div class="sm-bar"><span class="sm-count" id="sm-count">Loading\u2026</span><button class="sm-reload" id="sm-reload">Reload</button></div>'+
+      '<div id="sm-board"></div>';
+  }
+
+  function render(){
+    const board=document.getElementById('sm-board'); if(!board)return;
+    const cnt=document.getElementById('sm-count');
+    const enriched=ROWS.map(r=>({code:String(F(r,["code"])||"").toUpperCase(),
+        sector:F(r,["sector","industry"])||"", ltp:num(F(r,["ltp","last","close"])),
+        pct:num(F(r,["pct","change","change_pct","pct_change"])), a:readAct(r)})).filter(x=>x.code);
+    const notable=enriched.filter(x=>x.a.kind!=="neu");
+    if(!enriched.length){ board.innerHTML='<div class="sm-empty">The Smart Money feed is empty right now. If your Activity Detector tool hasn\u2019t uploaded for the latest session, this stays blank until it does \u2014 on a weekend it may carry the last trading day.</div>'; if(cnt)cnt.textContent=''; return; }
+    if(!notable.length){ board.innerHTML='<div class="sm-empty">No notable smart-money activity in the latest session \u2014 no stealth accumulation, distribution or blocks flagged across '+enriched.length+' names scanned.</div>'; if(cnt)cnt.textContent=enriched.length+' names scanned'; return; }
+    const order={blue:0,bear:1,bull:2,warn:3};
+    notable.sort((p,q)=>(order[p.a.kind]-order[q.a.kind])||p.code.localeCompare(q.code));
+    board.innerHTML='<div class="sm-grid">'+notable.map(x=>{
+      const px=x.ltp!=null?('<div class="sm-px">\u09F3'+x.ltp.toFixed(2)+(x.pct!=null?'<small class="'+(x.pct>=0?'up':'dn')+'">'+(x.pct>=0?'+':'')+x.pct.toFixed(2)+'%</small>':'')+'</div>'):'';
+      return '<div class="sm-card '+x.a.kind+'">'+
+        '<div class="sm-top"><div><div class="sm-code">'+esc(x.code)+'</div>'+(x.sector?'<div class="sm-sec">'+esc(x.sector)+'</div>':'')+'</div>'+px+'</div>'+
+        '<span class="sm-read '+x.a.kind+'">'+esc(x.a.label)+'</span>'+
+        (x.a.note?'<div class="sm-note">'+esc(x.a.note)+'</div>':'')+
+      '</div>';
+    }).join('')+'</div>'+
+    '<div class="sm-foot">Showing '+notable.length+' name'+(notable.length===1?'':'s')+' with notable activity \u00b7 '+enriched.length+' scanned. Blue = stealth \u00b7 Green = accumulation/bullish \u00b7 Red = distribution/bearish \u00b7 Gold = retail frenzy.</div>';
+    if(cnt)cnt.textContent=notable.length+' flagged \u00b7 '+enriched.length+' scanned';
+  }
+
+  async function buildSM(){
+    if(loaded){render();return;}
+    const cnt=document.getElementById('sm-count'); if(cnt)cnt.textContent='Loading\u2026';
+    const d=await fj('/api/activity/today');
+    ROWS=Array.isArray(d)?d:((d&&d.data)||[]);
+    loaded=true; render();
+  }
+
+  function hideSM(){ const p=document.getElementById('dt-smartmoney'); if(p)p.style.display='none'; const tb=document.getElementById('tab-smartmoney'); if(tb)tb.classList.remove('active'); }
+  function openSM(el){
+    STD.forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display='none';});
+    ['dt-xtool','dt-mastersignal'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    const p=document.getElementById('dt-smartmoney'); if(p)p.style.display='block';
+    document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    buildSM();
+  }
+  function injectTab(){
+    if(document.getElementById('tab-smartmoney')) return;
+    const tabs=[...document.querySelectorAll('#view-dashboard .tab')]; const anyTab=tabs[0]; if(!anyTab) return;
+    const tab=document.createElement('div'); tab.className='tab'; tab.id='tab-smartmoney'; tab.textContent='Smart Money';
+    tab.onclick=function(){ openSM(tab); };
+    const bdTab=tabs.find(t=>/BD Signal/i.test(t.textContent));
+    if(bdTab) bdTab.parentNode.insertBefore(tab, bdTab.nextSibling); else anyTab.parentNode.appendChild(tab);
+    const host=document.getElementById('dt-overview')?document.getElementById('dt-overview').parentNode:null;
+    if(host){ const p=document.createElement('div'); p.id='dt-smartmoney'; p.style.display='none'; p.innerHTML=panelHTML(); host.appendChild(p);
+      const rb=p.querySelector('#sm-reload'); if(rb) rb.onclick=function(){ loaded=false; buildSM(); };
+    }
+    if(window.switchDashTab && !window._smWrapped){ window._smWrapped=true; const orig=window.switchDashTab; window.switchDashTab=function(tt,el){ hideSM(); return orig.apply(this,arguments); }; }
+    ['tab-xtool','tab-mastersignal'].forEach(id=>{ const t=document.getElementById(id); if(t && !t._smHook){ t._smHook=true; const oc=t.onclick; t.onclick=function(){ hideSM(); if(oc) return oc.apply(this,arguments); }; } });
+  }
+  function boot(){ injectTab(); setTimeout(injectTab,800); }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+})();
+</script>
+<!-- ===== end Smart Money ===== -->
+
 </body>
 </html>

@@ -2615,7 +2615,7 @@ async function buildSectors(){
 (function(){
   const API="https://dsepulse-backend-production.up.railway.app";
   const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
-  let loaded=false, ROWS=[], ITEMS=[], _fb=false, _enriched=false;
+  let loaded=false, ROWS=[], ITEMS=[], _fb=false, _enriched=false, NEWMETA='';
 
   async function fj(p){ try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;} }
   const num=v=>{ if(v==null)return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; };
@@ -2699,7 +2699,8 @@ async function buildSectors(){
         '<div class="smf-into">'+esc(into)+'</div></div>'+
       '<div class="smf-counts">'+ORDER.map(k=>
         '<div><div class="smf-cnum" style="color:'+ST[k].num+'">'+c[k]+'</div><div class="smf-clbl">'+ST[k].label+'</div></div>'
-      ).join('')+'</div></div>';
+      ).join('')+'</div></div>'+
+      (NEWMETA?'<div style="font-size:11px;color:var(--text3);margin:8px 0 0 2px">'+NEWMETA+'</div>':'');
   }
 
   function cardHTML(x){
@@ -2724,6 +2725,7 @@ async function buildSectors(){
         '<span class="smf-code">'+esc(x.code)+'</span>'+
         '<span class="smf-sec">'+esc(sec)+(price?' \u00b7 '+price:'')+'</span>'+
         '<span class="smf-spk" id="spk-'+esc(x.code)+'">'+spk+'</span>'+
+        (x.isNew?'<span style="font-size:9px;font-weight:800;letter-spacing:.04em;padding:3px 6px;border-radius:4px;background:#FDE68A;color:#92400E">NEW</span>':'')+
         '<span class="smf-badge" style="background:'+st.dot+'">'+st.label+'</span>'+
       '</div>'+
       '<div class="smf-metrics">'+metrics.join('')+'</div>'+
@@ -2785,6 +2787,23 @@ async function buildSectors(){
     }));
   }
 
+  function markNew(){
+    try{
+      let scanDate=''; for(const r of ROWS){ if(r&&r.trade_date){ scanDate=r.trade_date; break; } }
+      if(!scanDate) scanDate=new Date().toISOString().slice(0,10);
+      const cur=ITEMS.map(x=>x.code);
+      let store={}; try{ store=JSON.parse(localStorage.getItem('sm_newtoday')||'{}'); }catch(e){}
+      let baseline=[];
+      if(store.curDate && store.curDate!==scanDate){ baseline=store.curCodes||[]; store={prevDate:store.curDate,prevCodes:store.curCodes||[],curDate:scanDate,curCodes:cur}; }
+      else if(store.curDate===scanDate){ baseline=store.prevCodes||[]; store.curCodes=cur; }
+      else { store={prevDate:'',prevCodes:[],curDate:scanDate,curCodes:cur}; }
+      const bset={}; baseline.forEach(c=>{bset[c]=1;});
+      let n=0; ITEMS.forEach(x=>{ x.isNew = baseline.length>0 && !bset[x.code]; if(x.isNew)n++; });
+      try{ localStorage.setItem('sm_newtoday',JSON.stringify(store)); }catch(e){}
+      NEWMETA='As of '+scanDate+(n?(' \u00b7 '+n+' new today'):'');
+    }catch(e){ NEWMETA=''; }
+  }
+
   async function buildSM(){
     if(!loaded){
       const head=document.getElementById('smf-head'); if(head)head.innerHTML='<div class="smf-empty" style="background:transparent;border:0;padding:10px">Loading flow signals\u2026</div>';
@@ -2794,6 +2813,7 @@ async function buildSectors(){
       ITEMS=ROWS.map(r=>{ const code=String(r.code||'').toUpperCase(); if(!code)return null; const s=msFor(code);
         return {code,r,s,status:classify(r,s),score:num(r.activity_score)||0,conv:s?s.conv:0,pct:num(r.pct),
                 sector:(s&&s.sector)||r.sector||r.cat||'',prices:null}; }).filter(Boolean);
+      markNew();
       loaded=true; populateFilters();
     }
     renderHead(); renderBody(); enrichSparklines();

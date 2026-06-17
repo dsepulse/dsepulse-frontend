@@ -2355,13 +2355,39 @@ async function buildSectors(){
   function gateSignin(){ return '<div class="hd-gate"><div class="hd-gate-t">Sign in to track your holdings</div><div class="hd-gate-s">Your portfolio is private to your account \u2014 only you can see it. Sign in to add the stocks you own and follow their live signals.</div><button class="hd-gate-btn" onclick="window.openAuth&&window.openAuth(\'login\')">Sign in</button></div>'; }
   function gateTrial(msg){ return '<div class="hd-gate"><div class="hd-gate-t">Your free trial has ended</div><div class="hd-gate-s">'+esc(msg||"Upgrade to keep using Holdings.")+'</div><button class="hd-gate-btn" onclick="window.navTo?navTo(\'pricing-section\'):0">View plans</button></div>'; }
 
-  function actionFor(L){
-    if(!L||!L.plan||!(L.plan.entry>0)||L.ltp==null)return{label:"\u2014",cls:"hold"};
-    const ltp=L.ltp, t1=L.plan.target, t2=+(L.plan.entry*1.10).toFixed(2), sl=L.plan.stop;
-    if(ltp<=sl)return{label:"Cut loss",cls:"cut"};
-    if(ltp>=t2)return{label:"Take profit",cls:"profit"};
-    if(ltp>=t1)return{label:"Trim",cls:"hold"};
-    return{label:"Hold",cls:"hold"};
+  // Recommendation for a stock you ALREADY hold. Fuses the six engines + conviction
+  // with your trade levels. If the engines reject a name you hold, it says exit/reduce
+  // rather than a blind "Hold". Signal-derived status, not financial advice.
+  function actionFor(L,h){
+    if(!L||L.ltp==null)return{label:"\u2014",cls:"hold",why:""};
+    const ltp=L.ltp, conv=L.conv||0, agreeN=L.agreeN||0, verdict=L.verdict||"";
+    const dir=(L.act&&L.act.dir)||"neutral", plan=L.plan;
+    const inProfit = h ? (ltp>h.avg) : false;
+    const bdRead=(L.reads&&L.reads.BD)||"\u2014", tchRead=(L.reads&&L.reads.TCH)||"\u2014";
+    const uncovered = agreeN===0 && (bdRead==="\u2014"||bdRead==="") && (tchRead==="\u2014"||tchRead==="listed"||tchRead==="");
+    // 1 — hard risk first
+    if(L.veto||verdict==="Avoid")
+      return{label:"Exit",cls:"cut",why:"BD\u2019s safety filter flagged a risk on this name \u2014 exit the position."};
+    if(plan&&plan.stop&&ltp<=plan.stop)
+      return{label:"Cut loss",cls:"cut",why:"Price has hit your stop loss \u2014 cut the loss."};
+    // 2 — engines no longer back a name you hold -> get out (the key rule)
+    if(uncovered)
+      return{label:"No signal",cls:"hold",why:"Not enough engine coverage today to judge \u2014 review manually."};
+    if(agreeN<=1||conv<25)
+      return inProfit
+        ? {label:"Sell",cls:"cut",why:"The engines no longer support this \u2014 you\u2019re still green, so this is a chance to exit."}
+        : {label:"Exit",cls:"cut",why:"The engines have rejected this name \u2014 reduce or exit rather than averaging down."};
+    if(dir==="bearish")
+      return{label:"Reduce",cls:"cut",why:"Activity turned bearish \u2014 trim your exposure."};
+    // 3 — still supported: take profit against your levels
+    if(plan){ const t2=+(plan.entry*1.10).toFixed(2);
+      if(ltp>=t2) return{label:"Take profit",cls:"profit",why:"Up past your +10% target \u2014 consider taking profit."};
+      if(plan.target&&ltp>=plan.target) return{label:"Trim",cls:"profit",why:"Up past your +5% target \u2014 lock some in, let the rest run."};
+    }
+    // 4 — strong vs lukewarm
+    if((verdict==="Strong Buy"||verdict==="Buy")&&agreeN>=3)
+      return{label:"Hold",cls:"profit",why:agreeN+" of 6 engines still back it \u2014 hold."};
+    return{label:"Hold",cls:"hold",why:"Mixed signals \u2014 hold and watch."};
   }
   function totals(){
     let inv=0,cur=0,priced=0;
@@ -2388,10 +2414,15 @@ async function buildSectors(){
     const pnlTxt=pnl==null?"\u2014":(pnl>=0?"+":"-")+money(Math.abs(pnl));
     const conv=L?'<span class="hd-score" style="color:'+convCol(L.conv)+'">'+(L.veto?"\u2014":L.conv)+'</span>':'<span class="hd-mono dim">\u2014</span>';
     const verdict=L?'<span class="hd-pill '+vClass(L.verdict)+'">'+esc(L.verdict)+'</span>':'<span class="hd-pill na">\u2014</span>';
-    const a=actionFor(L); const action='<span class="hd-act '+a.cls+'">'+a.label+'</span>';
+    const a=actionFor(L,h); const action='<span class="hd-act '+a.cls+'">'+a.label+'</span>';
     let detail;
     if(L){
       const plan=L.plan;
+      const recC={cut:["var(--red)","var(--red-bg)","var(--red-border)"],profit:["var(--green)","var(--green-bg)","var(--green-border)"],hold:["var(--gold)","var(--gold-bg)","var(--gold-border)"]}[a.cls]||["var(--text2)","var(--cream2)","var(--border)"];
+      const recBanner = a.why ? '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 6px;padding:9px 12px;border-radius:8px;background:'+recC[1]+';border:1px solid '+recC[2]+'">'+
+        '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:'+recC[0]+'">Recommendation</span>'+
+        '<span style="font-size:12px;font-weight:800;color:'+recC[0]+'">'+esc(a.label)+'</span>'+
+        '<span style="font-size:11px;color:var(--text2);flex:1;min-width:160px">'+esc(a.why)+'</span></div>' : '';
       const t1=plan?money2(plan.target):"\u2014", t2=plan?money2(+(plan.entry*1.10).toFixed(2)):"\u2014", sl=plan?money2(plan.stop):"\u2014";
       const wma=(L.tech&&L.tech.trend&&L.tech.trend.v)||"\u2014";
       const mv=(L.ltp!=null)?money(L.ltp*h.qty):"\u2014";
@@ -2410,6 +2441,7 @@ async function buildSectors(){
       detail='<div class="hd-lbl">Conviction</div>'+
         '<div class="hd-conv"><span class="hd-cn" style="color:'+convCol(L.conv)+'">'+(L.veto?"\u2014":L.conv)+'</span><div class="hd-cbar"><i style="width:'+(L.veto?0:L.conv)+'%;background:'+convCol(L.conv)+'"></i></div><span class="hd-cv" style="color:'+convCol(L.conv)+'">'+esc(L.verdict)+'</span></div>'+
         (L.why?'<div class="hd-why">'+esc(L.why)+'</div>':'')+
+        recBanner+
         '<div class="hd-lbl mt">Six engines</div><div class="hd-eng">'+engHTML(L)+'</div>'+
         '<div class="hd-lbl mt">Technical indicators</div><div class="hd-ind">'+indHTML(L.tech)+'</div>'+
         '<div class="hd-lbl mt">Your position</div>'+pos+levels;
@@ -2451,7 +2483,7 @@ async function buildSectors(){
     let body;
     if(!HOLD.length){ body='<div class="hd-card"><div class="hd-empty">No holdings yet. Tap <b>+ Add holding</b> to start tracking your portfolio.</div></div>'; }
     else{ body='<div class="hd-card"><div class="hd-thead"><div>Stock</div><div>LTP</div><div>Avg cost</div><div>P&amp;L</div><div>Conv.</div><div>Verdict</div><div>Action</div><div></div></div>'+HOLD.map(rowHTML).join("")+'</div>'; }
-    const note='<div class="hd-note">Conviction, engines, technicals and levels are pulled live from your Master Signal engines by stock code, so they match the board. <b>Action</b> (\u2265 target \u2192 take profit, \u2264 stop \u2192 cut loss, else hold) is a signal-derived status, not financial advice. Your holdings are private to your account.</div>';
+    const note='<div class="hd-note">Conviction, engines, technicals and levels are pulled live from your Master Signal engines by stock code, so they match the board. <b>Recommendation</b> reads the engines for a stock you already hold: if the engines reject it (no agreement / low conviction / BD veto) it flags <b>Exit / Reduce</b> rather than a blind Hold; past your target \u2192 Take profit / Trim; stop hit \u2192 Cut loss; engines still backing it \u2192 Hold. It\u2019s a signal-derived status, not financial advice. Your holdings are private to your account.</div>';
     root.innerHTML=summary+head+body+note;
   }
   function flash(msg,loss){ const f=$("hd-flash"); if(!f)return; f.textContent=msg; f.className="hd-flash show"+(loss?" loss":""); setTimeout(()=>{ const g=$("hd-flash"); if(g)g.className="hd-flash"; },4500); }

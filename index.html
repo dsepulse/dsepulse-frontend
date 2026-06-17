@@ -2264,5 +2264,183 @@ async function buildSectors(){
 </script>
 <!-- ===== end Master Signal ===== -->
 
+<!-- ===== Smart Money (standalone flow list) ===== -->
+<style>
+  #dt-smartmoney .sm-card{transition:border-color .12s}
+  #dt-smartmoney .sm-card:hover{border-color:#0D1F3C !important}
+  #dt-smartmoney select:focus{outline:none;border-color:#0D1F3C}
+</style>
+<script>
+(function(){
+  const API="https://dsepulse-backend-production.up.railway.app";
+  const STD=['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
+  const DISP={
+    TRIGGERED:{label:'Breakout',bg:'#1A6B3C',note:'Enter on the breakout candle \u2014 smart money already in.'},
+    WATCH:{label:'Coiled',bg:'#B8860B',note:'Coiled and ready \u2014 watchlist, wait for the breakout (~D+3).'},
+    ACCUMULATING:{label:'Inflow',bg:'#1D4ED8',note:'Accumulation building \u2014 watch, not yet a buy.'},
+    AVOID:{label:'Distribution',bg:'#B91C1C',note:'Smart money selling into strength \u2014 avoid or trim.'}
+  };
+  const ORDER=['TRIGGERED','WATCH','ACCUMULATING','AVOID'];
+  const num=v=>{ if(v==null)return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?null:n; };
+  const F=(o,ks)=>{ if(!o)return undefined; for(const k of ks){ if(o[k]!=null&&o[k]!=='')return o[k]; } return undefined; };
+  let smLoaded=false, smRows=[], smFilterSec='', smFilterSt='', smSort='strength';
+
+  async function fj(p){ try{ const r=await fetch(API+p); return await r.json(); }catch(e){ return null; } }
+  function indexBy(arr){ const m={}; (arr||[]).forEach(r=>{ const c=String(r&&r.code||'').toUpperCase(); if(c)m[c]=r; }); return m; }
+
+  function agreeCount(code,F6){
+    let n=0;
+    if(F6.pk[code]) n++;
+    const w=F6.wma[code]; if(w&&/STRONG BUY|BUY/.test(String(F(w,['signal','verdict'])||'').toUpperCase())) n++;
+    const t=F6.tech[code]; if(t){ const sc=num(F(t,['score'])); if(sc!=null&&sc>=70) n++; }
+    if(F6.cmb[code]) n++;
+    const b=F6.bd[code]; if(b){ const rj=String(F(b,['reject_reason'])||'').trim(); const rejected=rj.length>0||String(F(b,['signal'])||'').toUpperCase()==='REJECTED'; const sc=num(F(b,['final_score','score'])); const q=F(b,['qualified']); const qual=(q===true||q==='true'||q===1||q==='1'); if(!rejected&&(qual||(sc!=null&&sc>=65))) n++; }
+    const a=F6.act[code]; if(a){ const dir=String(F(a,['direction','read'])||'').toLowerCase(); if(/bull|stealth|accum|up/.test(dir)) n++; }
+    return n;
+  }
+  function spark(prices,color){
+    const p=(prices||[]).map(num).filter(v=>v!=null).slice(-30);
+    if(p.length<4) return '<svg width="78" height="26"></svg>';
+    const mn=Math.min.apply(null,p), mx=Math.max.apply(null,p), rng=(mx-mn)||1, W=78,H=26,pad=3;
+    const pts=p.map((v,i)=>{ const x=(i/(p.length-1))*W; const y=H-pad-((v-mn)/rng)*(H-2*pad); return x.toFixed(1)+','+y.toFixed(1); }).join(' ');
+    return '<svg width="78" height="26" viewBox="0 0 78 26"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.6"/></svg>';
+  }
+  function metaLine(r){
+    const L=[];
+    if(r.rsi!=null) L.push('RSI <b style="color:#0D1F3C">'+Math.round(r.rsi)+'</b>');
+    if(r.circuit!=null) L.push('<b style="color:#0D1F3C">'+r.circuit.toFixed(1)+'%</b> to circuit');
+    const bd=(r.block_dir||'').toUpperCase();
+    if(/BUY/.test(bd)) L.push('<span style="color:#1A6B3C;font-weight:700">\u25B2 block BUY</span>');
+    else if(/SELL/.test(bd)) L.push('<span style="color:#B91C1C;font-weight:700">\u25BC block SELL</span>');
+    if(r.vol_ratio!=null&&r.vol_ratio>0) L.push('vol <b style="color:#0D1F3C">\u00d7'+r.vol_ratio.toFixed(1)+'</b>');
+    const strong=r.agree>=3;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#6b6a62;margin-bottom:9px;gap:10px;flex-wrap:wrap">'+
+      '<span>'+(L.length?L.join(' &nbsp;&middot;&nbsp; '):'\u2014')+'</span>'+
+      '<span style="background:'+(strong?'#EAF1FB':'#F1EFE8')+';color:'+(strong?'#1D4ED8':'#5F5E5A')+';font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap">'+r.agree+'/6 engines</span>'+
+    '</div>';
+  }
+  function planCells(r){
+    const cell=(lab,val,col)=>'<div style="flex:1"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#a39e92">'+lab+'</div><div style="font-family:ui-monospace,monospace;font-weight:700;font-size:13px;color:'+col+'">'+val+'</div></div>';
+    return '<div style="display:flex;border-top:1px solid #F0EBDF;padding-top:9px">'+
+      cell('Entry', r.entry!=null?('\u09F3'+r.entry.toFixed(2)):'\u2014','#0D1F3C')+
+      cell('Target', r.target!=null?('\u09F3'+r.target.toFixed(2)):'\u2014','#1A6B3C')+
+      cell('Stop', r.stop!=null?('\u09F3'+r.stop.toFixed(2)):'\u2014','#B91C1C')+
+      cell('R:R', r.rr!=null?(r.rr.toFixed(1)+'\u00d7'):'\u2014','#0D1F3C')+
+    '</div>';
+  }
+  function rowHTML(r){
+    const d=DISP[r.status]; if(!d) return '';
+    return '<div class="sm-card" data-code="'+r.code+'" style="border:1px solid #E3DDD0;border-radius:10px;background:#fff;padding:12px 14px;margin-bottom:7px;cursor:pointer">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<span style="font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:15px;color:#0D1F3C">'+r.code+'</span>'+
+        '<span style="font-size:11px;color:#8b867b;flex:1">'+(r.sector||'')+' &middot; \u09F3'+(r.ltp!=null?r.ltp.toFixed(2):'\u2014')+'</span>'+
+        spark(r.prices,d.bg)+
+        '<span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:4px 9px;border-radius:5px;color:#fff;background:'+d.bg+'">'+d.label+'</span>'+
+      '</div>'+ metaLine(r)+ planCells(r)+
+    '</div>';
+  }
+  function render(){
+    const board=document.getElementById('sm-board'); if(!board)return;
+    const cnt=st=>smRows.filter(r=>r.status===st).length;
+    const inRows=smRows.filter(r=>r.status!=='AVOID');
+    const secCount={}; inRows.forEach(r=>{ if(r.sector)secCount[r.sector]=(secCount[r.sector]||0)+1; });
+    const topSec=Object.keys(secCount).sort((a,b)=>secCount[b]-secCount[a]).slice(0,3).join(' \u00b7 ')||'\u2014';
+    const strip=document.getElementById('sm-strip');
+    if(strip) strip.innerHTML=
+      '<div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8fa3c4;margin-bottom:4px">Smart money flowing into</div><div style="font-size:14px;font-weight:700;color:#fff">'+topSec+'</div></div>'+
+      '<div style="display:flex;gap:16px;text-align:center">'+
+        '<div><div style="font-size:18px;font-weight:800;color:#5fd08a">'+cnt('TRIGGERED')+'</div><div style="font-size:9px;color:#8fa3c4;text-transform:uppercase">Breakout</div></div>'+
+        '<div><div style="font-size:18px;font-weight:800;color:#e8b84b">'+cnt('WATCH')+'</div><div style="font-size:9px;color:#8fa3c4;text-transform:uppercase">Coiled</div></div>'+
+        '<div><div style="font-size:18px;font-weight:800;color:#6ea8f0">'+cnt('ACCUMULATING')+'</div><div style="font-size:9px;color:#8fa3c4;text-transform:uppercase">Inflow</div></div>'+
+        '<div><div style="font-size:18px;font-weight:800;color:#e57373">'+cnt('AVOID')+'</div><div style="font-size:9px;color:#8fa3c4;text-transform:uppercase">Distrib</div></div>'+
+      '</div>';
+    const sel=document.getElementById('sm-sec');
+    if(sel&&sel.options.length<=1){ Array.from(new Set(smRows.map(r=>r.sector).filter(Boolean))).sort().forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); }); }
+    let rows=smRows.slice();
+    if(smFilterSec) rows=rows.filter(r=>r.sector===smFilterSec);
+    if(smFilterSt) rows=rows.filter(r=>r.status===smFilterSt);
+    rows.sort((a,b)=> smSort==='price'?((b.ltp||0)-(a.ltp||0)) : smSort==='conv'?(b.agree-a.agree||b.dir-a.dir) : (b.dir-a.dir||b.agree-a.agree));
+    if(!rows.length){ board.innerHTML='<div style="font-size:12px;color:#8b867b;padding:24px;text-align:center;border:1px dashed #E3DDD0;border-radius:10px">No smart-money shares match. On a flat market the scanner stays quiet \u2014 check back after an active session.</div>'; return; }
+    let html='';
+    ORDER.forEach(st=>{ const gr=rows.filter(r=>r.status===st); if(!gr.length)return; const d=DISP[st];
+      html+='<div style="display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8b867b;margin-bottom:3px"><span style="width:8px;height:8px;border-radius:50%;background:'+d.bg+'"></span>'+d.label+' \u00b7 '+gr.length+'</div>'+
+        '<div style="font-size:11px;color:#a39e92;margin-bottom:9px;font-style:italic">'+d.note+'</div>'+
+        gr.map(rowHTML).join('')+'<div style="height:12px"></div>';
+    });
+    board.innerHTML=html;
+  }
+  async function buildSM(force){
+    const board=document.getElementById('sm-board'); if(!board)return;
+    if(smLoaded&&!force){ render(); return; }
+    const cd=document.getElementById('sm-count'); if(cd)cd.textContent='Loading\u2026';
+    const res=await Promise.all([fj('/api/signals/scan'),fj('/api/picks/today'),fj('/api/wma/today'),fj('/api/tech/today'),fj('/api/combined/today'),fj('/api/bd/all'),fj('/api/activity/today')]);
+    const scan=res[0];
+    const F6={ pk:indexBy((res[1]&&res[1].picks)||[]), wma:indexBy(Array.isArray(res[2])?res[2]:[]), tech:indexBy(Array.isArray(res[3])?res[3]:[]), cmb:indexBy(Array.isArray(res[4])?res[4]:[]), bd:indexBy(Array.isArray(res[5])?res[5]:[]), act:indexBy(Array.isArray(res[6])?res[6]:((res[6]&&res[6].data)||[])) };
+    const all=((scan&&scan.results)||[]);
+    smRows=all.filter(r=>DISP[r.status]).map(r=>{ const code=String(r.code).toUpperCase(); const a=F6.act[code]||{};
+      return { code:code, status:r.status, dir:num(r.dir_score)||0, ltp:num(r.ltp), sector:r.sector||'', agree:agreeCount(code,F6), block_dir:F(a,['block_dir'])||'', vol_ratio:num(F(a,['vol_ratio'])), entry:null,target:null,stop:null,rr:null,rsi:null,circuit:null,prices:null }; });
+    if(cd)cd.textContent=smRows.length+' smart-money shares \u00b7 '+all.length+' scanned';
+    smLoaded=true; render();
+    await Promise.all(smRows.map(async row=>{
+      const d=await fj('/api/bd/eval/'+encodeURIComponent(row.code));
+      if(!d||typeof d!=='object')return;
+      let e=num(F(d,['entry'])); if(e==null&&row.ltp!=null)e=row.ltp;
+      let t=num(F(d,['target','target_l1'])), s=num(F(d,['sl','stop'])), rr=num(F(d,['rr']));
+      if(e!=null&&e>0){ if(t==null)t=+(e*1.05).toFixed(2); if(s==null)s=+(e*0.97).toFixed(2); if(rr==null||!isFinite(rr))rr=((t-e)>0&&(e-s)>0)?+((t-e)/(e-s)).toFixed(1):null; }
+      row.entry=e; row.target=t; row.stop=s; row.rr=rr;
+      const rsi=num(F(d,['rsi'])); if(rsi!=null&&rsi>0&&rsi<100)row.rsi=rsi;
+      const c2=num(F(d,['circuit_dist','circuit'])); if(c2!=null)row.circuit=c2;
+      const ps=F(d,['prices','closes']); if(Array.isArray(ps))row.prices=ps;
+      if(!row.block_dir&&d.activity&&typeof d.activity==='object'){ const bd2=F(d.activity,['block_dir']); if(bd2)row.block_dir=bd2; const vr=num(F(d.activity,['vol_ratio'])); if(vr!=null)row.vol_ratio=vr; }
+    }));
+    render();
+  }
+  function panelHTML(){
+    return '<div style="max-width:760px">'+
+      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4A5568;margin-bottom:10px">Smart Money \u00b7 Flow Signals</div>'+
+      '<div id="sm-strip" style="background:#0D1F3C;border-radius:10px;padding:13px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"></div>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">'+
+        '<select id="sm-sec" style="font-size:11px;padding:5px 8px;border:1px solid #E3DDD0;border-radius:6px;background:#fff;color:#4A5568"><option value="">All sectors</option></select>'+
+        '<select id="sm-st" style="font-size:11px;padding:5px 8px;border:1px solid #E3DDD0;border-radius:6px;background:#fff;color:#4A5568"><option value="">Any status</option><option value="TRIGGERED">Breakout</option><option value="WATCH">Coiled</option><option value="ACCUMULATING">Inflow</option><option value="AVOID">Distribution</option></select>'+
+        '<select id="sm-sort" style="font-size:11px;padding:5px 8px;border:1px solid #E3DDD0;border-radius:6px;background:#fff;color:#4A5568"><option value="strength">Sort: strength</option><option value="conv">Sort: engines</option><option value="price">Sort: price</option></select>'+
+        '<span id="sm-count" style="font-size:11px;color:#a39e92;margin-left:auto">Loading\u2026</span>'+
+      '</div>'+
+      '<div id="sm-board"></div>'+
+      '<div style="font-size:11px;color:#a39e92;border-top:1px solid #E3DDD0;padding-top:12px;margin-top:6px;line-height:1.5">Tap any row \u2192 full Master Signal card. Block direction &amp; volume come from the Activity Detector; the engine count cross-checks the six Master Signal engines. Trade levels are BD\u2019s \u2014 confirm before acting.</div>'+
+    '</div>';
+  }
+  function hideSM(){ const p=document.getElementById('dt-smartmoney'); if(p)p.style.display='none'; const tb=document.getElementById('tab-smartmoney'); if(tb)tb.classList.remove('active'); }
+  function openSM(el){
+    STD.forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display='none';});
+    ['dt-xtool','dt-mastersignal'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    const p=document.getElementById('dt-smartmoney'); if(p)p.style.display='block';
+    document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    buildSM(false);
+  }
+  function injectTab(){
+    if(document.getElementById('tab-smartmoney')) return;
+    const tabs=[...document.querySelectorAll('#view-dashboard .tab')]; const anyTab=tabs[0]; if(!anyTab) return;
+    const tab=document.createElement('div'); tab.className='tab'; tab.id='tab-smartmoney'; tab.textContent='Smart Money';
+    tab.onclick=function(){ openSM(tab); };
+    const ref=tabs.find(t=>/Master Signal/i.test(t.textContent))||tabs.find(t=>/BD Signal/i.test(t.textContent));
+    if(ref) ref.parentNode.insertBefore(tab, ref.nextSibling); else anyTab.parentNode.appendChild(tab);
+    const host=document.getElementById('dt-overview')?document.getElementById('dt-overview').parentNode:null;
+    if(host){ const p=document.createElement('div'); p.id='dt-smartmoney'; p.style.display='none'; p.innerHTML=panelHTML(); host.appendChild(p);
+      p.addEventListener('click',function(e){ const card=e.target.closest('.sm-card[data-code]'); if(!card)return; const code=card.getAttribute('data-code'); if(window.__openBDCard) window.__openBDCard(code,[]); });
+      const ss=p.querySelector('#sm-sec'); if(ss)ss.addEventListener('change',function(e){ smFilterSec=e.target.value; render(); });
+      const st2=p.querySelector('#sm-st'); if(st2)st2.addEventListener('change',function(e){ smFilterSt=e.target.value; render(); });
+      const so=p.querySelector('#sm-sort'); if(so)so.addEventListener('change',function(e){ smSort=e.target.value; render(); });
+    }
+    if(window.switchDashTab && !window._smWrapped){ window._smWrapped=true; const orig=window.switchDashTab; window.switchDashTab=function(tt,el){ hideSM(); return orig(tt,el); }; }
+    const mtab=document.getElementById('tab-mastersignal'); if(mtab && !mtab._smHook){ mtab._smHook=true; const oc=mtab.onclick; mtab.onclick=function(){ hideSM(); if(oc) return oc.apply(this,arguments); }; }
+    const xtab=document.getElementById('tab-xtool'); if(xtab && !xtab._smHook){ xtab._smHook=true; const oc=xtab.onclick; xtab.onclick=function(){ hideSM(); if(oc) return oc.apply(this,arguments); }; }
+  }
+  function boot(){ injectTab(); }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+})();
+</script>
+<!-- ===== end Smart Money ===== -->
+
 </body>
 </html>

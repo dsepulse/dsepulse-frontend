@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WMA Signals &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:960px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.tbl{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:920px}
+.thead{padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
+.empty{padding:34px;text-align:center;color:var(--text3);font-size:12px}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+<div class="wrap">
+  <div class="h-title">WMA Signals</div>
+  <div class="h-sub">WMA 9 / 34 / 89 trend alignment</div>
+  <div class="tbl">
+    <div class="thead" style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px"><div>Stock</div><div style="text-align:right">WMA9</div><div style="text-align:right">WMA34</div><div style="text-align:right">WMA89</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
+    <div id="wma-rows"><div class="empty">Loading WMA signals&hellip;</div></div>
+  </div>
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
+const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
+const scC=s=>s>=70?'var(--green)':s>=55?'var(--gold)':'var(--red)';
+async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+async function buildWMA(){
+  const el=document.getElementById('wma-rows');if(!el)return;
+  const live=await fetchJSON('/api/wma/today');
+  const raw=Array.isArray(live)&&live.length?live:[];
+  if(!raw.length){ el.innerHTML='<div class="empty">No WMA signals available right now.</div>'; return; }
+  const WDr=raw.map(r=>({code:r.code,cat:r.cat,ltp:Number(r.ltp||0),w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal,fresh:r.fresh||""}));
+  el.innerHTML=WDr.map((r,i)=>`<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[r.sig]||'transparent'}${i===WDr.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span>${r.fresh?` <span style="font-size:11px">${r.fresh}</span>`:''}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w9?'var(--green)':'var(--red)'}">${r.w9.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w34?'var(--green)':'var(--red)'}">${r.w34.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w89?'var(--green)':'var(--red)'}">${r.w89.toFixed(2)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${r.ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[r.sig]};background:${sigBg[r.sig]};border:1px solid currentColor;border-radius:4px;opacity:0.85">${r.sig}</span></div></div>`).join('');
+}
+buildWMA();
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Overview &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:960px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+@media(max-width:680px){#ov-grid{grid-template-columns:1fr !important}}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Overview</div>
+  <div class="h-sub">Market snapshot &middot; today's strongest signal &middot; cross-tool consensus</div>
+
+  <div id="dt-overview">
+    <div id="ov-market"></div>
+    <div id="ov-top"></div>
+    <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin-top:16px" id="ov-grid">
+      <div id="ov-funnel"></div>
+      <div id="ov-consensus"></div>
+    </div>
+  </div>
+
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+
+async function buildOverview(){
+  const el=document.getElementById('dt-overview');if(!el)return;
+  const d=await fetchJSON('/api/dashboard/overview');
+  if(!d||!d.market){
+    document.getElementById('ov-market').innerHTML='<div style="padding:34px 20px;text-align:center;color:var(--text3);font-size:12px;border:1px dashed var(--border);border-radius:10px">Overview data isn\u2019t available yet. Give the backend a minute, then refresh.</div>';
+    return;
+  }
+  const m=d.market,fn=d.funnel||{},t=d.top_signal,cons=d.consensus||[];
+  const fmtD=s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();}catch(e){return s||'';}};
+  const moodC=m.mood==='Bullish'?'#4ADE80':m.mood==='Bearish'?'#F87171':'var(--gold2)';
+  const L='font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)';
+  const DIV='<div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>';
+  const sect=(arr,lbl,col)=>arr&&arr.length?`<div style="display:flex;flex-direction:column;gap:3px"><span style="${L}">${lbl}</span><span style="font-size:12px;font-weight:600;color:${col}">${arr.join(' · ')}</span></div>`:'';
+  const dsexC=(m.dsex_change||0)>=0?'#4ADE80':'#F87171';
+  const dsexBlk=(m.dsex>0)?`<div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">DSEX Index</span><span style="font-size:20px;font-weight:800;font-family:var(--mono);color:#fff;line-height:1.1">${m.dsex.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})} <span style="font-size:12px;color:${dsexC}">${(m.dsex_change||0)>=0?'▲':'▼'}${Math.abs(m.dsex_change||0).toFixed(2)}%</span></span></div>${DIV}`:'';
+  const turnBlk=(m.turnover>0)?

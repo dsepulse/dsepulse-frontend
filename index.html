@@ -653,6 +653,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab" onclick="switchDashTab('sectors',this)">Sector Ranking</div>
       <div class="tab" onclick="switchDashTab('analyse',this)">Analyse Stock</div>
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
+      <div class="tab" onclick="location.href='/screener.html'">Screener</div>
     </div>
 
     <div id="dt-overview">
@@ -1410,7 +1411,6 @@ async function buildSectors(){
 </script>
 <!-- ===== end Auth ===== -->
 <!-- ===== DSE Pulse · Cross-Tool Comparison ===== -->
-  <div class="tab" onclick="location.href='/screener.html'">Screener</div>
 <script>
 (function () {
   const API = "https://dsepulse-backend-production.up.railway.app";
@@ -2847,6 +2847,5 @@ async function buildSectors(){
 </script>
 <!-- ===== end Smart Money ===== -->
 
-<div class="tab" onclick="location.href='/screener.html'">Screener</div>
 </body>
 </html>

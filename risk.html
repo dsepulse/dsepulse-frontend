@@ -60,7 +60,7 @@ input[type=number]{width:100%;padding:8px 10px;font-size:13px;border:1px solid v
 
 <div class="wrap">
   <div class="h-title">Portfolio Risk</div>
-  <div class="h-sub">Concentration, exposure and position sizing for your holdings</div>
+  <div class="h-sub">Concentration, exposure and position sizing &middot; your totals live in My Holdings</div>
   <div id="risk-body"><div class="msg">Loading your portfolio&hellip;</div></div>
 
   <div class="section" style="margin-top:6px">
@@ -130,15 +130,8 @@ async function load(){
   rows.filter(r=>r.pnlPct<=-15).sort((a,b)=>a.pnlPct-b.pnlPct).slice(0,3).forEach(r=>flags.push(['bad',r.code+' is '+r.pnlPct.toFixed(1)+'% from cost \u2014 deep loss.']));
   if(!flags.length) flags.push(['ok','No major concentration or signal red flags right now.']);
 
-  const dcol=totPnl>=0?'var(--green)':'var(--red)';
   document.getElementById('risk-body').innerHTML=
-    '<div class="cards">'
-    +'<div class="card"><div class="c-lbl">Invested</div><div class="c-val">'+tk(invested)+'</div></div>'
-    +'<div class="card"><div class="c-lbl">Current value</div><div class="c-val">'+tk(curVal)+'</div></div>'
-    +'<div class="card"><div class="c-lbl">Unrealised P&amp;L</div><div class="c-val" style="color:'+dcol+'">'+(totPnl>=0?'+':'\u2212')+tk(Math.abs(totPnl))+'</div><div class="c-sub" style="color:'+dcol+'">'+(totPct>=0?'+':'')+totPct.toFixed(1)+'%</div></div>'
-    +'<div class="card"><div class="c-lbl">Holdings</div><div class="c-val">'+rows.length+'</div></div>'
-    +'</div>'
-    +'<div class="lbl">Risk check</div><div class="cards">'
+    '<div class="lbl">Risk check</div><div class="cards">'
     +'<div class="card"><div class="c-lbl">Largest position</div><div class="c-val" style="font-size:16px;color:'+(largestPct>15?'var(--gold)':'var(--navy)')+'">'+largest.code+' \u00b7 '+largestPct.toFixed(1)+'%</div></div>'
     +'<div class="card"><div class="c-lbl">Top sector</div><div class="c-val" style="font-size:16px;color:'+(topSec.pct>25?'var(--gold)':'var(--navy)')+'">'+topSec.s+' \u00b7 '+topSec.pct.toFixed(0)+'%</div></div>'
     +'<div class="card"><div class="c-lbl">In loss</div><div class="c-val" style="font-size:18px">'+inLoss+' of '+rows.length+'</div></div>'

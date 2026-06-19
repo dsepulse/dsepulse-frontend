@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Cross-Tool &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:980px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:980px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+#dt-xtool tbody tr{cursor:default}
+#dt-xtool tbody tr:hover{background:#faf7f0}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Cross-Tool</div>
+  <div class="h-sub">Which engines flag each stock &mdash; filter to find agreements and divergences</div>
+  <div id="dt-xtool"></div>
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+(function(){
+  const API = "https://dsepulse-backend-production.up.railway.app";
+  const TOOLS = [
+    { key:"picker",   label:"Picker",   path:"/api/picks/today",    pick:d=>(d&&d.picks)||[],          val:r=>"#"+(r.rank||"?") },
+    { key:"wma",      label:"WMA",      path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[],     val:r=>sigAbbr(r.signal) },
+    { key:"tech",     label:"Tech",     path:"/api/tech/today",     pick:d=>Array.isArray(d)?d:[],     val:r=>Math.round(r.score) },
+    { key:"combined", label:"Combined", path:"/api/combined/today", pick:d=>Array.isArray(d)?d:[],     val:r=>"\u2713" },
+    { key:"bd",       label:"BD",       path:"/api/bd/today",       pick:d=>Array.isArray(d)?d:[],     val:r=>Math.round(r.score) }
+  ];
+  function sigAbbr(s){s=(s||"").toUpperCase();if(s==="STRONG BUY")return"SB";if(s==="BUY")return"B";if(s==="NEUTRAL")return"N";if(s==="SELL")return"S";if(s==="STRONG SELL")return"SS";return s.slice(0,2)||"\u2713";}
+  const STD = ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'];
+  let DATA=null, loaded=false;
+
+  async function xfetch(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+
+  function panelHTML(){
+    const opt='<option value="any">Any</option><option value="in">In</option><option value="out">Not in</option>';
+    const filters=TOOLS.map(t=>`<label style="font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:3px">${t.label}<select data-xf="${t.key}" style="padding:6px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--white);color:var(--text)">${opt}</select></label>`).join('');
+    return `
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Cross-Tool Comparison</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:14px">Which engines flag each stock. Set a filter per tool — e.g. Tech = In, Combined = In, BD = Not in — to find agreements and divergences.</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
+        ${filters}
+        <input id="xt-search" placeholder="Search code…" style="padding:7px 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;min-width:120px;background:var(--white);color:var(--text)">
+        <button id="xt-reset" style="padding:7px 12px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--text2);font-size:12px;cursor:pointer">Reset</button>
+      </div>
+      <div id="xt-count" style="font-size:11px;color:var(--text3);margin-bottom:10px">Loading…</div>
+      <div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr id="xt-head"></tr></thead>
+          <tbody id="xt-body"></tbody>
+        </table>
+      </div>`;
+  }
+
+  function injectTab(){
+    if(document.getElementById('tab-xtool')) return;
+    const anyTab=document.querySelector('#view-dashboard .tab'); if(!anyTab) return;
+    const tab=document.createElement('div'); tab.className='tab'; tab.id='tab-xtool'; tab.textContent='Cross-Tool';
+    tab.onclick=function(){ openX(tab); };
+    anyTab.parentNode.appendChild(tab);
+    const host=document.getElementById('dt-overview') ? document.getElementById('dt-overview').parentNode : null;
+    if(host){ const p=document.createElement('div'); p.id='dt-xtool'; p.style.display='none'; p.innerHTML=panelHTML(); host.appendChild(p); }
+    if(window.switchDashTab && !window._xtoolWrapped){
+      window._xtoolWrapped=true;
+      const orig=window.switchDashTab;
+      window.switchDashTab=function(tt,el){ const xp=document.getElementById('dt-xtool'); if(xp)xp.style.display='none'; const tb=document.getElementById('tab-xtool'); if(tb)tb.classList.remove('active'); return orig(tt,el); };
+    }
+  }
+
+  function openX(el){
+    STD.forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display='none';});
+    var __tf=document.getElementById('tool-frame'); if(__tf)__tf.style.display='none';
+    const xp=document.getElementById('dt-xtool'); if(xp)xp.style.display='block';
+    document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    buildX();
+  }
+
+  async function buildX(){
+    if(loaded){ render(); return; }
+    const results=await Promise.all(TOOLS.map(t=>xfetch(t.path)));
+    DATA={};
+    TOOLS.forEach((t,i)=>{ (t.pick(results[i])||[]).forEach(r=>{ const code=(r.code||'').toUpperCase(); if(!code)return; if(!DATA[code])DATA[code]={}; DATA[code][t.key]=t.val(r); }); });
+    loaded=true;
+    document.getElementById('xt-head').innerHTML='<th style="text-align:left;padding:9px 10px;color:var(--text2);border-bottom:1px solid var(--border)">Stock</th>'+TOOLS.map(t=>`<th style="text-align:center;padding:9px 8px;color:var(--text2);border-bottom:1px solid var(--border)">${t.label}</th>`).join('');
+    document.querySelectorAll('#dt-xtool [data-xf]').forEach(s=>s.onchange=render);
+    document.getElementById('xt-search').oninput=render;
+    document.getElementById('xt-reset').onclick=function(){ document.querySelectorAll('#dt-xtool [data-xf]').forEach(s=>s.value='any'); document.getElementById('xt-search').value=''; render(); };
+    render();
+  }
+
+  function render(){
+    if(!DATA) return;
+    const filters={}; document.querySelectorAll('#dt-xtool [data-xf]').forEach(s=>filters[s.getAttribute('data-xf')]=s.value);
+    const q=(document.getElementById('xt-search').value||'').toUpperCase();
+    const codes=Object.keys(DATA).filter(code=>{
+      if(q && code.indexOf(q)<0) return false;
+      for(const t of TOOLS){ const f=filters[t.key], has=DATA[code][t.key]!==undefined; if(f==='in'&&!has)return false; if(f==='out'&&has)return false; }
+      return true;
+    }).sort();
+    const body=document.getElementById('xt-body');
+    if(!codes.length){
+      const qc=q.trim();
+      body.innerHTML = qc.length>=2
+        ? '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">No tool flagged <b style="color:var(--navy)">'+qc+'</b> today — <a href="#" class="xt-lookup" data-code="'+qc+'" style="color:var(--navy);font-weight:700;text-decoration:underline">look up '+qc+' &rarr;</a></td></tr>'
+        : '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">No stocks match.</td></tr>';
+    }
+    else { body.innerHTML=codes.map(code=>{
+      const cells=TOOLS.map(t=>{ const v=DATA[code][t.key];
+        return v===undefined
+          ? '<td style="text-align:center;padding:8px;color:var(--text3);border-bottom:1px solid var(--border)">—</td>'
+          : `<td style="text-align:center;padding:8px;border-bottom:1px solid var(--border)"><span style="font-weight:700;color:var(--navy);font-family:var(--mono);font-size:11px">${v}</span></td>`;
+      }).join('');
+      return `<tr><td style="padding:8px 10px;font-weight:700;font-family:var(--mono);color:var(--navy);border-bottom:1px solid var(--border)">${code}</td>${cells}</tr>`;
+    }).join(''); }
+    document.getElementById('xt-count').textContent=codes.length+' stocks';
+  }
+
+  function boot(){
+    const host=document.getElementById('dt-xtool');
+    if(host){ host.innerHTML=panelHTML(); buildX(); }
+  }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+})();
+</script>
+</body>
+</html>

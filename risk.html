@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Portfolio Risk &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:960px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin:0 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.c-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
+.c-val{font-size:22px;font-weight:800;font-family:var(--mono);color:var(--navy);margin-top:4px}
+.c-sub{font-size:12px;margin-top:2px}
+.section{margin-bottom:22px}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar-h{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+.bar-t{height:8px;border-radius:5px;background:var(--cream2);overflow:hidden}
+.bar-f{height:8px;border-radius:5px}
+.flags{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.flag{display:flex;align-items:flex-start;gap:10px;padding:12px 15px;border-bottom:1px solid var(--cream3);font-size:14px}
+.flag:last-child{border-bottom:none}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.calc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.f-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+.f-lbl{font-size:11px;color:var(--text3);display:block;margin-bottom:4px}
+input[type=number]{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);color:var(--navy)}
+.o-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.o-box{background:var(--cream2);border-radius:8px;padding:12px}
+.o-lbl{font-size:11px;color:var(--text3)}
+.o-val{font-size:20px;font-weight:800;font-family:var(--mono);color:var(--navy);margin-top:2px}
+.msg{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:30px;text-align:center;font-size:14px;color:var(--text2)}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Portfolio Risk</div>
+  <div class="h-sub">Concentration, exposure and position sizing for your holdings</div>
+  <div id="risk-body"><div class="msg">Loading your portfolio&hellip;</div></div>
+
+  <div class="section" style="margin-top:6px">
+    <div class="lbl">Position-size calculator</div>
+    <div class="calc">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px">How many shares to buy for a given risk &middot; capital pre-fills from your portfolio value.</div>
+      <div class="f-grid">
+        <div><label class="f-lbl">Capital (&#2547;)</label><input id="cap" type="number" value="0" step="1000"></div>
+        <div><label class="f-lbl">Risk per trade %</label><input id="risk" type="number" value="2" step="0.5"></div>
+        <div><label class="f-lbl">Max position %</label><input id="maxp" type="number" value="10" step="1"></div>
+        <div><label class="f-lbl">Entry (&#2547;)</label><input id="entry" type="number" value="100" step="0.1"></div>
+        <div><label class="f-lbl">Stop (&#2547;)</label><input id="stop" type="number" value="95" step="0.1"></div>
+      </div>
+      <div class="o-grid">
+        <div class="o-box"><div class="o-lbl">Shares to buy</div><div class="o-val" id="o-shares">&mdash;</div></div>
+        <div class="o-box"><div class="o-lbl">Capital at risk</div><div class="o-val" id="o-risk">&mdash;</div></div>
+        <div class="o-box"><div class="o-lbl">Position value</div><div class="o-val" id="o-val">&mdash;</div></div>
+        <div class="o-box"><div class="o-lbl">% of book</div><div class="o-val" id="o-pct">&mdash;</div></div>
+      </div>
+      <div id="o-note" style="font-size:13px;color:var(--text3);margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+const TOKEN=localStorage.getItem('dse_token');
+const tk=n=>'\u09f3'+Math.round(n).toLocaleString('en-IN');
+const N=v=>Number(v||0);
+
+async function load(){
+  const body=document.getElementById('risk-body');
+  if(!TOKEN){ body.innerHTML='<div class="msg">Please sign in on the main app first, then reopen this page.<br><br><a class="back" href="https://dsepulse.com">Go to DSE Pulse &rarr;</a></div>'; return; }
+  let pf=null, all=[];
+  try{ pf=await fetch(API+'/api/portfolio',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>r.json()); }catch(e){}
+  try{ all=await fetch(API+'/api/bd/all').then(r=>r.json()); }catch(e){}
+  const holds=(pf&&pf.holdings)||[];
+  if(!holds.length){ body.innerHTML='<div class="msg">No holdings found. Add positions in My Holdings, then reopen this page.</div>'; return; }
+  const map={}; (Array.isArray(all)?all:[]).forEach(r=>{ if(r&&r.code) map[String(r.code).toUpperCase()]=r; });
+
+  const rows=holds.map(h=>{
+    const code=String(h.code||'').toUpperCase(), qty=N(h.qty), avg=N(h.avg_buy_price);
+    const m=map[code]||{}; const ltp=N(m.ltp)>0?N(m.ltp):avg;
+    const cost=qty*avg, value=qty*ltp, pnl=value-cost;
+    return {code,qty,avg,ltp,cost,value,pnl,pnlPct:cost?pnl/cost*100:0,sector:m.sector||'Other',score:N(m.score),signal:String(m.signal||'').toUpperCase()};
+  }).filter(r=>r.qty>0);
+
+  const invested=rows.reduce((a,r)=>a+r.cost,0);
+  const curVal=rows.reduce((a,r)=>a+r.value,0);
+  const totPnl=curVal-invested, totPct=invested?totPnl/invested*100:0;
+  const inLoss=rows.filter(r=>r.pnl<0).length;
+  const weak=rows.filter(r=>r.signal==='SELL'||(r.score>0&&r.score<40)).length;
+
+  const byVal=rows.slice().sort((a,b)=>b.value-a.value);
+  const largest=byVal[0]; const largestPct=curVal?largest.value/curVal*100:0;
+
+  const secAgg={}; rows.forEach(r=>{ secAgg[r.sector]=(secAgg[r.sector]||0)+r.value; });
+  const secArr=Object.keys(secAgg).map(s=>({s:s,pct:curVal?secAgg[s]/curVal*100:0})).sort((a,b)=>b.pct-a.pct);
+  const topSec=secArr[0]||{s:'\u2014',pct:0};
+
+  const flags=[];
+  if(topSec.pct>25) flags.push(['warn',topSec.s+' is '+topSec.pct.toFixed(0)+'% of your book \u2014 concentrated in one sector.']);
+  if(largestPct>15) flags.push(['warn',largest.code+' is '+largestPct.toFixed(0)+'% of the portfolio \u2014 single-stock weight high.']);
+  rows.filter(r=>r.signal==='SELL').slice(0,3).forEach(r=>flags.push(['bad',r.code+' is flashing a Sell signal \u2014 review.']));
+  rows.filter(r=>r.pnlPct<=-15).sort((a,b)=>a.pnlPct-b.pnlPct).slice(0,3).forEach(r=>flags.push(['bad',r.code+' is '+r.pnlPct.toFixed(1)+'% from cost \u2014 deep loss.']));
+  if(!flags.length) flags.push(['ok','No major concentration or signal red flags right now.']);
+
+  const dcol=totPnl>=0?'var(--green)':'var(--red)';
+  document.getElementById('risk-body').innerHTML=
+    '<div class="cards">'
+    +'<div class="card"><div class="c-lbl">Invested</div><div class="c-val">'+tk(invested)+'</div></div>'
+    +'<div class="card"><div class="c-lbl">Current value</div><div class="c-val">'+tk(curVal)+'</div></div>'
+    +'<div class="card"><div class="c-lbl">Unrealised P&amp;L</div><div class="c-val" style="color:'+dcol+'">'+(totPnl>=0?'+':'\u2212')+tk(Math.abs(totPnl))+'</div><div class="c-sub" style="color:'+dcol+'">'+(totPct>=0?'+':'')+totPct.toFixed(1)+'%</div></div>'
+    +'<div class="card"><div class="c-lbl">Holdings</div><div class="c-val">'+rows.length+'</div></div>'
+    +'</div>'
+    +'<div class="lbl">Risk check</div><div class="cards">'
+    +'<div class="card"><div class="c-lbl">Largest position</div><div class="c-val" style="font-size:16px;color:'+(largestPct>15?'var(--gold)':'var(--navy)')+'">'+largest.code+' \u00b7 '+largestPct.toFixed(1)+'%</div></div>'
+    +'<div class="card"><div class="c-lbl">Top sector</div><div class="c-val" style="font-size:16px;color:'+(topSec.pct>25?'var(--gold)':'var(--navy)')+'">'+topSec.s+' \u00b7 '+topSec.pct.toFixed(0)+'%</div></div>'
+    +'<div class="card"><div class="c-lbl">In loss</div><div class="c-val" style="font-size:18px">'+inLoss+' of '+rows.length+'</div></div>'
+    +'<div class="card"><div class="c-lbl">Flashing reduce</div><div class="c-val" style="font-size:18px;color:'+(weak?'var(--red)':'var(--navy)')+'">'+weak+'</div></div>'
+    +'</div>'
+    +'<div class="section"><div class="lbl">Sector exposure</div><div class="bars">'
+    +secArr.map(x=>'<div><div class="bar-h"><span>'+x.s+'</span><span style="color:'+(x.pct>25?'var(--gold)':'var(--text2)')+'">'+x.pct.toFixed(0)+'%</span></div><div class="bar-t"><div class="bar-f" style="width:'+Math.min(100,x.pct)+'%;background:'+(x.pct>25?'var(--gold)':'var(--navy2)')+'"></div></div></div>').join('')
+    +'</div></div>'
+    +'<div class="section"><div class="lbl">What needs attention</div><div class="flags">'
+    +flags.map(f=>{ const c=f[0]==='bad'?'var(--red)':f[0]==='warn'?'var(--gold)':'var(--green)'; return '<div class="flag"><span class="dot" style="background:'+c+'"></span><span>'+f[1]+'</span></div>'; }).join('')
+    +'</div></div>';
+
+  const cap=document.getElementById('cap'); if(cap && !(N(cap.value)>0)) cap.value=Math.round(curVal);
+  calc();
+}
+
+function calc(){
+  const g=id=>N((document.getElementById(id)||{}).value);
+  const cap=g('cap'), risk=g('risk')/100, maxp=g('maxp')/100, entry=g('entry'), stop=g('stop');
+  const dist=entry-stop;
+  const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  if(!(cap>0&&entry>0&&dist>0)){ set('o-shares','\u2014'); set('o-risk','\u2014'); set('o-val','\u2014'); set('o-pct','\u2014'); set('o-note','Enter a capital, entry and a stop below entry.'); return; }
+  const byRisk=Math.floor((cap*risk)/dist), byMax=Math.floor((cap*maxp)/entry);
+  const shares=Math.max(0,Math.min(byRisk,byMax));
+  const val=shares*entry, atRisk=shares*dist, pct=cap?val/cap*100:0;
+  set('o-shares',shares.toLocaleString('en-IN'));
+  set('o-risk',tk(atRisk));
+  set('o-val',tk(val));
+  set('o-pct',pct.toFixed(1)+'%');
+  set('o-note','Limited by: '+(byMax<byRisk?'your max-position cap':'your risk limit')+'. Stop distance \u09f3'+dist.toFixed(2)+' per share.');
+}
+['cap','risk','maxp','entry','stop'].forEach(id=>{ const e=document.getElementById(id); if(e) e.addEventListener('input',calc); });
+load();
+</script>
+</body>
+</html>

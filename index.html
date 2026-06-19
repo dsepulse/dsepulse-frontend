@@ -651,7 +651,6 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab" onclick="switchDashTab('combined',this)">Combined Signal</div>
       <div class="tab" onclick="switchDashTab('bd',this)">BD Signal</div>
       <div class="tab" onclick="switchDashTab('sectors',this)">Sector Ranking</div>
-      <div class="tab" onclick="switchDashTab('analyse',this)">Analyse Stock</div>
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
       <div class="tab" onclick="location.href='/screener.html'">Screener</div>
     </div>
@@ -738,28 +737,6 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     <div id="dt-sectors" style="display:none">
       <div id="sectors-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:14px">Sector Ranking</div>
       <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:680px" id="sector-rows"></div>
-    </div>
-
-    <div id="dt-analyse" style="display:none">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:12px">Analyse any DSE stock — Free for all users</div>
-      <div style="display:flex;gap:10px;margin-bottom:20px;max-width:480px">
-        <input class="sp-input" id="dashInput" value="ACMEPL" placeholder="Enter stock code..." style="flex:1;padding:10px 14px;font-size:13px">
-        <button class="btn btn-navy" onclick="runAnalyse('dashInput')">Analyse</button>
-      </div>
-      <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px;max-width:540px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--navy)">ACMEPL</div><div style="font-size:11px;color:var(--text3)">ACME Pesticides · Cat A · Pharma</div></div>
-          <span class="signal-pill buy">STRONG BUY</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-          <div class="mkt-card"><div class="mkt-lbl">BD Score</div><div class="mkt-val" style="color:var(--gold)">78/100</div></div>
-          <div class="mkt-card"><div class="mkt-lbl">Entry zone</div><div class="mkt-val" style="font-size:12px;color:var(--green)">৳23.8–৳24.4</div></div>
-          <div class="mkt-card"><div class="mkt-lbl">Target</div><div class="mkt-val" style="color:var(--green)">৳25.80</div></div>
-          <div class="mkt-card"><div class="mkt-lbl">Stop loss</div><div class="mkt-val" style="color:var(--red)">৳23.20</div></div>
-          <div class="mkt-card"><div class="mkt-lbl">RSI</div><div class="mkt-val" style="color:var(--gold)">52.2</div></div>
-          <div class="mkt-card"><div class="mkt-lbl">Timeframe</div><div class="mkt-val" style="font-size:12px;color:var(--text2)">3–7 days</div></div>
-        </div>
-      </div>
     </div>
 
     <div id="dt-holdings" style="display:none">

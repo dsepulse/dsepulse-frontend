@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Today's Picks &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:1000px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+
+.btn{padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border-radius:6px;transition:all 0.15s}
+.btn-navy{background:var(--navy);border:1px solid var(--navy);color:var(--white)}
+.btn-navy:hover{background:var(--navy2)}
+
+.pick-card{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:12px}
+.pc-code{font-size:13px;font-weight:800;font-family:var(--mono);color:var(--navy)}
+.pc-co{font-size:9px;color:var(--text3);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.pc-score-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pc-score{width:34px;height:34px;border:2px solid var(--navy);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:var(--mono);color:var(--navy);flex-shrink:0}
+.pc-sig{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.3px}
+.pc-meta{font-size:9px;color:var(--text3);margin-top:1px}
+.pc-levels{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pc-lvl{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:5px 7px}
+.pc-lvl-lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
+.pc-lvl-val{font-size:11px;font-weight:700;font-family:var(--mono)}
+.pc-lvl-val.g{color:var(--green)}.pc-lvl-val.r{color:var(--red)}.pc-lvl-val.gold{color:var(--gold)}
+
+.trial-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.tt-btn{padding:6px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;cursor:pointer;background:transparent;color:var(--text3);border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+.tt-btn.active{background:var(--navy);color:var(--white)}
+
+.lock-overlay{position:relative}
+.lock-blur{filter:blur(5px);user-select:none;pointer-events:none}
+.lock-wall{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.8);backdrop-filter:blur(2px)}
+.lock-box{text-align:center;padding:24px 28px;background:var(--white);border:1px solid var(--border);border-radius:10px;max-width:260px;box-shadow:var(--shadow-md)}
+.lock-icon{font-size:28px;color:var(--text3);display:block;margin-bottom:8px}
+.lock-title{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.lock-sub{font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.5}
+
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:760px){.pick-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Today's Picks</div>
+  <div class="h-sub">The Daily Picker's highest-conviction short-term setups</div>
+
+  <div id="dt-picks">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div id="dt-picks-hdr" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)">Daily Picker</div>
+        <div id="dt-picks-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Loading latest picks&hellip;</div>
+      </div>
+      <div class="trial-toggle">
+        <button class="tt-btn active" onclick="setDashTrial('active',this)">Trial active</button>
+        <button class="tt-btn" onclick="setDashTrial('expired',this)">Trial expired</button>
+      </div>
+    </div>
+
+    <div id="dt-picks-active">
+      <div class="pick-grid">
+        <div class="pick-card"><div class="pc-code">PRAGATIINS</div><div class="pc-co">Pragati Insurance &middot; Cat A &middot; Insurance</div><div class="pc-score-row"><div class="pc-score">94</div><div><div class="pc-sig">STRONG BUY</div><div class="pc-meta">RSI 60.2 &middot; Vol 3.3&times; &middot; &#128276;</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;75.60</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">&#2547;79.46</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">&#2547;73.67</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">1&ndash;3 days</div></div></div></div>
+        <div class="pick-card"><div class="pc-code">DELTALIFE</div><div class="pc-co">Delta Life Insurance &middot; Cat A</div><div class="pc-score-row"><div class="pc-score">90</div><div><div class="pc-sig">STRONG BUY</div><div class="pc-meta">RSI 63.1 &middot; Vol 3.1&times; &middot; 3 up days</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;78.40</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">&#2547;81.54</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">&#2547;76.83</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">3&ndash;5 days</div></div></div></div>
+        <div class="pick-card"><div class="pc-code">EASTERNINS</div><div class="pc-co">Eastern Insurance &middot; Cat A</div><div class="pc-score-row"><div class="pc-score">90</div><div><div class="pc-sig">STRONG BUY</div><div class="pc-meta">RSI 71.6 &middot; Vol 4.5&times; &middot; 5 up days</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;64.10</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">&#2547;67.72</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">&#2547;62.29</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">3&ndash;5 days</div></div></div></div>
+      </div>
+    </div>
+
+    <div id="dt-picks-expired" style="display:none">
+      <div class="lock-overlay">
+        <div class="pick-grid lock-blur" aria-hidden="true">
+          <div class="pick-card"><div class="pc-code">XXXXXXX</div><div class="pc-co">XXXXXXX &middot; Cat A</div><div class="pc-score-row"><div class="pc-score">94</div><div><div class="pc-sig">STRONG BUY</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;XX</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target</div><div class="pc-lvl-val g">&#2547;XX</div></div></div></div>
+          <div class="pick-card"><div class="pc-code">XXXXXXXXX</div><div class="pc-co">XXXXXXXX &middot; Cat A</div><div class="pc-score-row"><div class="pc-score">90</div><div><div class="pc-sig">STRONG BUY</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;XX</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target</div><div class="pc-lvl-val g">&#2547;XX</div></div></div></div>
+          <div class="pick-card"><div class="pc-code">XXXXXXXXX</div><div class="pc-co">XXXXXXXX &middot; Cat A</div><div class="pc-score-row"><div class="pc-score">89</div><div><div class="pc-sig">STRONG BUY</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">&#2547;XX</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target</div><div class="pc-lvl-val g">&#2547;XX</div></div></div></div>
+        </div>
+        <div class="lock-wall">
+          <div class="lock-box">
+            <div class="lock-icon">&#128274;</div>
+            <div class="lock-title">Trial expired</div>
+            <div class="lock-sub">Subscribe to access today's picks.</div>
+            <button class="btn btn-navy" style="width:100%;padding:10px;border-radius:6px;font-size:12px">Subscribe from &#2547;499/month</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+
+function setDashTrial(s,el){
+  el.parentElement.querySelectorAll('.tt-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('dt-picks-active').style.display=s==='active'?'block':'none';
+  document.getElementById('dt-picks-expired').style.display=s==='expired'?'block':'none';
+}
+
+async function buildPicks(){
+  const el=document.getElementById('dt-picks-active');if(!el)return;
+  const data=await fetchJSON('/api/picks/today');
+  const fmt=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}};
+  if(!data||data.status!=='live'||!Array.isArray(data.picks)||!data.picks.length){
+    const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent='Showing sample picks \u2014 live list updates after the next upload';
+    return;
+  }
+  const picks=data.picks.slice(0,12);
+  const hdr=document.getElementById('dt-picks-hdr');if(hdr)hdr.textContent='Daily Picker \u00b7 '+fmt(data.date);
+  const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent=picks.length+' picks \u00b7 updated '+fmt(data.date);
+  const num=v=>Number(v||0);
+  el.innerHTML='<div class="pick-grid">'+picks.map(p=>{
+    const rank=num(p.rank),isBuy=rank>0&&rank<=3;
+    const sig=isBuy?'BUY':'WATCH',sigC=isBuy?'var(--green)':'var(--gold)';
+    const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),vol=num(p.vol),score=num(p.score);
+    const tf=isBuy?'1\u20133 days':'3\u20135 days';
+    return `<div class="pick-card"><div class="pc-code">${p.code||''}</div><div class="pc-co">Cat ${p.cat||'A'} · Rank #${rank}</div><div class="pc-score-row"><div class="pc-score">${score.toFixed(0)}</div><div><div class="pc-sig" style="color:${sigC}">${sig}</div><div class="pc-meta">R/R ${rr.toFixed(1)}× · Vol ${vol.toFixed(1)}×</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">৳${ltp.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">৳${l1.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">৳${sl.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">${tf}</div></div></div></div>`;
+  }).join('')+'</div>';
+}
+buildPicks();
+</script>
+</body>
+</html>

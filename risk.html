@@ -131,7 +131,13 @@ async function load(){
   if(!flags.length) flags.push(['ok','No major concentration or signal red flags right now.']);
 
   document.getElementById('risk-body').innerHTML=
-    '<div class="lbl">Risk check</div><div class="cards">'
+    '<div class="lbl">Risk check</'<div class="cards">'
+    +'<div class="card"><div class="c-lbl">Invested</div><div class="c-val">'+tk(invested)+'</div></div>'
+    +'<div class="card"><div class="c-lbl">Current value</div><div class="c-val">'+tk(curVal)+'</div></div>'
+    +'<div class="card"><div class="c-lbl">Unrealised P&amp;L</div><div class="c-val" style="color:'+dcol+'">'+(totPnl>=0?'+':'\u2212')+tk(Math.abs(totPnl))+'</div><div class="c-sub" style="color:'+dcol+'">'+(totPct>=0?'+':'')+totPct.toFixed(1)+'%</div></div>'
+    +'<div class="card"><div class="c-lbl">Holdings</div><div class="c-val">'+rows.length+'</div></div>'
+    +'</div>'
+    +'<div class="lbl">Risk check</div><div class="cards">'
     +'<div class="card"><div class="c-lbl">Largest position</div><div class="c-val" style="font-size:16px;color:'+(largestPct>15?'var(--gold)':'var(--navy)')+'">'+largest.code+' \u00b7 '+largestPct.toFixed(1)+'%</div></div>'
     +'<div class="card"><div class="c-lbl">Top sector</div><div class="c-val" style="font-size:16px;color:'+(topSec.pct>25?'var(--gold)':'var(--navy)')+'">'+topSec.s+' \u00b7 '+topSec.pct.toFixed(0)+'%</div></div>'
     +'<div class="card"><div class="c-lbl">In loss</div><div class="c-val" style="font-size:18px">'+inLoss+' of '+rows.length+'</div></div>'

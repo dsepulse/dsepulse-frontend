@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Compare &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:960px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.inputs{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.in-box label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);display:block;margin-bottom:5px}
+input[type=text]{padding:9px 11px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--navy);font-family:var(--mono);text-transform:uppercase;width:150px}
+.btn{padding:10px 22px;font-size:13px;font-weight:700;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:var(--navy2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:15px 17px}
+.card.top{border:2px solid var(--gold-border);box-shadow:0 2px 10px rgba(184,134,11,0.08)}
+.badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gold);background:var(--gold-bg);padding:3px 10px;border-radius:5px}
+.c-code{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--navy);margin:8px 0 1px}
+.c-name{font-size:11px;color:var(--text2);margin-bottom:2px}
+.c-meta{font-size:11px;color:var(--text3)}
+.pill{display:inline-block;margin:10px 0;padding:4px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;border-radius:5px;border:1px solid currentColor}
+.row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-top:1px solid var(--cream3)}
+.row .k{color:var(--text3)}
+.row .v{font-weight:600;font-family:var(--mono)}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Compare stocks</div>
+  <div class="h-sub">Put two or three stocks side by side &middot; the strongest is flagged</div>
+
+  <div class="inputs">
+    <div class="in-box"><label>Stock 1</label><input type="text" id="c1" value="BXPHARMA"></div>
+    <div class="in-box"><label>Stock 2</label><input type="text" id="c2" value="SQURPHARMA"></div>
+    <div class="in-box"><label>Stock 3 (optional)</label><input type="text" id="c3" placeholder="e.g. RENATA"></div>
+    <button class="btn" onclick="compare()">Compare</button>
+  </div>
+
+  <div class="grid" id="cmp-out"></div>
+
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+const API="https://dsepulse-backend-production.up.railway.app";
+const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","WATCH":"var(--gold-bg)","SELL":"var(--red-bg)","AVOID":"var(--red-bg)"};
+const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","WATCH":"var(--gold)","SELL":"var(--red)","AVOID":"var(--red)"};
+const N=v=>Number(v||0);
+
+async function getAnalyse(code){
+  try{
+    const r=await fetch(API+'/api/analyse/'+encodeURIComponent(code));
+    const j=await r.json();
+    return (j && j.score!==undefined) ? j : null;
+  }catch(e){ return null; }
+}
+
+function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+
+async function compare(){
+  const codes=['c1','c2','c3'].map(id=>(document.getElementById(id).value||'').trim().toUpperCase()).filter(Boolean);
+  const out=document.getElementById('cmp-out');
+  if(!codes.length){ out.innerHTML='<div style="font-size:13px;color:var(--text3)">Enter at least one stock code.</div>'; return; }
+  out.innerHTML='<div style="font-size:13px;color:var(--text3)">Comparing\u2026</div>';
+  const res=await Promise.all(codes.map(async c=>({code:c,d:await getAnalyse(c)})));
+  const valid=res.filter(r=>r.d);
+  const maxScore=valid.length?Math.max.apply(null,valid.map(r=>N(r.d.score))):-1;
+  out.innerHTML=res.map(r=>{
+    if(!r.d) return '<div class="card"><div class="c-code">'+r.code+'</div><div class="c-meta" style="margin-top:10px">No data found for this code.</div></div>';
+    const s=r.d, sg=String(s.sig||s.signal||'').toUpperCase();
+    const isTop=valid.length>1 && N(s.score)===maxScore;
+    const chg=N(s.chg), chgC=chg>=0?'var(--green)':'var(--red)';
+    return '<div class="card'+(isTop?' top':'')+'">'
+      +(isTop?'<span class="badge">Strongest</span>':'')
+      +'<div class="c-code">'+r.code+'</div>'
+      +'<div class="c-name">'+(s.name||'')+'</div>'
+      +'<div class="c-meta">'+(s.sector||'')+(s.cat?' \u00b7 Cat '+s.cat:'')+'</div>'
+      +'<div><span class="pill" style="color:'+(sigTxt[sg]||'var(--text2)')+';background:'+(sigBg[sg]||'var(--cream2)')+'">'+(sg||'\u2014')+'</span></div>'
+      +row('Score', N(s.score).toFixed(0)+' /100')
+      +row('LTP', '\u09f3'+N(s.ltp).toFixed(2))
+      +row('Today', '<span style="color:'+chgC+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>')
+      +row('Entry', '\u09f3'+N(s.entry).toFixed(2))
+      +row('Target', '<span style="color:var(--green)">\u09f3'+N(s.t1).toFixed(2)+'</span>')
+      +row('Stop', '<span style="color:var(--red)">\u09f3'+N(s.sl).toFixed(2)+'</span>')
+      +row('R / R', N(s.rr).toFixed(1)+'\u00d7')
+      +(s.tf?row('Timeframe', s.tf):'')
+      +'</div>';
+  }).join('');
+}
+compare();
+</script>
+</body>
+</html>

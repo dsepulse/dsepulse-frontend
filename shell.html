@@ -7,35 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
-  /* --- Tighten vertical rhythm: pull tool content up under the nav --- */
-
-/* 1. Trial / Back-to-site strip: kill the oversized padding */
-.trial-bar,
-.subnav-strip {            /* <-- match your actual class */
-  padding-top: 8px;
-  padding-bottom: 8px;
-  margin: 0;
-}
-
-/* 2. Main content area: remove the top push */
-.tool-content,
-main,
-.page-body {               /* <-- match your actual class */
-  margin-top: 0 !important;
-  padding-top: 12px !important;
-}
-
-/* 3. Kill any vertical-centering min-height that creates empty space */
-.content-wrapper,
-.shell-main {              /* <-- match your actual class */
-  min-height: auto !important;
-  justify-content: flex-start !important;
-}
-
-/* 4. The tool card itself: lift it */
-.tool-card,
-.signal-card {             /* <-- match your actual class */
-  margin-top: 0 !important;}
+  /* --- Tighten vertical rhythm (shell side) --- */
+  /* Dashboard wrapper + header trims live inline in the dashboard view;
+     the real per-tool deadzone fix is injected into each iframe in openTool(). */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --white:#FFFFFF;
@@ -673,8 +647,8 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 
 <!-- DASHBOARD VIEW -->
 <div id="view-dashboard" style="display:none">
-  <div style="background:var(--cream);min-height:100vh;padding:28px 40px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
+  <div style="background:var(--cream);min-height:100vh;padding:14px 40px 28px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
       <div>
         <div id="greet-main" style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening</div>
         <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
@@ -704,7 +678,6 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="dash-grp">Tools</div>
       <div class="tab" onclick="openTool('/screener.html',this)">Screener</div>
       <div class="tab" onclick="openTool('/comparison.html',this)">Compare</div>
-      <div class="tab" onclick="openTool('/fundamentals.html',this)">Fundamentals</div>
       <div class="tab" onclick="openTool('/fundamentals.html',this)">Fundamentals</div>
       <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
     </div>
@@ -857,7 +830,24 @@ function openTool(url,el){
   if(f){
     if(f.getAttribute('data-url')!==url){ f.src=url; f.setAttribute('data-url',url); }
     f.style.display='block';
-    f.onload=function(){ try{ var h=f.contentDocument&&f.contentDocument.querySelector('.hdr'); if(h)h.style.display='none'; }catch(e){} };
+    f.onload=function(){
+      try{
+        var d=f.contentDocument; if(!d) return;
+        var h=d.querySelector('.hdr'); if(h) h.style.display='none';
+        if(!d.getElementById('shell-trim')){
+          var st=d.createElement('style'); st.id='shell-trim';
+          st.textContent =
+            /* the shell already shows ticker + nav, so hide any the tool renders */
+            '.hdr,.ticker,nav.nav,.nav{display:none!important}'+
+            /* kill the body push that creates the gap */
+            'html,body{margin-top:0!important;padding-top:0!important}'+
+            'body>*:first-child{margin-top:0!important}'+
+            /* cap the big hero/section top padding to a tight, consistent value */
+            '.hero,.hero-inner,main,.tool-content,.page-body,.wrap,.container,section:first-of-type{padding-top:14px!important;margin-top:0!important}';
+          (d.head||d.documentElement).appendChild(st);
+        }
+      }catch(e){}
+    };
   }
 }
 

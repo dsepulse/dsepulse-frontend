@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Fundamentals &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --green-bright:#2E8B57; --red:#B91C1C; --red-bg:#FEF2F2; --info:#1D4ED8; --info-bg:#EAF1FB;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+
+.controls{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.ctrl label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);display:block;margin-bottom:5px}
+#q{padding:9px 11px;font-size:13px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--navy);font-family:'Inter',sans-serif;width:220px}
+#sec{padding:9px 11px;font-size:13px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--navy);font-family:'Inter',sans-serif;min-width:200px;cursor:pointer}
+.count{font-size:11px;color:var(--text3);margin:0 0 10px 2px;font-family:var(--mono)}
+
+.tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+table.scr{width:100%;border-collapse:collapse;font-size:13px}
+table.scr thead th{position:sticky;top:0;background:var(--cream);color:var(--navy);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:11px 13px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border);user-select:none}
+table.scr thead th:hover{background:var(--cream3)}
+table.scr th.r,table.scr td.r{text-align:right}
+table.scr th.l,table.scr td.l{text-align:left}
+table.scr tbody td{padding:9px 13px;border-top:1px solid var(--cream3);font-family:var(--mono);color:var(--navy);white-space:nowrap}
+table.scr tbody tr:hover{background:var(--cream)}
+td.code{font-weight:800;color:var(--navy)}
+td.name{font-family:'Inter',sans-serif;color:var(--text2);font-weight:500;white-space:normal;min-width:160px}
+td.sector{font-family:'Inter',sans-serif;color:var(--text3);font-size:12px;white-space:normal}
+.arr{font-size:9px;margin-left:4px;color:var(--gold)}
+.empty{padding:26px 16px;font-size:13px;color:var(--text3);text-align:center}
+.note{font-size:11px;color:var(--text3);margin-top:14px;font-style:italic}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+
+<div class="wrap">
+  <div class="h-title">Fundamentals</div>
+  <div class="h-sub">Valuation snapshot across every listed stock &middot; tap a column to sort</div>
+
+  <div class="controls">
+    <div class="ctrl"><label>Search</label><input type="text" id="q" placeholder="Code or company name" oninput="render()"></div>
+    <div class="ctrl"><label>Sector</label><select id="sec" onchange="render()"></select></div>
+  </div>
+
+  <div class="count" id="count"></div>
+
+  <div class="tbl-wrap">
+    <table class="scr">
+      <thead><tr id="head-row"></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+
+  <div class="note" id="note"></div>
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
+</div>
+
+<script>
+const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+
+const N=v=>(v===null||v===undefined||v==="")?null:Number(v);
+const fmt=(v,d)=>v===null?"\u2014":Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const TK="\u09f3"; // ৳
+
+async function sbGet(path){
+  try{ const r=await fetch(SB_URL+"/rest/v1/"+path,{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}}); if(!r.ok)return null; return await r.json(); }
+  catch(e){ return null; }
+}
+
+const COLS=[
+  {k:'code',     t:'Code',      type:'text'},
+  {k:'name',     t:'Company',   type:'text'},
+  {k:'sector',   t:'Sector',    type:'text'},
+  {k:'ltp',      t:'LTP',       type:'num'},
+  {k:'pe',       t:'P / E',     type:'num'},
+  {k:'eps',      t:'EPS',       type:'num'},
+  {k:'nav',      t:'NAV',       type:'num'},
+  {k:'roe',      t:'ROE',       type:'num'},
+  {k:'div_yield',t:'Div yield', type:'num'}
+];
+const SECT_ALL='All sectors';
+let RAW=[], sortKey='code', sortDir=1, hasDiv=false;
+
+function cellHTML(col,r){
+  const k=col.k;
+  if(k==='code')   return '<td class="l code">'+(r.code||'')+'</td>';
+  if(k==='name')   return '<td class="l name">'+(r.name||'\u2014')+'</td>';
+  if(k==='sector') return '<td class="l sector">'+(r.sector||'\u2014')+'</td>';
+  const v=N(r[k]);
+  if(k==='ltp') return '<td class="r">'+(v===null?'\u2014':TK+fmt(v,2))+'</td>';
+  if(k==='pe')  return '<td class="r">'+fmt(v,2)+'</td>';
+  if(k==='eps') return '<td class="r">'+(v===null?'\u2014':TK+fmt(v,2))+'</td>';
+  if(k==='nav') return '<td class="r">'+(v===null?'\u2014':TK+fmt(v,2))+'</td>';
+  if(k==='roe'){ const cls=v===null?'':'color:'+(v>=0?'var(--green)':'var(--red)'); return '<td class="r" style="'+cls+'">'+(v===null?'\u2014':fmt(v,1)+'%')+'</td>'; }
+  if(k==='div_yield') return '<td class="r">'+(v===null?'\u2014':fmt(v,2)+'%')+'</td>';
+  return '<td class="r">'+fmt(v,2)+'</td>';
+}
+
+function cmp(a,b){
+  const col=COLS.find(c=>c.k===sortKey);
+  if(col && col.type==='num'){
+    const av=N(a[sortKey]), bv=N(b[sortKey]);
+    if(av===null && bv===null) return 0;
+    if(av===null) return 1;   // nulls always last
+    if(bv===null) return -1;
+    return (av-bv)*sortDir;
+  }
+  const av=String(a[sortKey]||'').toUpperCase(), bv=String(b[sortKey]||'').toUpperCase();
+  if(av<bv) return -1*sortDir;
+  if(av>bv) return 1*sortDir;
+  return 0;
+}
+
+function setSort(k){
+  if(sortKey===k){ sortDir=-sortDir; }
+  else { sortKey=k; const col=COLS.find(c=>c.k===k); sortDir=(col&&col.type==='num')?-1:1; }
+  render();
+}
+
+function drawHead(){
+  document.getElementById('head-row').innerHTML=COLS.map(c=>{
+    const align=(c.type==='num')?'r':'l';
+    const arr=(c.k===sortKey)?('<span class="arr">'+(sortDir===1?'\u25B2':'\u25BC')+'</span>'):'';
+    return '<th class="'+align+'" onclick="setSort(\''+c.k+'\')">'+c.t+arr+'</th>';
+  }).join('');
+}
+
+function render(){
+  drawHead();
+  const q=(document.getElementById('q').value||'').trim().toUpperCase();
+  const sec=document.getElementById('sec').value;
+  let rows=RAW.filter(r=>{
+    if(sec && sec!==SECT_ALL && (r.sector||'')!==sec) return false;
+    if(q){ const hay=((r.code||'')+' '+(r.name||'')).toUpperCase(); if(hay.indexOf(q)<0) return false; }
+    return true;
+  });
+  rows.sort(cmp);
+
+  const body=document.getElementById('body');
+  if(!rows.length){ body.innerHTML='<tr><td class="empty" colspan="'+COLS.length+'">No stocks match your filters.</td></tr>'; }
+  else { body.innerHTML=rows.map(r=>'<tr>'+COLS.map(c=>cellHTML(c,r)).join('')+'</tr>').join(''); }
+
+  document.getElementById('count').textContent='Showing '+rows.length+' of '+RAW.length+' stocks';
+}
+
+function fillSectors(){
+  const set={}; RAW.forEach(r=>{ if(r.sector) set[r.sector]=1; });
+  const list=[SECT_ALL].concat(Object.keys(set).sort());
+  document.getElementById('sec').innerHTML=list.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+}
+
+async function load(){
+  document.getElementById('body').innerHTML='<tr><td class="empty" colspan="'+COLS.length+'">Loading fundamentals\u2026</td></tr>';
+  const arr=await sbGet('fundamentals?select=*&limit=2000');
+  RAW=Array.isArray(arr)?arr.filter(r=>r&&r.code):[];
+  hasDiv=RAW.some(r=>N(r.div_yield)!==null);
+  document.getElementById('note').innerHTML = hasDiv
+    ? 'P/E, EPS, NAV, ROE and dividend yield from the latest fundamentals upload. ROE is computed as EPS \u00F7 NAV.'
+    : 'P/E, EPS, NAV, ROE from the latest fundamentals upload. ROE is computed as EPS \u00F7 NAV. Dividend yield isn\u2019t in the AmarStock data, so it shows \u2014.';
+  if(!RAW.length){ document.getElementById('body').innerHTML='<tr><td class="empty" colspan="'+COLS.length+'">No fundamentals data found.</td></tr>'; document.getElementById('count').textContent=''; return; }
+  fillSectors();
+  render();
+}
+load();
+</script>
+</body>
+</html>

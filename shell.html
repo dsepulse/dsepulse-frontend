@@ -807,7 +807,7 @@ function navTo(id){showView('landing');setTimeout(function(){var e=document.getE
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
-  if(v==='dashboard'){ var __ov=document.querySelector('#view-dashboard .tabs .tab'); if(__ov) openTool('/overview.html', __ov); }
+ if(v==='dashboard'){ applyToolGates().then(openFirstVisibleTool); }
   window.scrollTo(0,0);
 }
 

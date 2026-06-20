@@ -846,6 +846,17 @@ function openTool(url,el){
             '.hero,.hero-inner,main,.tool-content,.page-body,.wrap,.container,section:first-of-type{padding-top:14px!important;margin-top:0!important}';
           (d.head||d.documentElement).appendChild(st);
         }
+        /* Sticky table headers for the data-table tools */
+        var STICKY=['/overview.html','/market.html','/picks.html'];
+        if(STICKY.indexOf(url)>-1 && !d.getElementById('shell-sticky')){
+          var ss=d.createElement('style'); ss.id='shell-sticky';
+          ss.textContent =
+            'thead th,thead td,table thead th,.data-table thead th,.tbl thead th,.table thead th{'+
+              'position:sticky!important;top:0;z-index:30;'+
+              'background:var(--white,#fff);'+
+              'box-shadow:inset 0 -1px 0 var(--border,#e6e2d8)}';
+          (d.head||d.documentElement).appendChild(ss);
+        }
       }catch(e){}
     };
   }

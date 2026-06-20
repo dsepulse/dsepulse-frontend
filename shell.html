@@ -1745,6 +1745,45 @@ function openFirstVisibleTool(){
   }
 }
 </script>
+<script>
+/* Tool visibility — reads config.features [{id,on}] saved from the Admin panel.
+   Admin preview: open dsepulse.com/?preview=on to see ALL tools this session
+   (regardless of toggles); use ?preview=off to exit. */
+(function(){ try{ var p=new URLSearchParams(location.search);
+  if(p.get('preview')==='on') sessionStorage.setItem('dse_preview','1');
+  if(p.get('preview')==='off') sessionStorage.removeItem('dse_preview');
+}catch(e){} })();
+function isPreview(){ try{ return sessionStorage.getItem('dse_preview')==='1'; }catch(e){ return false; } }
+function showPreviewBadge(){
+  if(!isPreview() || document.getElementById('previewBadge')) return;
+  var b=document.createElement('div'); b.id='previewBadge';
+  b.style.cssText='position:fixed;bottom:14px;right:14px;z-index:9999;background:#0D1F3C;color:#fff;font:600 12px Inter,system-ui,sans-serif;padding:8px 12px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+  b.innerHTML='Preview: all tools shown <a href="?preview=off" style="color:#D4A017;text-decoration:underline;margin-left:6px">exit</a>';
+  document.body.appendChild(b);
+}
+function applyToolGates(){
+  if(isPreview()) showPreviewBadge();
+  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
+    .then(function(r){return r.json();})
+    .then(function(c){
+      var off={};
+      if(!isPreview()){ (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; }); }
+      document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
+        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+        if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
+      });
+    }).catch(function(){});
+}
+function openFirstVisibleTool(){
+  var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
+  for(var i=0;i<tabs.length;i++){
+    if(tabs[i].style.display==='none') continue;
+    var m=(tabs[i].getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+    if(m){ openTool(m[1], tabs[i]); return; }
+  }
+}
+</script>
+</body>
 </body>
 </body>
 </html>

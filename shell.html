@@ -1723,5 +1723,28 @@ async function buildSectors(){
 })();
 </script>
 <!-- ===== end My Holdings ===== -->
+<script>
+/* Tool visibility — reads config.features [{id,on}] saved from the Admin panel */
+function applyToolGates(){
+  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
+    .then(function(r){return r.json();})
+    .then(function(c){
+      var off={}; (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; });
+      document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
+        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+        if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
+      });
+    }).catch(function(){});
+}
+function openFirstVisibleTool(){
+  var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
+  for(var i=0;i<tabs.length;i++){
+    if(tabs[i].style.display==='none') continue;
+    var m=(tabs[i].getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+    if(m){ openTool(m[1], tabs[i]); return; }
+  }
+}
+</script>
+</body>
 </body>
 </html>

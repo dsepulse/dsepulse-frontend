@@ -1803,12 +1803,26 @@ function openFirstVisibleTool(){
   }
 }
 </script>
-if(m){ openTool(m[1], tabs[i]); return; }
+<script>
+/* Dashboard header market line — fills #dash-date-sub independently of the
+   iframe tools, since buildOverview() no longer runs in the sidebar shell. */
+(function(){
+  function fmtD(s){try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();}catch(e){return s||'';}}
+  async function fillDashHeader(){
+    var el=document.getElementById('dash-date-sub'); if(!el) return;
+    var d=(typeof fetchJSON==='function')?await fetchJSON('/api/dashboard/overview'):null;
+    if(!d||!d.market){ el.textContent='Market data unavailable \u2014 reopen the dashboard shortly'; return; }
+    var m=d.market;
+    var dx=(m.dsex>0)?'DSEX '+m.dsex.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+' '+((m.dsex_change||0)>=0?'\u25B2':'\u25BC')+Math.abs(m.dsex_change||0).toFixed(2)+'% \u00B7 ':'';
+    el.textContent=(d.updated?fmtD(d.updated):'\u2014')+' \u00B7 '+dx+((m.mood||'').toUpperCase())+' MARKET \u00B7 \u25B2'+m.adv+' / \u25BC'+m.dec;
   }
-}
-showPreviewBadge();
+  window.fillDashHeader=fillDashHeader;
+  fillDashHeader();                              // fill once on load
+  if(typeof window.showView==='function'){       // and refresh each time the dashboard opens
+    var _sv=window.showView;
+    window.showView=function(v){ _sv.apply(this,arguments); if(v==='dashboard') fillDashHeader(); };
+  }
+})();
 </script>
-</body>
-</body>
 </body>
 </html>

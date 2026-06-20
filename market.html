@@ -36,10 +36,16 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .b-leg{display:flex;justify-content:space-between;font-size:12px}
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px}
-.heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
-.tile{border-radius:8px;padding:11px 12px}
-.tile .t-n{font-size:12px;font-weight:600}
-.tile .t-v{font-size:16px;font-weight:700;font-family:var(--mono)}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(134px,1fr));gap:10px}
+.tile{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:9px;transition:border-color .15s,box-shadow .15s}
+.tile:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(13,31,60,0.05)}
+.tile .t-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.tile .t-n{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text2);line-height:1.25}
+.tile .t-rank{font-size:9px;font-family:var(--mono);color:var(--text3);flex-shrink:0;padding-top:1px}
+.tile .t-v{font-size:26px;font-weight:800;font-family:var(--mono);line-height:1}
+.tile .t-bar{height:5px;border-radius:3px;background:var(--cream2);overflow:hidden}
+.tile .t-bar i{display:block;height:100%;border-radius:3px;min-width:0}
+.tile .t-meta{font-size:9px;color:var(--text3);display:flex;justify-content:space-between;letter-spacing:0.2px}
 .tbl{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .thead,.trow{display:grid;grid-template-columns:1fr 80px 90px 130px 110px;gap:8px;padding:9px 18px;align-items:center}
 .thead{background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
@@ -93,11 +99,12 @@ const API="https://dsepulse-backend-production.up.railway.app";
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
 
-function tileColors(v){
-  if(v>=65) return ['#C0DD97','#173404'];
-  if(v>=55) return ['#EAF3DE','#27500A'];
-  if(v>=45) return ['var(--gold-bg)','var(--gold)'];
-  return ['#FCEBEB','#791F1F'];
+function scoreTier(v){
+  if(v>=60) return 'var(--green)';
+  if(v>=45) return 'var(--gold)';
+  if(v>=30) return 'var(--navy2)';
+  if(v>0)   return 'var(--text3)';
+  return 'var(--border2)';
 }
 async function getJSON(p){ try{ const r=await fetch(API+p); return await r.json(); }catch(e){ return null; } }
 
@@ -136,9 +143,15 @@ async function load(){
   const agg={};
   list.forEach(r=>{ const s=r.sector||'Other'; if(!agg[s])agg[s]={sum:0,n:0}; agg[s].sum+=Number(r.score||0); agg[s].n++; });
   const secs=Object.keys(agg).map(s=>({s:s,avg:agg[s].sum/agg[s].n,n:agg[s].n})).filter(x=>x.n>=2).sort((a,b)=>b.avg-a.avg);
-  document.getElementById('m-heat').innerHTML=secs.map(x=>{
-    const c=tileColors(x.avg);
-    return '<div class="tile" style="background:'+c[0]+';color:'+c[1]+'"><div class="t-n">'+x.s+'</div><div class="t-v">'+x.avg.toFixed(0)+'</div></div>';
+  document.getElementById('m-heat').innerHTML=secs.map(function(x,i){
+    var v=x.avg, col=scoreTier(v), w=Math.max(Math.min(v,100),0);
+    var numCol=v>0?col:'var(--text3)';
+    return '<div class="tile">'
+      +'<div class="t-head"><div class="t-n">'+x.s+'</div><div class="t-rank">#'+(i+1)+'</div></div>'
+      +'<div class="t-v" style="color:'+numCol+'">'+v.toFixed(0)+'</div>'
+      +'<div class="t-bar"><i style="width:'+w+'%;background:'+col+'"></i></div>'
+      +'<div class="t-meta"><span>'+x.n+' stock'+(x.n!==1?'s':'')+'</span><span>avg signal</span></div>'
+      +'</div>';
   }).join('') || '<div style="font-size:13px;color:var(--text3)">Sector data unavailable.</div>';
 
   const top=list.slice().sort((a,b)=>Number(b.score||0)-Number(a.score||0)).slice(0,8);

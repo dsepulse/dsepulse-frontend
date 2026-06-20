@@ -34,7 +34,7 @@ input[type=range]{width:100%}
 .bar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .cnt{font-size:11px;color:var(--text3)}
 .rank{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
-.thead{display:grid;grid-template-columns:1fr 80px 90px 130px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
+.thead{position:sticky;top:0;z-index:2;display:grid;-template-columns:1fr 80px 90px 130px 110px;gap:8px;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
 .thead div:nth-child(2),.thead div:nth-child(3){text-align:right}
 .thead div:nth-child(5){text-align:center}
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
@@ -68,7 +68,7 @@ input[type=range]{width:100%}
     <span class="rank">ranked by score</span>
   </div>
 
-  <div class="card" style="overflow:hidden">
+  <div class="card" style="overflow:auto;max-height:78vh">
     <div class="thead"><div>Stock</div><div>Score</div><div>LTP</div><div>Sector</div><div style="text-align:center">Signal</div></div>
     <div id="scr-rows"></div>
   </div>

@@ -40,6 +40,15 @@
   .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
   .gate input{width:100%;margin:14px 0}
   .hide{display:none}
+  .toolgrp{font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px}
+  .toolrow{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--panel2)}
+  .toolrow span{font-size:13px}
+  .sw{position:relative;display:inline-block;width:40px;height:22px;flex:none}
+  .sw input{opacity:0;width:0;height:0}
+  .sw .sl{position:absolute;inset:0;background:#243043;border-radius:999px;transition:.15s;cursor:pointer}
+  .sw .sl:before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:#9fb0c7;border-radius:50%;transition:.15s}
+  .sw input:checked + .sl{background:var(--success)}
+  .sw input:checked + .sl:before{transform:translateX(18px);background:#04241a}
 </style>
 </head>
 <body>
@@ -92,6 +101,14 @@
     </div>
     <button class="btn btn-pri" style="margin-top:12px" onclick="savePricing()">Save pricing</button>
   </div>
+
+  <div class="card">
+    <h2>Tool visibility</h2>
+    <div id="tMsg" class="msg"></div>
+    <div id="tools"><div class="sub">Loading…</div></div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveTools()">Save tool visibility</button>
+    <div class="sub" style="margin-top:8px">Turned-off tools disappear from the app sidebar for everyone. Hard-refresh the app after saving.</div>
+  </div>
 </div>
 
 <script>
@@ -116,7 +133,7 @@ async function unlock(){
   }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
 }
 function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
-function boot(){loadStats();loadUsers();loadPricing()}
+function boot(){loadStats();loadUsers();loadPricing();loadTools()}
 
 async function loadStats(){
   try{
@@ -191,6 +208,55 @@ async function savePricing(){
     if(!r.ok)throw new Error("HTTP "+r.status);
     $("pMsg").textContent="Pricing saved. Hard-refresh the public site to see new prices.";
   }catch(e){$("pMsg").textContent="Failed: "+e.message}
+}
+
+const TOOLS=[
+  {id:'/overview.html',label:'Overview',grp:'Market'},
+  {id:'/market.html',label:'Market Pulse',grp:'Market'},
+  {id:'/sectors.html',label:'Sector Ranking',grp:'Market'},
+  {id:'/picks.html',label:"Today's Picks",grp:'Signals'},
+  {id:'/wma.html',label:'WMA Signals',grp:'Signals'},
+  {id:'/tech.html',label:'Tech Analysis',grp:'Signals'},
+  {id:'/combined.html',label:'Combined Signal',grp:'Signals'},
+  {id:'/bd.html',label:'BD Signal',grp:'Signals'},
+  {id:'/smartmoney.html',label:'Smart Money',grp:'Signals'},
+  {id:'/mastersignal.html',label:'Master Signal',grp:'Signals'},
+  {id:'/risk.html',label:'Risk',grp:'Portfolio'},
+  {id:'/screener.html',label:'Screener',grp:'Tools'},
+  {id:'/comparison.html',label:'Compare',grp:'Tools'},
+  {id:'/crosstool.html',label:'Cross-Tool',grp:'Tools'},
+  {id:'/fundamentals.html',label:'Fundamentals',grp:'Tools'}
+];
+let TOOLSTATE={};
+
+async function loadTools(){
+  try{
+    const c=await(await fetch(`${API}/api/config`)).json();
+    const arr=Array.isArray(c.features)?c.features:[];
+    const map={}; arr.forEach(f=>{if(f&&f.id)map[f.id]=(f.on!==false)});
+    TOOLSTATE={}; TOOLS.forEach(t=>{TOOLSTATE[t.id]=(t.id in map)?map[t.id]:true});
+    renderTools();
+  }catch(e){TOOLS.forEach(t=>TOOLSTATE[t.id]=true);renderTools();$("tMsg").textContent="Could not load saved state, showing all on: "+e.message}
+}
+
+function renderTools(){
+  let html="",grp="";
+  TOOLS.forEach(t=>{
+    if(t.grp!==grp){grp=t.grp;html+=`<div class="toolgrp">${grp}</div>`}
+    const on=TOOLSTATE[t.id]!==false;
+    html+=`<div class="toolrow"><span>${t.label}</span><label class="sw"><input type="checkbox" ${on?"checked":""} onchange="TOOLSTATE['${t.id}']=this.checked"><span class="sl"></span></label></div>`;
+  });
+  $("tools").innerHTML=html;
+}
+
+async function saveTools(){
+  $("tMsg").textContent="Saving…";
+  const gates=TOOLS.map(t=>({id:t.id,on:TOOLSTATE[t.id]!==false}));
+  try{
+    const r=await fetch(`${API}/api/admin/features`,{method:"POST",headers:H(),body:JSON.stringify({gates})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    $("tMsg").textContent="Saved. Hard-refresh the app to see the sidebar update.";
+  }catch(e){$("tMsg").textContent="Failed: "+e.message}
 }
 
 if(KEY){fetch(`${API}/api/admin/stats`,{headers:H()}).then(r=>{if(r.ok){$("gate").classList.add("hide");$("app").classList.remove("hide");boot();}}).catch(()=>{});}

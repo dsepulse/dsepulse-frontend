@@ -7,6 +7,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
+  /* --- Tighten vertical rhythm: pull tool content up under the nav --- */
+
+/* 1. Trial / Back-to-site strip: kill the oversized padding */
+.trial-bar,
+.subnav-strip {            /* <-- match your actual class */
+  padding-top: 8px;
+  padding-bottom: 8px;
+  margin: 0;
+}
+
+/* 2. Main content area: remove the top push */
+.tool-content,
+main,
+.page-body {               /* <-- match your actual class */
+  margin-top: 0 !important;
+  padding-top: 12px !important;
+}
+
+/* 3. Kill any vertical-centering min-height that creates empty space */
+.content-wrapper,
+.shell-main {              /* <-- match your actual class */
+  min-height: auto !important;
+  justify-content: flex-start !important;
+}
+
+/* 4. The tool card itself: lift it */
+.tool-card,
+.signal-card {             /* <-- match your actual class */
+  margin-top: 0 !important;}
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --white:#FFFFFF;

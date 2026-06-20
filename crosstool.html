@@ -28,6 +28,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
 #dt-xtool tbody tr{cursor:default}
 #dt-xtool tbody tr:hover{background:#faf7f0}
+thead th{position:sticky;top:0;background:var(--cream2);z-index:2}
 </style>
 </head>
 <body>
@@ -71,7 +72,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
         <button id="xt-reset" style="padding:7px 12px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--text2);font-size:12px;cursor:pointer">Reset</button>
       </div>
       <div id="xt-count" style="font-size:11px;color:var(--text3);margin-bottom:10px">Loading…</div>
-      <div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px">
+      <div style="overflow:auto;max-height:78vh;border:1px solid var(--border);border-radius:10px">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead><tr id="xt-head"></tr></thead>
           <tbody id="xt-body"></tbody>

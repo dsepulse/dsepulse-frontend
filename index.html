@@ -1832,9 +1832,6 @@ function openFirstVisibleTool(){
   if(typeof window.showView==='function'){       // and refresh each time the dashboard opens
     var _sv=window.showView;
     window.showView=function(v){ _sv.apply(this,arguments); if(v==='dashboard') fillDashHeader(); };
-  }
-})();
 </script>
-<div class="tab" onclick="openTool('/assistant.html',this)">Ask AI</div>
 </body>
 </html>

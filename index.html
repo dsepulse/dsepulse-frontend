@@ -1832,17 +1832,59 @@ function openFirstVisibleTool(){
   if(typeof window.showView==='function'){       // and refresh each time the dashboard opens
     var _sv=window.showView;
     window.showView=function(v){ _sv.apply(this,arguments); if(v==='dashboard') fillDashHeader(); };
+  }
+})();
 </script>
-<div style="font-size:11px;color:#9AA3B0;text-align:center;padding:18px;line-height:1.6">
-  DSE Pulse provides informational, algorithm-generated data and signals only — not investment advice.
-  Trading carries risk of loss; always do your own research. ·
-  <a href="disclaimer.html" style="color:#B8860B;text-decoration:none">Full disclaimer</a>
+<!-- ===== DSE Pulse footer ===== -->
+<footer style="border-top:1px solid #E2DECE;margin-top:28px;padding:24px 20px;font-family:'Inter',system-ui,sans-serif">
+  <div style="max-width:680px;margin:0 auto;text-align:center">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:800;color:#0D1F3C;margin-bottom:10px">
+      DSE<span style="color:#B8860B">Pulse</span>
+    </div>
+    <p style="font-size:11.5px;color:#9AA3B0;line-height:1.7;margin:0 auto 14px;max-width:520px">
+      Informational, algorithm-generated market data and signals only — not investment advice.
+      Trading carries risk of loss; always do your own research.
+    </p>
+    <div style="font-size:12px;margin-bottom:12px">
+      <a href="disclaimer.html" style="color:#B8860B;text-decoration:none;font-weight:600">Full disclaimer</a>
+    </div>
+    <div style="font-size:10.5px;color:#9AA3B0;letter-spacing:.2px">&copy; 2026 DSE Pulse &middot; Dhaka, Bangladesh</div>
+  </div>
+</footer>
+
+<!-- ===== DSE Pulse — login disclaimer consent gate ===== -->
+<div id="dpcGate" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(13,31,60,.55);align-items:center;justify-content:center;padding:20px;font-family:'Inter',system-ui,sans-serif">
+  <div style="background:#FAF8F3;border:1px solid #E2DECE;border-radius:14px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+    <div style="background:#0D1F3C;padding:18px 22px">
+      <div style="font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:19px;color:#fff">Before you continue</div>
+      <div style="font-size:11px;color:#B8860B;margin-top:2px;letter-spacing:.3px">Please read &amp; accept</div>
+    </div>
+    <div style="padding:20px 22px">
+      <p style="font-size:13.5px;color:#4A5568;line-height:1.65;margin:0 0 12px">
+        DSE Pulse provides <b>informational, algorithm-generated</b> market data and signals only — <b>not investment advice</b>, and we are not licensed advisers. Trading shares carries a high risk of loss, including your full capital. All signals are automated calculations, not recommendations. Always do your own research.
+      </p>
+      <p style="font-size:12px;color:#9AA3B0;line-height:1.6;margin:0 0 16px">
+        See the full <a href="disclaimer.html" target="_blank" style="color:#B8860B;text-decoration:none;font-weight:600">disclaimer</a> for complete terms.
+      </p>
+      <button id="dpcAgree" style="width:100%;background:#0D1F3C;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">I understand &amp; agree</button>
+      <div style="text-align:center;margin-top:12px">
+        <a id="dpcDecline" href="#" style="font-size:11.5px;color:#9AA3B0;text-decoration:none">I don&rsquo;t agree — log out</a>
+      </div>
+    </div>
+  </div>
 </div>
-<label style="display:flex;gap:8px;font-size:12px;color:#4A5568;line-height:1.5;margin:10px 0">
-  <input type="checkbox" id="agree-disc" required>
-  <span>I understand DSE Pulse provides informational signals only, not investment advice,
-  and I trade entirely at my own risk. I agree to the
-  <a href="disclaimer.html" target="_blank" style="color:#B8860B">disclaimer</a>.</span>
-</label>
+<script>
+(function(){
+  var DISC_VERSION = 1;                 // bump this number whenever you change the disclaimer text
+  var KEY = 'dpDiscAccepted';
+  var ok; try{ ok = parseInt(localStorage.getItem(KEY)||'0',10) >= DISC_VERSION; }catch(e){ ok=false; }
+  var gate = document.getElementById('dpcGate');
+  if(!ok && gate) gate.style.display='flex';
+  var ag = document.getElementById('dpcAgree');
+  if(ag) ag.onclick=function(){ try{ localStorage.setItem(KEY,String(DISC_VERSION)); }catch(e){} if(gate) gate.style.display='none'; };
+  var dc = document.getElementById('dpcDecline');
+  if(dc) dc.onclick=function(e){ e.preventDefault(); window.location.href='index.html'; };
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Reset password · DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F4F0E6;font-family:'Inter',system-ui,sans-serif;color:#1A1A2E;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border:1px solid #E2DECE;border-radius:14px;max-width:420px;width:100%;box-shadow:0 16px 50px rgba(0,0,0,.12);overflow:hidden}
+.top{background:#0D1F3C;padding:20px 24px}
+.logo{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:21px;color:#fff}
+.logo span{color:#B8860B}
+.body{padding:24px}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:20px;color:#0D1F3C;margin-bottom:6px}
+p.sub{font-size:13px;color:#4A5568;line-height:1.6;margin-bottom:18px}
+label{display:block;font-size:12px;font-weight:600;color:#4A5568;margin-bottom:5px}
+input{width:100%;padding:11px 12px;border:1px solid #D1C9B8;border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit}
+input:focus{outline:none;border-color:#B8860B}
+.btn{width:100%;background:#0D1F3C;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{font-size:13px;line-height:1.6;margin-top:14px;text-align:center}
+.msg.err{color:#B91C1C}
+.msg.ok{color:#1A6B3C}
+.foot{font-size:12px;text-align:center;margin-top:16px}
+.foot a{color:#B8860B;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top"><div class="logo">DSE<span>Pulse</span></div></div>
+  <div class="body">
+    <h1>Set a new password</h1>
+    <p class="sub">Choose a new password for your account. Make it at least 6 characters.</p>
+    <div id="form-area">
+      <label>New password</label>
+      <input id="pw1" type="password" placeholder="••••••••" autocomplete="new-password">
+      <label>Confirm new password</label>
+      <input id="pw2" type="password" placeholder="••••••••" autocomplete="new-password">
+      <button class="btn" id="go">Reset password</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="foot"><a href="index.html">&larr; Back to DSE Pulse</a></div>
+  </div>
+</div>
+<script>
+(function(){
+  var API = "https://dsepulse-backend-production.up.railway.app";
+  function q(k){ return new URLSearchParams(location.search).get(k) || ""; }
+  var token = q("token");
+  var msg = document.getElementById("msg");
+  var area = document.getElementById("form-area");
+  function show(t, ok){ msg.textContent = t; msg.className = "msg " + (ok ? "ok" : "err"); }
+
+  if(!token){ area.style.display="none"; show("This reset link is missing its token. Please use the link from your email, or request a new one.", false); return; }
+
+  document.getElementById("go").onclick = async function(){
+    var p1 = document.getElementById("pw1").value, p2 = document.getElementById("pw2").value;
+    if(p1.length < 6){ show("Password must be at least 6 characters.", false); return; }
+    if(p1 !== p2){ show("The two passwords don't match.", false); return; }
+    var btn = document.getElementById("go"); btn.disabled = true; show("Updating…", true);
+    try{
+      var r = await fetch(API + "/api/auth/reset", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ token: token, password: p1 }) });
+      var d = await r.json().catch(function(){ return {}; });
+      if(!r.ok) throw new Error(d.detail || ("Error " + r.status));
+      area.style.display = "none";
+      show((d.message || "Your password has been reset.") + " Redirecting to sign in…", true);
+      setTimeout(function(){ location.href = "index.html"; }, 2500);
+    }catch(e){ btn.disabled = false; show(e.message, false); }
+  };
+})();
+</script>
+</body>
+</html>

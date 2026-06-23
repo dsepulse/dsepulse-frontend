@@ -1835,7 +1835,8 @@ function applyToolGates(){
         });
       }
       document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
-        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+        var oc=(t.getAttribute('onclick')||'');
+        var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);
         if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
       });
     }).catch(function(){});

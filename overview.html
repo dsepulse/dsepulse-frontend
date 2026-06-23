@@ -86,7 +86,7 @@ async function buildOverview(){
     ${turnBlk}
     ${m.hot&&m.hot.length?DIV+sect(m.hot,'Hot Sectors','#4ADE80'):''}
     ${sect(m.cold,'Cold Sectors','#F87171')}
-    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated?fmtD(d.updated):'—'}</span></div>
+    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated_time||(d.updated?fmtD(d.updated):'—')}</span></div>
   </div>`;
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';

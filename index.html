@@ -909,7 +909,7 @@ async function buildOverview(){
     ${turnBlk}
     ${m.hot&&m.hot.length?DIV+sect(m.hot,'Hot Sectors','#4ADE80'):''}
     ${sect(m.cold,'Cold Sectors','#F87171')}
-    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated?fmtD(d.updated):'—'}</span></div>
+    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated_time||(d.updated?fmtD(d.updated):'—')}</span></div>
   </div>`;
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';
@@ -1290,6 +1290,7 @@ async function buildSectors(){
     <label>Password</label><input id="au-pass" type="password" placeholder="••••••••">
     <button class="submit" id="au-submit">Sign in</button>
     <div class="err" id="au-err"></div>
+    <div id="au-forgot" style="text-align:center;margin-top:10px;font-size:11.5px"><a href="#" id="au-forgot-link" style="color:#B8860B;text-decoration:none">Forgot password?</a></div>
   </div>`;
   document.body.appendChild(ov);
 
@@ -1299,7 +1300,8 @@ async function buildSectors(){
     $("tab-signup").classList.toggle("on", m === "signup");
     $("fld-name").style.display = m === "signup" ? "block" : "none";
     $("au-submit").textContent = m === "signup" ? "Create account" : "Sign in";
-    $("au-err").textContent = ""; }
+    $("au-err").textContent = ""; $("au-err").style.color = "";
+    var _f=$("au-forgot"); if(_f) _f.style.display = m === "signup" ? "none" : "block"; }
   window.openAuth = function(m){ setMode(m || "login"); ov.classList.add("show"); };
   function closeAuth(){ ov.classList.remove("show"); }
   $("dse-x").onclick = closeAuth;
@@ -1334,6 +1336,16 @@ async function buildSectors(){
         onAuthed(await post("/api/auth/register", { name, email, password: pass }));
       } else { onAuthed(await post("/api/auth/login", { email, password: pass })); }
     }catch(e){ $("au-err").textContent = e.message; }
+  };
+  $("au-forgot-link").onclick = async function(e){
+    e.preventDefault();
+    const email = $("au-email").value.trim();
+    if (!email){ $("au-err").style.color=""; $("au-err").textContent = "Enter your email above, then tap Forgot password."; return; }
+    $("au-err").style.color = "#1A6B3C"; $("au-err").textContent = "Sending reset link…";
+    try{ const d = await post("/api/auth/forgot", { email });
+      $("au-err").style.color = "#1A6B3C";
+      $("au-err").textContent = d.message || "If that email is registered, a reset link is on its way.";
+    }catch(err){ $("au-err").style.color=""; $("au-err").textContent = err.message; }
   };
 
   window.dseGoogle = async function(resp){
@@ -1794,11 +1806,34 @@ function showPreviewBadge(){
 }
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
-  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
-    .then(function(r){return r.json();})
-    .then(function(c){
+  var API="https://dsepulse-backend-production.up.railway.app";
+  var tok=null; try{ tok=localStorage.getItem("dse_token"); }catch(e){}
+  // Resolve the user's live plan (free if not signed in), then read the gates.
+  var planP = tok
+    ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})
+        .then(function(r){return r.ok?r.json():{};})
+        .then(function(u){return (u&&u.plan)||"free";})
+        .catch(function(){return "free";})
+    : Promise.resolve("free");
+  return Promise.all([
+      planP,
+      fetch(API+"/api/config").then(function(r){return r.json();}).catch(function(){return {};})
+    ])
+    .then(function(res){
+      var plan=res[0]||"free", c=res[1]||{};
       var off={};
-      if(!isPreview()){ (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; }); }
+      if(!isPreview()){
+        (Array.isArray(c.features)?c.features:[]).forEach(function(f){
+          if(!f||!f.id) return;
+          var allowed;
+          if(typeof f.free==="boolean"||typeof f.premium==="boolean"||typeof f.pro==="boolean"){
+            allowed = (f[plan]===true);            // per-package format {id,free,premium,pro}
+          }else{
+            allowed = (f.on!==false);              // old global on/off format
+          }
+          if(!allowed) off[f.id]=1;
+        });
+      }
       document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
         var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
         if(m){ t.style.display = off[m[1]] ? 'none' : ''; }

@@ -79,8 +79,8 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   </div>
 
   <div class="section">
-    <div class="lbl">Sector strength &middot; average signal score</div>
-    <div class="heat" id="m-heat"></div>
+    <div class="lbl">Market outlook</div>
+    <div id="m-outlook"></div>
   </div>
 
   <div class="section">
@@ -143,20 +143,66 @@ async function load(){
     document.getElementById('m-hotcold').innerHTML=hp+cp;
   }
 
-  const agg={};
-  list.forEach(r=>{ const s=r.sector||'Other'; if(!agg[s])agg[s]={sum:0,n:0,best:null}; const sc=Number(r.score||0); agg[s].sum+=sc; agg[s].n++; if(!agg[s].best||sc>agg[s].best.sc) agg[s].best={code:r.code,sc:sc}; });
-  const secs=Object.keys(agg).map(s=>({s:s,avg:agg[s].sum/agg[s].n,n:agg[s].n,best:agg[s].best})).filter(x=>x.n>=2).sort((a,b)=>b.avg-a.avg);
-  document.getElementById('m-heat').innerHTML=secs.map(function(x,i){
-    var v=x.avg, col=scoreTier(v), w=Math.max(Math.min(v,100),0);
-    var numCol=v>0?col:'var(--text3)';
-    var best=x.best?x.best.code:'\u2014';
-    return '<div class="tile">'
-      +'<div class="t-head"><div class="t-n">'+x.s+'</div><div class="t-rank">#'+(i+1)+'</div></div>'
-      +'<div class="t-v" style="color:'+numCol+'">'+v.toFixed(0)+'</div>'
-      +'<div class="t-bar"><i style="width:'+w+'%;background:'+col+'"></i></div>'
-      +'<div class="t-meta"><span>'+x.n+' stock'+(x.n!==1?'s':'')+'</span><span style="color:var(--gold);font-weight:700">\u2605 '+best+'</span></div>'
+  // ── Market outlook: rule-based read of today's momentum & breadth ──
+  (function(){
+    var dchg=Number(m.dsex_change||0);
+    var a=Number(m.adv||0), d=Number(m.dec||0);
+    var turnCr=Number(m.turnover||0)/10;
+    var idxVals=[m.dsex,m.dses,m.ds30].filter(function(x){return Number(x)>0;});
+    var idxN=idxVals.length||1;
+    var ups=[m.dsex_change,m.dses_change,m.ds30_change].filter(function(x,i){return Number([m.dsex,m.dses,m.ds30][i])>0 && Number(x)>0;}).length;
+    var strong=list.filter(function(r){return (r.signal||'').toUpperCase()==='STRONG BUY';}).length;
+
+    var sc=0;
+    sc += dchg>0.5?2:dchg>0?1:dchg<-0.5?-2:dchg<0?-1:0;
+    sc += a>d*1.3?2:a>d?1:d>a*1.3?-2:d>a?-1:0;
+    sc += ups>=idxN?1:ups===0?-1:0;
+
+    var label,col,bg,head;
+    if(sc>=4){label='Bullish';col='var(--green)';bg='var(--green-bg)';head='Broad strength across the market.';}
+    else if(sc>=2){label='Mildly positive';col='var(--green)';bg='var(--green-bg)';head='A modest upward lean.';}
+    else if(sc>=1){label='Cautiously positive';col='var(--gold)';bg='var(--gold-bg)';head='Slightly positive, not decisive.';}
+    else if(sc===0){label='Neutral / mixed';col='var(--gold)';bg='var(--gold-bg)';head='No clear direction today.';}
+    else if(sc>=-2){label='Soft / cautious';col='var(--red)';bg='var(--red-bg)';head='Leaning weak.';}
+    else {label='Bearish';col='var(--red)';bg='var(--red-bg)';head='Broad weakness across the market.';}
+
+    var idxLine='DSEX '+(dchg>=0?'+':'')+dchg.toFixed(2)+'%';
+    if(m.dses) idxLine+=', DSES '+(Number(m.dses_change)>=0?'+':'')+Number(m.dses_change).toFixed(2)+'%';
+    if(m.ds30) idxLine+=', DS30 '+(Number(m.ds30_change)>=0?'+':'')+Number(m.ds30_change).toFixed(2)+'%';
+    var agree=ups>=idxN?'the indices moved up together':ups===0?'the indices were all soft':'the indices were mixed';
+
+    var breadth;
+    if(a>d*1.3) breadth='breadth was firmly positive ('+a+' up vs '+d+' down), confirming the move';
+    else if(a>d) breadth='breadth was mildly positive ('+a+' up vs '+d+' down)';
+    else if(d>a*1.3) breadth='breadth was firmly negative ('+d+' down vs '+a+' up)';
+    else if(d>a) breadth='breadth was mildly negative ('+d+' down vs '+a+' up)';
+    else breadth='breadth was roughly even ('+a+' up / '+d+' down)';
+
+    var diverge='';
+    if(dchg>0 && d>a) diverge=' Watch the divergence \u2014 the index rose while more stocks fell, which often means the gain is leaning on a few large caps rather than the broad market.';
+    else if(dchg<0 && a>d) diverge=' Interesting divergence \u2014 the index fell while more stocks actually rose, so large-cap weakness is masking steadier broad-market action.';
+
+    var turnTxt=turnCr>=1000?'healthy turnover (\u09f3'+turnCr.toFixed(0)+' cr) is behind it':
+                turnCr>=500?'turnover was moderate (\u09f3'+turnCr.toFixed(0)+' cr)':
+                'turnover was thin (\u09f3'+turnCr.toFixed(0)+' cr), so conviction behind the move is limited';
+
+    var read='Today '+idxLine+' \u2014 '+agree+'. '+strong+' stock'+(strong!==1?'s are':' is')+' on a Strong Buy, '+breadth+', and '+turnTxt+'.'+diverge;
+
+    var watch;
+    if(sc>=2) watch='For this to extend, breadth needs to stay positive and turnover hold up next session. If advancers thin out or turnover drops, the momentum is fading.';
+    else if(sc<=-2) watch='A turnaround would need breadth to flip positive and turnover to return. Until then pressure stays on the downside \u2014 watch whether the index holds the current level.';
+    else watch='Direction is unsettled. Next session, expanding advancers and rising turnover would tilt it up; shrinking breadth and thin volume would tilt it down.';
+
+    document.getElementById('m-outlook').innerHTML=
+      '<div class="card" style="padding:16px 18px">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
+      +'<span style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:'+col+';background:'+bg+'">'+label+'</span>'
+      +'<span style="font-size:13px;color:var(--text2)">'+head+'</span></div>'
+      +'<p style="font-size:13px;line-height:1.7;color:var(--text2);margin-bottom:12px">'+read+'</p>'
+      +'<div style="font-size:12.5px;line-height:1.6;color:var(--navy);background:var(--cream2);border-radius:8px;padding:11px 13px"><b>What to watch next session:</b> '+watch+'</div>'
+      +'<div style="font-size:10.5px;color:var(--text3);margin-top:10px">A data-driven read of today\u2019s momentum and breadth \u2014 not a forecast or investment advice.</div>'
       +'</div>';
-  }).join('') || '<div style="font-size:13px;color:var(--text3)">Sector data unavailable.</div>';
+  })();
 
   const top=list.slice().sort((a,b)=>Number(b.score||0)-Number(a.score||0)).slice(0,8);
   const el=document.getElementById('m-rows');

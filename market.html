@@ -79,16 +79,18 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   </div>
 
   <div class="section">
-    <div class="lbl">Market outlook</div>
-    <div id="m-outlook"></div>
+    <div class="lbl">Top movers</div>
+    <div id="m-movers" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"></div>
   </div>
 
   <div class="section">
-    <div class="lbl">Strongest setups today</div>
-    <div class="tbl">
-      <div class="thead"><div>Stock</div><div>Score</div><div>LTP</div><div>Sector</div><div style="text-align:center">Signal</div></div>
-      <div id="m-rows"></div>
-    </div>
+    <div class="lbl">Most active &middot; by turnover</div>
+    <div class="tbl"><div id="m-active"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="lbl">Market outlook</div>
+    <div id="m-outlook"></div>
   </div>
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
@@ -123,8 +125,16 @@ async function load(){
   if(m.dses) cards.push(idxCard('DSES \u00b7 Shariah',m.dses,m.dses_change));
   if(m.ds30) cards.push(idxCard('DS30',m.ds30,m.ds30_change));
   cards.push('<div class="card"><div class="c-lbl">Market mood</div><div class="c-val" style="font-family:var(--serif);font-size:20px;color:'+(m.mood==='Bullish'?'var(--green)':m.mood==='Bearish'?'var(--red)':'var(--gold)')+'">'+(m.mood||'\u2014')+'</div></div>');
-  if(m.turnover) cards.push('<div class="card"><div class="c-lbl">Turnover</div><div class="c-val">\u09f3'+Number(m.turnover/10).toLocaleString('en-US',{maximumFractionDigits:0})+' cr</div></div>');
-  cards.push('<div class="card"><div class="c-lbl">Breadth</div><div class="c-val" style="font-size:18px"><span style="color:var(--green)">\u25b2'+(m.adv||0)+'</span> / <span style="color:var(--red)">\u25bc'+(m.dec||0)+'</span></div></div>');
+  if(m.turnover){
+    var tc=Number(m.turnover)/10, ptc=Number(m.prev_turnover||0)/10, tsub='';
+    if(ptc>0){ var dp=(tc-ptc)/ptc*100; tsub='<div class="c-sub" style="color:'+(dp>=0?'var(--green)':'var(--red)')+'">'+(dp>=0?'\u25b2':'\u25bc')+' '+Math.abs(dp).toFixed(0)+'% vs yest</div>'; }
+    cards.push('<div class="card"><div class="c-lbl">Turnover</div><div class="c-val">\u09f3'+tc.toLocaleString('en-US',{maximumFractionDigits:0})+' cr</div>'+tsub+'</div>');
+  }
+  (function(){
+    var net=Number(m.adv||0)-Number(m.dec||0), pnet=Number(m.prev_adv||0)-Number(m.prev_dec||0), bsub='';
+    if(m.prev_adv||m.prev_dec){ var dn=net-pnet; bsub='<div class="c-sub" style="color:'+(dn>=0?'var(--green)':'var(--red)')+'">'+(dn>=0?'\u25b2':'\u25bc')+' '+(dn>=0?'+':'')+dn+' net vs yest</div>'; }
+    cards.push('<div class="card"><div class="c-lbl">Breadth</div><div class="c-val" style="font-size:18px"><span style="color:var(--green)">\u25b2'+(m.adv||0)+'</span> / <span style="color:var(--red)">\u25bc'+(m.dec||0)+'</span></div>'+bsub+'</div>');
+  })();
   document.getElementById('m-cards').innerHTML=cards.join('');
 
   const a=Number(m.adv||0),d=Number(m.dec||0),u=Number(m.unch||0),tot=a+d+u||1;
@@ -204,20 +214,43 @@ async function load(){
       +'</div>';
   })();
 
-  const top=list.slice().sort((a,b)=>Number(b.score||0)-Number(a.score||0)).slice(0,8);
-  const el=document.getElementById('m-rows');
-  el.innerHTML=top.map((r,i)=>{
-    const sc=Number(r.score||0),ltp=Number(r.ltp||0),sg=r.signal||'',sec=r.sector||'';
-    const scC=sc>=70?'var(--green)':sc>=55?'#1A6B3C':sc>=40?'var(--gold)':'var(--red)';
-    const last=i===top.length-1?';border-bottom:none':'';
-    return '<div class="trow" style="'+(last?last.slice(1):'')+'">'
-      +'<div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">'+r.code+'</span>'+(r.cat?' <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">'+r.cat+'</span>':'')+'</div>'
-      +'<div style="text-align:right;font-size:13px;font-weight:800;font-family:var(--mono);color:'+scC+'">'+sc.toFixed(0)+'</div>'
-      +'<div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">\u09f3'+ltp.toFixed(2)+'</div>'
-      +'<div style="font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+sec+'</div>'
-      +'<div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:'+(sigTxt[sg]||'var(--text2)')+';background:'+(sigBg[sg]||'var(--cream2)')+';border:1px solid currentColor;border-radius:4px;opacity:0.85">'+sg+'</span></div>'
-      +'</div>';
-  }).join('');
+  // Top gainers / losers (from the scanned universe)
+  (function(){
+    var withPct=list.filter(function(r){return r.pct!==undefined && r.pct!==null && !isNaN(Number(r.pct));});
+    var g=withPct.slice().sort(function(a,b){return Number(b.pct)-Number(a.pct);}).slice(0,5);
+    var l=withPct.slice().sort(function(a,b){return Number(a.pct)-Number(b.pct);}).slice(0,5);
+    function rows(arr){
+      return arr.map(function(r){
+        var p=Number(r.pct||0), pc=p>=0?'var(--green)':'var(--red)';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">'
+          +'<span style="font-weight:700;font-family:var(--mono);color:var(--navy)">'+r.code+'</span>'
+          +'<span style="font-family:var(--mono);color:var(--text3)">\u09f3'+Number(r.ltp||0).toFixed(2)+'</span>'
+          +'<span style="font-weight:700;font-family:var(--mono);color:'+pc+'">'+(p>=0?'+':'')+p.toFixed(2)+'%</span>'
+          +'</div>';
+      }).join('') || '<div style="font-size:12px;color:var(--text3);padding:6px 0">No data.</div>';
+    }
+    var mv=document.getElementById('m-movers'); if(mv) mv.innerHTML=
+      '<div class="card" style="padding:12px 14px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--green);margin-bottom:4px">Top gainers</div>'+rows(g)+'</div>'
+      +'<div class="card" style="padding:12px 14px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin-bottom:4px">Top losers</div>'+rows(l)+'</div>';
+  })();
+
+  // Most active by turnover
+  (function(){
+    var withVal=list.filter(function(r){return Number(r.value||0)>0;}).sort(function(a,b){return Number(b.value)-Number(a.value);}).slice(0,6);
+    var el=document.getElementById('m-active'); if(!el) return;
+    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 92px 80px 78px;gap:8px;padding:9px 16px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Turnover</div><div style="text-align:right">LTP</div><div style="text-align:right">Chg</div></div>'
+      +(withVal.map(function(r,i){
+        var p=Number(r.pct||0), pc=p>=0?'var(--green)':'var(--red)', cr=Number(r.value||0)/10;
+        var last=i===withVal.length-1?';border-bottom:none':'';
+        return '<div style="display:grid;grid-template-columns:1fr 92px 80px 78px;gap:8px;padding:9px 16px;align-items:center;border-bottom:1px solid var(--border)'+last+'">'
+          +'<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">'+r.code+(r.cat?' <span style="font-size:9px;padding:1px 5px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">'+r.cat+'</span>':'')+'</div>'
+          +'<div style="text-align:right;font-size:12px;font-family:var(--mono);color:var(--navy);font-weight:700">\u09f3'+cr.toLocaleString('en-US',{maximumFractionDigits:1})+' cr</div>'
+          +'<div style="text-align:right;font-size:12px;font-family:var(--mono);color:var(--text3)">\u09f3'+Number(r.ltp||0).toFixed(2)+'</div>'
+          +'<div style="text-align:right;font-size:12px;font-family:var(--mono);font-weight:700;color:'+pc+'">'+(p>=0?'+':'')+p.toFixed(2)+'%</div>'
+          +'</div>';
+      }).join('') || '<div style="font-size:12px;color:var(--text3);padding:10px 16px">No data.</div>');
+  })();
+
   if(!list.length){ ds.textContent='Could not load market data right now.'; }
 }
 load();

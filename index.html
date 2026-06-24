@@ -1816,7 +1816,7 @@ function applyToolGates(){
         .then(function(r){return r.ok?r.json():{};})
         .then(function(u){
           var plan=(u&&u.plan)||"free";
-          if(plan==="free" && u && u.trial_expired===false) return "premium";  // trial taste
+          if(plan==="free" && u && u.trial_expired===false) return "pro";     // full Pro taste during trial
           return plan;
         })
         .catch(function(){return "free";})

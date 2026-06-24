@@ -1808,11 +1808,17 @@ function applyToolGates(){
   if(isPreview()) showPreviewBadge();
   var API="https://dsepulse-backend-production.up.railway.app";
   var tok=null; try{ tok=localStorage.getItem("dse_token"); }catch(e){}
-  // Resolve the user's live plan (free if not signed in), then read the gates.
+  // Resolve the user's EFFECTIVE plan for tool visibility.
+  // A free user still inside their 7-day trial gets Premium-level access;
+  // once the trial expires they drop to the Free set. Premium/Pro are unchanged.
   var planP = tok
     ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})
         .then(function(r){return r.ok?r.json():{};})
-        .then(function(u){return (u&&u.plan)||"free";})
+        .then(function(u){
+          var plan=(u&&u.plan)||"free";
+          if(plan==="free" && u && u.trial_expired===false) return "premium";  // trial taste
+          return plan;
+        })
         .catch(function(){return "free";})
     : Promise.resolve("free");
   return Promise.all([

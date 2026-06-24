@@ -86,7 +86,7 @@
     <div id="uMsg" class="msg"></div>
     <div class="tbl">
       <table>
-        <thead><tr><th>User</th><th>Plan</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+        <thead><tr><th>User</th><th>Plan</th><th>Trial</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody id="uRows"><tr><td colspan="5">Loading…</td></tr></tbody>
       </table>
     </div>
@@ -158,17 +158,32 @@ async function loadUsers(){
   }catch(e){$("uMsg").textContent="Failed: "+e.message}
 }
 
+const TRIAL_DAYS=7;
+function trialCell(u){
+  const plan=(u.plan||"free").toLowerCase();
+  if(plan!=="free") return '<span class="sub">—</span>';           // paid plans: trial N/A
+  if(!u.trial_start) return '<span class="sub">—</span>';
+  const start=new Date(u.trial_start);
+  if(isNaN(start)) return '<span class="sub">—</span>';
+  const used=(Date.now()-start.getTime())/86400000;
+  const left=Math.ceil(TRIAL_DAYS-used);
+  if(left>1)  return `<span style="color:var(--success)">${left} days left</span>`;
+  if(left===1)return `<span style="color:var(--amber)">1 day left</span>`;
+  if(left===0)return `<span style="color:var(--amber)">last day</span>`;
+  return `<span style="color:var(--hint)">ended ${Math.abs(left)}d ago</span>`;
+}
 function renderUsers(){
   const q=($("search").value||"").toLowerCase();
   const rows=USERS.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||(u.name||"").toLowerCase().includes(q));
   const tb=$("uRows");
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="5">No users.</td></tr>`;return}
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="6">No users.</td></tr>`;return}
   tb.innerHTML=rows.map(u=>{
     const plan=(u.plan||"free").toLowerCase(),banned=u.status==="banned";
     const opts=["free","premium","pro"].map(p=>`<option value="${p}" ${p===plan?"selected":""}>${p[0].toUpperCase()+p.slice(1)}</option>`).join("");
     return `<tr>
       <td><div>${u.name||"—"}</div><div class="sub">${u.email||""}</div></td>
       <td>${badge(plan)}</td>
+      <td>${trialCell(u)}</td>
       <td>${banned?'<span style="color:#ff8fa3">banned</span>':"active"}</td>
       <td>${fmtDate(u.created_at)}</td>
       <td><select onchange="setPlan('${u.id}',this.value)">${opts}</select>
@@ -216,22 +231,22 @@ async function savePricing(){
 }
 
 const TOOLS=[
-  {id:'/overview.html',label:'Overview',grp:'Market'},
-  {id:'/market.html',label:'Market Pulse',grp:'Market'},
-  {id:'/sectors.html',label:'Sector Ranking',grp:'Market'},
-  {id:'/picks.html',label:"Today's Picks",grp:'Signals'},
-  {id:'/wma.html',label:'WMA Signals',grp:'Signals'},
-  {id:'/tech.html',label:'Tech Analysis',grp:'Signals'},
-  {id:'/combined.html',label:'Combined Signal',grp:'Signals'},
-  {id:'/bd.html',label:'BD Signal',grp:'Signals'},
-  {id:'/smartmoney.html',label:'Smart Money',grp:'Signals'},
-  {id:'/mastersignal.html',label:'Master Signal',grp:'Signals'},
-  {id:'holdings',label:'My Holdings',grp:'Portfolio'},
-  {id:'/risk.html',label:'Risk',grp:'Portfolio'},
-  {id:'/screener.html',label:'Screener',grp:'Tools'},
-  {id:'/comparison.html',label:'Compare',grp:'Tools'},
-  {id:'/crosstool.html',label:'Cross-Tool',grp:'Tools'},
-  {id:'/fundamentals.html',label:'Fundamentals',grp:'Tools'}
+  {id:'/overview.html',label:'Overview',grp:'Market',def:'free'},
+  {id:'/market.html',label:'Market Pulse',grp:'Market',def:'free'},
+  {id:'/sectors.html',label:'Sector Ranking',grp:'Market',def:'free'},
+  {id:'/picks.html',label:"Today's Picks",grp:'Signals',def:'premium'},
+  {id:'/wma.html',label:'WMA Signals',grp:'Signals',def:'premium'},
+  {id:'/tech.html',label:'Tech Analysis',grp:'Signals',def:'premium'},
+  {id:'/combined.html',label:'Combined Signal',grp:'Signals',def:'premium'},
+  {id:'/bd.html',label:'BD Signal',grp:'Signals',def:'premium'},
+  {id:'/smartmoney.html',label:'Smart Money',grp:'Signals',def:'pro'},
+  {id:'/mastersignal.html',label:'Master Signal',grp:'Signals',def:'pro'},
+  {id:'holdings',label:'My Holdings',grp:'Portfolio',def:'pro'},
+  {id:'/risk.html',label:'Risk',grp:'Portfolio',def:'pro'},
+  {id:'/screener.html',label:'Screener',grp:'Tools',def:'premium'},
+  {id:'/comparison.html',label:'Compare',grp:'Tools',def:'premium'},
+  {id:'/crosstool.html',label:'Cross-Tool',grp:'Tools',def:'pro'},
+  {id:'/fundamentals.html',label:'Fundamentals',grp:'Tools',def:'premium'}
 ];
 let TOOLSTATE={}; // { id: {free:bool, premium:bool, pro:bool} }
 const PLANS=["free","premium","pro"];
@@ -249,7 +264,8 @@ async function loadTools(){
       } else if(f && ("on" in f)){
         const on=f.on!==false; TOOLSTATE[t.id]={free:on,premium:on,pro:on};      // migrate old global on/off
       } else {
-        TOOLSTATE[t.id]={free:true,premium:true,pro:true};                       // default: on for all
+        var d=t.def||'free';                                          // default tier from the split
+        TOOLSTATE[t.id]={free:d==='free', premium:d!=='pro', pro:true};
       }
     });
     renderTools();

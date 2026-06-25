@@ -654,7 +654,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
-        <span style="padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px">Trial · 7 days left</span>
+        <span id="trialBadge" style="display:none;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px"></span>
         <button class="btn btn-outline" onclick="showView('landing')">← Back to site</button>
       </div>
     </div>
@@ -1768,17 +1768,6 @@ async function buildSectors(){
 <!-- ===== end My Holdings ===== -->
 <script>
 /* Tool visibility — reads config.features [{id,on}] saved from the Admin panel */
-function applyToolGates(){
-  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
-    .then(function(r){return r.json();})
-    .then(function(c){
-      var off={}; (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; });
-      document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
-        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
-        if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
-      });
-    }).catch(function(){});
-}
 function openFirstVisibleTool(){
   var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
   for(var i=0;i<tabs.length;i++){
@@ -1789,7 +1778,7 @@ function openFirstVisibleTool(){
 }
 </script>
 <script>
-/* Tool visibility — reads config.features [{id,on}] saved from the Admin panel.
+/* Tool visibility — reads config.features [{id,free,premium,pro}] saved from the Admin panel.
    Admin preview: open dsepulse.com/?preview=on to see ALL tools this session
    (regardless of toggles); use ?preview=off to exit. */
 (function(){ try{ var p=new URLSearchParams(location.search);
@@ -1804,6 +1793,21 @@ function showPreviewBadge(){
   b.innerHTML='Preview: all tools shown <a href="?preview=off" style="color:#D4A017;text-decoration:underline;margin-left:6px">exit</a>';
   document.body.appendChild(b);
 }
+function updateTrialBadge(u){
+  var el=document.getElementById('trialBadge'); if(!el) return;
+  var plan=(u&&u.plan)||"free";
+  if(plan==="premium"||plan==="pro"){ el.style.display='none'; return; }      // paid: no trial badge
+  var left=(u&&typeof u.trial_days_left==="number")?u.trial_days_left:null;
+  var expired=(u&&u.trial_expired===true);
+  if(expired){
+    el.textContent="Trial ended · Upgrade";
+    el.style.borderColor="#B91C1C"; el.style.color="#B91C1C"; el.style.background="rgba(185,28,28,0.08)";
+  }else if(left!==null){
+    el.textContent="Trial · "+left+(left===1?" day left":" days left");
+    el.style.borderColor="var(--gold-border)"; el.style.color="var(--gold)"; el.style.background="var(--gold-bg)";
+  }else{ el.style.display='none'; return; }
+  el.style.display='';
+}
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
   var API="https://dsepulse-backend-production.up.railway.app";
@@ -1815,6 +1819,7 @@ function applyToolGates(){
     ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})
         .then(function(r){return r.ok?r.json():{};})
         .then(function(u){
+          updateTrialBadge(u);                                               // show real trial state
           var plan=(u&&u.plan)||"free";
           if(plan==="free" && u && u.trial_expired===false) return "pro";     // full Pro taste during trial
           return plan;

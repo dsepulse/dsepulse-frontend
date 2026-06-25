@@ -114,6 +114,23 @@
     <button class="btn btn-pri" style="margin-top:12px" onclick="saveTools()">Save tool visibility</button>
     <div class="sub" style="margin-top:8px">Each tool can be on/off per plan. A tool turned off for a plan is hidden from those users' sidebar. Hard-refresh the app after saving.</div>
   </div>
+
+  <div class="card">
+    <h2>Trial win-back emails</h2>
+    <div id="wbMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:10px">Sends a 3-email sequence (Day 0 / 2 / 5 after a trial expires), then stops. Each user receives each email only once.</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="wbTest" class="search" style="max-width:260px" placeholder="your@email.com (test recipient)">
+      <select id="wbStage">
+        <option value="1">Stage 1 · Day 0</option>
+        <option value="2">Stage 2 · Day 2</option>
+        <option value="3">Stage 3 · Day 5</option>
+      </select>
+      <button class="btn" onclick="wbTest()">Send test to me</button>
+      <button class="btn btn-pri" onclick="wbRun()">Run win-back now</button>
+    </div>
+    <div class="sub" style="margin-top:8px">"Send test to me" emails one sample to the address above (no real users touched). "Run win-back now" emails any users who are due today — the daily GitHub Action does this automatically, so this button is just for manual runs.</div>
+  </div>
 </div>
 
 <script>
@@ -284,6 +301,25 @@ function renderTools(){
   $("tools").innerHTML=html;
 }
 
+async function wbTest(){
+  const email=$("wbTest").value.trim(); const stage=$("wbStage").value;
+  if(!email){$("wbMsg").textContent="Enter a test email first.";return}
+  $("wbMsg").textContent="Sending test…";
+  try{
+    const r=await fetch(`${API}/api/admin/send-winback?test=${encodeURIComponent(email)}&stage=${stage}`,{method:"POST",headers:H()});
+    const j=await r.json();
+    $("wbMsg").textContent = r.ok ? `Test (stage ${stage}): ${j.status} → ${email}` : `Error: ${j.detail||r.status}`;
+  }catch(e){$("wbMsg").textContent="Network error: "+e.message;}
+}
+async function wbRun(){
+  if(!confirm("Send win-back emails now to every user who is due today?"))return;
+  $("wbMsg").textContent="Running…";
+  try{
+    const r=await fetch(`${API}/api/admin/send-winback`,{method:"POST",headers:H()});
+    const j=await r.json();
+    $("wbMsg").textContent = r.ok ? `Done — sent ${j.sent}, skipped ${j.skipped}, failed ${j.failed}` : `Error: ${j.detail||r.status}`;
+  }catch(e){$("wbMsg").textContent="Network error: "+e.message;}
+}
 async function saveTools(){
   $("tMsg").textContent="Saving…";
   const gates=TOOLS.map(t=>{const s=TOOLSTATE[t.id]||{free:true,premium:true,pro:true};return {id:t.id,free:!!s.free,premium:!!s.premium,pro:!!s.pro};});

@@ -1,26 +1,143 @@
-<div style="background:#F4F0E6;border-radius:12px;padding:18px 18px 20px;font-family:Inter,system-ui,sans-serif">
-  <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#4A5568;margin-bottom:12px">Sector strength · average signal score</div>
-  <div id="heat" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(134px,1fr));gap:10px"></div>
-  <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:10px;color:#9AA3B0">
-    <span><b style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1A6B3C;vertical-align:middle;margin-right:5px"></b>Strong 60+</span>
-    <span><b style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#B8860B;vertical-align:middle;margin-right:5px"></b>Moderate 45–59</span>
-    <span><b style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1A3260;vertical-align:middle;margin-right:5px"></b>Building 30–44</span>
-    <span><b style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#9AA3B0;vertical-align:middle;margin-right:5px"></b>Weak</span>
-    <span><b style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#D1C9B8;vertical-align:middle;margin-right:5px"></b>No signal</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sector Ranking &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --cream:#FAF8F3; --cream2:#F4F0E6; --cream3:#EDE8DA;
+  --navy:#0D1F3C; --navy2:#1A3260; --gold:#B8860B; --gold2:#D4A017;
+  --gold-bg:#FDF8EC; --gold-border:#E8D5A0; --green:#1A6B3C; --green-bg:#EDF7F1;
+  --red:#B91C1C; --red-bg:#FEF2F2;
+  --text:#1A1A2E; --text2:#4A5568; --text3:#9AA3B0; --border:#E2DECE; --border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace; --serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}
+.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.wrap{max-width:1100px;margin:0 auto;padding:22px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+.c-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.c-name{font-size:14px;font-weight:700;color:var(--navy);letter-spacing:.01em}
+.c-rank{font-size:10px;font-family:var(--mono);color:var(--text3);font-weight:600;white-space:nowrap}
+.c-sig{padding:2px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-radius:4px}
+.score-row{display:flex;align-items:baseline;gap:8px}
+.score-num{font-size:30px;font-weight:800;font-family:var(--mono);line-height:1}
+.score-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.bar{height:5px;background:var(--cream2);border-radius:3px;overflow:hidden}
+.bar>div{height:100%;border-radius:3px}
+.meta{font-size:11px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap}
+.meta b{color:var(--text2);font-weight:600}
+.div{height:1px;background:var(--border);margin:2px 0}
+.best{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.best-l{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.best-tag{font-size:8px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.best-code{font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)}
+.best-score{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--green)}
+.best-px{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.tech{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:5px;background:var(--cream2);color:var(--text2);border:1px solid var(--border);white-space:nowrap}
+.chip b{font-weight:700}
+.empty{padding:34px;text-align:center;color:var(--text3);font-size:12px;grid-column:1/-1}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-top:16px;align-items:center}
+.legend .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:4px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+<div class="wrap">
+  <div class="h-title">Sector Ranking</div>
+  <div class="h-sub" id="sub">Sectors ranked by signal strength &middot; best stock &amp; technicals per sector</div>
+  <div class="grid" id="grid"><div class="empty">Loading sectors&hellip;</div></div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--green)"></span>Strong 60+</span>
+    <span><span class="dot" style="background:var(--gold)"></span>Moderate 45&ndash;59</span>
+    <span><span class="dot" style="background:var(--navy2)"></span>Building 30&ndash;44</span>
+    <span><span class="dot" style="background:var(--text3)"></span>Weak &lt;30</span>
   </div>
+  <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
 <script>
-(function(){
-  var data=[["IT",55,9],["Real Estate",48,6],["Ceramics",37,5],["Telecom",27,3],["Paper",25,4],["Cement",21,5],["Travel",17,3],["Pharma",16,12],["Engineering",13,14],["Textile",11,18],["Other",5,7],["Insurance",5,11],["Fuel & Power",4,6],["NBFI",4,8],["Bank",3,13],["Food",2,5],["Mutual Fund",0,22],["Corporate Bond",0,4],["Tannery",0,3],["Jute",0,3]];
-  function tier(v){ if(v>=60)return"#1A6B3C"; if(v>=45)return"#B8860B"; if(v>=30)return"#1A3260"; if(v>0)return"#9AA3B0"; return"#D1C9B8"; }
-  document.getElementById("heat").innerHTML=data.map(function(x,i){
-    var v=x[1],col=tier(v),w=Math.max(Math.min(v,100),0),numCol=v>0?col:"#9AA3B0";
-    return '<div style="background:#fff;border:1px solid #E2DECE;border-radius:10px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:9px">'
-      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:#4A5568;line-height:1.25">'+x[0]+'</div><div style="font-size:9px;font-family:JetBrains Mono,monospace;color:#9AA3B0;padding-top:1px">#'+(i+1)+'</div></div>'
-      +'<div style="font-size:26px;font-weight:800;font-family:JetBrains Mono,monospace;line-height:1;color:'+numCol+'">'+v+'</div>'
-      +'<div style="height:5px;border-radius:3px;background:#F4F0E6;overflow:hidden"><i style="display:block;height:100%;border-radius:3px;width:'+w+'%;background:'+col+'"></i></div>'
-      +'<div style="font-size:9px;color:#9AA3B0;display:flex;justify-content:space-between"><span>'+x[2]+' stocks</span><span>avg signal</span></div>'
-      +'</div>';
-  }).join("");
-})();
+const API="https://dsepulse-backend-production.up.railway.app";
+function scColor(s){ return s>=60?'var(--green)':s>=45?'var(--gold)':s>=30?'var(--navy2)':'var(--text3)'; }
+function sigStyle(sig){
+  if(sig==='HOT')      return 'color:var(--green);background:var(--green-bg)';
+  if(sig==='BULLISH')  return 'color:var(--green);background:#F0FDF4';
+  if(sig==='MIXED')    return 'color:var(--gold);background:var(--gold-bg)';
+  return 'color:var(--red);background:var(--red-bg)';            // COLD
+}
+function rsiStyle(zone){
+  if(zone==='Oversold')   return 'color:var(--green);border-color:var(--green-bg)';
+  if(zone==='Overbought') return 'color:var(--red);border-color:var(--red-bg)';
+  return '';
+}
+function pctColor(p){ return p>0?'var(--green)':p<0?'var(--red)':'var(--text2)'; }
+function esc(x){ return (x==null?'':String(x)).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+
+function card(s,i){
+  const best = s.best || {};
+  const hasBest = best.code;
+  const pctTxt = (best.pct!=null) ? (best.pct>0?'+':'')+Number(best.pct).toFixed(2)+'%' : '';
+  const ltpTxt = (best.ltp!=null && best.ltp>0) ? '&#2547;'+Number(best.ltp).toFixed(2) : '';
+  const rsiTxt = (s.rsi!=null) ? `RSI <b>${s.rsi}</b> ${s.rsi_zone||''}` : 'RSI &mdash;';
+  const macdTxt= (s.macd_pct!=null) ? `MACD <b>${s.macd_pct}%</b> bull` : 'MACD &mdash;';
+  return `<div class="card">
+    <div class="c-top">
+      <div>
+        <div class="c-name">${esc(s.n)}</div>
+        <div class="meta" style="margin-top:3px"><span><b>${s.s}</b> stocks</span><span><b>${s.strong||0}</b> buy signals</span></div>
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <span class="c-rank">#${i+1}</span>
+        <span class="c-sig" style="${sigStyle(s.sig)}">${s.sig}</span>
+      </div>
+    </div>
+    <div class="score-row"><span class="score-num" style="color:${scColor(s.sc)}">${s.sc}</span><span class="score-lbl">avg signal</span></div>
+    <div class="bar"><div style="width:${Math.max(2,Math.min(100,s.sc))}%;background:${scColor(s.sc)}"></div></div>
+    <div class="div"></div>
+    ${hasBest ? `<div class="best">
+      <div class="best-l">
+        <span class="best-tag">Best</span>
+        <span class="best-code">${esc(best.code)}</span>
+        <span class="best-score">${best.score}</span>
+        ${best.signal?`<span class="best-tag" style="color:${(String(best.signal).toUpperCase().includes('BUY'))?'var(--green)':'var(--text3)'}">${esc(best.signal)}</span>`:''}
+      </div>
+      <span class="best-px">${ltpTxt} ${pctTxt?`<span style="color:${pctColor(best.pct)}">${pctTxt}</span>`:''}</span>
+    </div>` : ''}
+    <div class="tech">
+      <span class="chip" style="${rsiStyle(s.rsi_zone)}">${rsiTxt}</span>
+      <span class="chip">${macdTxt}</span>
+    </div>
+  </div>`;
+}
+
+async function buildSectors(){
+  const el=document.getElementById('grid'); if(!el)return;
+  const live=await fetchJSON('/api/sectors/today');
+  const rows=Array.isArray(live)&&live.length?live:[];
+  if(!rows.length){ el.innerHTML='<div class="empty">No sector data available right now. Check back after the next trading session.</div>'; return; }
+  el.innerHTML=rows.map((s,i)=>card(s,i)).join('');
+  const real=rows.filter(r=>r.s>=3).length;
+  document.getElementById('sub').innerHTML=`${rows.length} sectors &middot; best stock &amp; technicals per sector &middot; ${real} with 3+ stocks`;
+}
+buildSectors();
 </script>
+</body>
+</html>

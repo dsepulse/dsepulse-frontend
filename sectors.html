@@ -120,6 +120,13 @@ function card(s,i){
         ${best.signal?`<span class="best-tag" style="color:${(String(best.signal).toUpperCase().includes('BUY'))?'var(--green)':'var(--text3)'}">${esc(best.signal)}</span>`:''}
       </div>
       <span class="best-px">${ltpTxt} ${pctTxt?`<span style="color:${pctColor(best.pct)}">${pctTxt}</span>`:''}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="best-tag" style="min-width:62px">${esc(best.code)}</span>
+      <div class="tech">
+        <span class="chip">${best.rsi!=null?`RSI <b>${best.rsi}</b>`:'RSI &mdash;'}</span>
+        <span class="chip" style="${best.macd==='Bullish'?'color:var(--green)':best.macd==='Bearish'?'color:var(--red)':''}">MACD <b>${esc(best.macd||'\u2014')}</b></span>
+      </div>
     </div>` : ''}
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <span class="best-tag" style="min-width:62px">Sector avg</span>

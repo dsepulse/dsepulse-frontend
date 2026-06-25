@@ -121,9 +121,12 @@ function card(s,i){
       </div>
       <span class="best-px">${ltpTxt} ${pctTxt?`<span style="color:${pctColor(best.pct)}">${pctTxt}</span>`:''}</span>
     </div>` : ''}
-    <div class="tech">
-      <span class="chip" style="${rsiStyle(s.rsi_zone)}">${rsiTxt}</span>
-      <span class="chip">${macdTxt}</span>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="best-tag" style="min-width:62px">Sector avg</span>
+      <div class="tech">
+        <span class="chip" style="${rsiStyle(s.rsi_zone)}">${rsiTxt}</span>
+        <span class="chip">${macdTxt}</span>
+      </div>
     </div>
   </div>`;
 }

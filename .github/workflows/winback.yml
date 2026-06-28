@@ -1,0 +1,17 @@
+name: Daily Trial Win-back Emails
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  winback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger win-back endpoint
+        run: |
+          curl -sS -X POST \
+            "https://dsepulse-backend-production.up.railway.app/api/cron/winback" \
+            -H "X-Cron-Key: ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}\n"

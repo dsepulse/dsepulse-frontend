@@ -92,7 +92,10 @@ function render(){
     <div class="stat"><div class="v">${a.win_rate!=null?a.win_rate+'%':'&mdash;'}</div><div class="l">Win rate</div></div>
     ${tb?`<div class="stat"><div class="v" style="color:var(--green)">${a.hit||0}</div><div class="l">Target hit</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${a.stopped||0}</div><div class="l">Stopped</div></div>
-    <div class="stat"><div class="v" style="color:var(--text2)">${a.open||0}</div><div class="l">Still open</div></div>`
+    <div class="stat"><div class="v" style="color:var(--text2)">${(a.expired||0)}</div><div class="l">Expired</div></div>
+    <div class="stat"><div class="v" style="color:var(--gold)">${(a.holding||0)}</div><div class="l">Holding</div></div>
+    ${a.avg_days_to_hit?`<div class="stat"><div class="v">${a.avg_days_to_hit}d</div><div class="l">Avg days to hit</div></div>`:''}
+    ${a.in_time_pct!=null?`<div class="stat"><div class="v">${a.in_time_pct}%</div><div class="l">Hit in time</div></div>`:''}`
     :`<div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.best)}</div><div class="l">Best</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${fmtRet(a.worst)}</div><div class="l">Worst</div></div>
     <div class="stat"><div class="v">${a.samples}</div><div class="l">Picks tracked</div></div>`}` : '';
@@ -102,7 +105,7 @@ function render(){
     return;
   }
   if(!tb){ document.getElementById('sub').innerHTML=`${esc(tool.label)} ranks by score (no preset target) &middot; showing return since pick`; }
-  else { document.getElementById('sub').innerHTML=`${esc(tool.label)} &middot; did each pick reach its target? &middot; latest data ${esc(DATA.updated||'')}`; }
+  else { document.getElementById('sub').innerHTML=`${esc(tool.label)} &middot; did each pick reach its target within its window? &middot; latest data ${esc(DATA.updated||'')}`; }
   body.innerHTML=tool.days.map(d=>`
     <div class="day">
       <div class="day-h">${esc(d.date)}</div>
@@ -111,7 +114,7 @@ function render(){
           <div class="row-l">
             <span class="rk">#${i+1}</span>
             <span class="code">${esc(p.code)}</span>
-            <span class="px">entry &#2547;${p.entry}${p.target?` &middot; target &#2547;${p.target}`:''} &middot; last &#2547;${p.last}</span>
+            <span class="px">entry &#2547;${p.entry}${p.target?` &rarr; target &#2547;${p.target}`:''}${p.win_label?` <span style="color:var(--text3)">(${esc(p.win_label)})</span>`:''} &middot; last &#2547;${p.last}</span>
             ${statusBadge(p)}
           </div>
           <span class="ret" style="color:${retColor(p.ret)}">${fmtRet(p.ret)}</span>
@@ -119,10 +122,15 @@ function render(){
     </div>`).join('');
 }
 function statusBadge(p){
-  if(p.status==='HIT')     return `<span class="badge" style="background:var(--green-bg);color:var(--green)">TARGET HIT${p.hit_date?' &middot; '+esc(p.hit_date):''}</span>`;
-  if(p.status==='STOPPED') return `<span class="badge" style="background:var(--red-bg);color:var(--red)">STOPPED</span>`;
+  if(p.status==='HIT'){
+    const t = p.in_time ? 'in time' : 'late';
+    const tc = p.in_time ? 'var(--green)' : 'var(--gold)';
+    return `<span class="badge" style="background:var(--green-bg);color:var(--green)">TARGET HIT &middot; ${esc(p.event_date||'')} &middot; ${p.days}d</span><span class="badge" style="color:${tc}">${t}</span>`;
+  }
+  if(p.status==='STOPPED') return `<span class="badge" style="background:var(--red-bg);color:var(--red)">STOPPED &middot; ${esc(p.event_date||'')} &middot; ${p.days}d</span>`;
+  if(p.status==='EXPIRED') return `<span class="badge" style="color:var(--text2)">EXPIRED &middot; ${p.win_days}d, no hit</span>`;
+  if(p.status==='HOLDING') return `<span class="badge" style="background:var(--gold-bg);color:var(--gold)">HOLDING &middot; day ${p.days}${p.win_days?' of '+p.win_days:''}</span>`;
   if(p.agree)              return `<span class="badge">${p.agree} tools agree</span>`;
-  if(p.target)             return `<span class="badge">OPEN</span>`;
   if(p.score!=null)        return `<span class="badge">score ${p.score}</span>`;
   return '';
 }

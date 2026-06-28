@@ -86,17 +86,23 @@ function pick(i){ CUR=i; renderTabs(); render(); }
 function render(){
   const tool=DATA.tools[CUR];
   const a=tool.agg||{};
+  const tb = tool.target_based;
   document.getElementById('agg').innerHTML = (a.samples>0) ? `
-    <div class="stat"><div class="v" style="color:${retColor(a.avg_ret)}">${fmtRet(a.avg_ret)}</div><div class="l">Avg return</div></div>
+    <div class="stat"><div class="v" style="color:${retColor(a.avg_ret)}">${fmtRet(a.avg_ret)}</div><div class="l">Avg result</div></div>
     <div class="stat"><div class="v">${a.win_rate!=null?a.win_rate+'%':'&mdash;'}</div><div class="l">Win rate</div></div>
-    <div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.best)}</div><div class="l">Best</div></div>
+    ${tb?`<div class="stat"><div class="v" style="color:var(--green)">${a.hit||0}</div><div class="l">Target hit</div></div>
+    <div class="stat"><div class="v" style="color:var(--red)">${a.stopped||0}</div><div class="l">Stopped</div></div>
+    <div class="stat"><div class="v" style="color:var(--text2)">${a.open||0}</div><div class="l">Still open</div></div>`
+    :`<div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.best)}</div><div class="l">Best</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${fmtRet(a.worst)}</div><div class="l">Worst</div></div>
-    <div class="stat"><div class="v">${a.samples}</div><div class="l">Picks tracked</div></div>` : '';
+    <div class="stat"><div class="v">${a.samples}</div><div class="l">Picks tracked</div></div>`}` : '';
   const body=document.getElementById('body');
   if(!tool.days||!tool.days.length){
     body.innerHTML=`<div class="empty">No stored history for ${esc(tool.label)} yet.${tool.key==='master'?' Needs a few days of signals to form consensus.':''}</div>`;
     return;
   }
+  if(!tb){ document.getElementById('sub').innerHTML=`${esc(tool.label)} ranks by score (no preset target) &middot; showing return since pick`; }
+  else { document.getElementById('sub').innerHTML=`${esc(tool.label)} &middot; did each pick reach its target? &middot; latest data ${esc(DATA.updated||'')}`; }
   body.innerHTML=tool.days.map(d=>`
     <div class="day">
       <div class="day-h">${esc(d.date)}</div>
@@ -105,13 +111,20 @@ function render(){
           <div class="row-l">
             <span class="rk">#${i+1}</span>
             <span class="code">${esc(p.code)}</span>
-            <span class="px">&#2547;${p.entry} &rarr; &#2547;${p.current}</span>
-            ${p.agree?`<span class="badge">${p.agree} tools</span>`:''}
-            ${p.score!=null&&!p.agree?`<span class="badge">score ${p.score}</span>`:''}
+            <span class="px">entry &#2547;${p.entry}${p.target?` &middot; target &#2547;${p.target}`:''} &middot; last &#2547;${p.last}</span>
+            ${statusBadge(p)}
           </div>
           <span class="ret" style="color:${retColor(p.ret)}">${fmtRet(p.ret)}</span>
         </div>`).join('')}
     </div>`).join('');
+}
+function statusBadge(p){
+  if(p.status==='HIT')     return `<span class="badge" style="background:var(--green-bg);color:var(--green)">TARGET HIT${p.hit_date?' &middot; '+esc(p.hit_date):''}</span>`;
+  if(p.status==='STOPPED') return `<span class="badge" style="background:var(--red-bg);color:var(--red)">STOPPED</span>`;
+  if(p.agree)              return `<span class="badge">${p.agree} tools agree</span>`;
+  if(p.target)             return `<span class="badge">OPEN</span>`;
+  if(p.score!=null)        return `<span class="badge">score ${p.score}</span>`;
+  return '';
 }
 load();
 </script>

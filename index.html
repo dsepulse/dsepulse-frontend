@@ -664,6 +664,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab active" onclick="openTool('/overview.html',this)">Overview</div>
       <div class="tab" onclick="openTool('/market.html',this)">Market Pulse</div>
       <div class="tab" onclick="openTool('/sectors.html',this)">Sector Ranking</div>
+      <div class="tab" onclick="openTool('/trackrecord.html',this)">Track Record</div>
       <div class="dash-grp">Signals</div>
       <div class="tab" onclick="openTool('/picks.html',this)">Today's Picks</div>
       <div class="tab" onclick="openTool('/wma.html',this)">WMA Signals</div>
@@ -1850,6 +1851,18 @@ function applyToolGates(){
         var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);
         if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
       });
+      // Hide a group header (.dash-grp) when every tool under it is hidden.
+      var kids=document.querySelectorAll('#view-dashboard .tabs > *');
+      var curHdr=null, anyVisible=false;
+      kids.forEach(function(el){
+        if(el.classList.contains('dash-grp')){
+          if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
+          curHdr=el; anyVisible=false;
+        }else if(el.classList.contains('tab')){
+          if(el.style.display!=='none') anyVisible=true;
+        }
+      });
+      if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';   // last group
     }).catch(function(){});
 }
 function openFirstVisibleTool(){

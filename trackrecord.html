@@ -58,6 +58,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div class="disc">Past performance is shown for transparency and does not guarantee future results. Returns are mark-to-market (pick-day LTP vs latest LTP), before costs. Informational only &mdash; not investment advice.</div>
   <div class="tabs" id="tabs"></div>
   <div class="agg" id="agg"></div>
+  <div id="samplecap" style="font-size:12px;color:var(--text3);margin:8px 2px 0;line-height:1.5;"></div>
   <div id="body"><div class="empty">Loading track record&hellip;</div></div>
   <div class="foot" id="note"></div>
 </div>
@@ -87,9 +88,15 @@ function render(){
   const tool=DATA.tools[CUR];
   const a=tool.agg||{};
   const tb = tool.target_based;
+  const expTiles = `
+    ${a.avg_win!=null?`<div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.avg_win)}</div><div class="l">Avg win</div></div>`:''}
+    ${a.avg_loss!=null?`<div class="stat"><div class="v" style="color:var(--red)">${fmtRet(a.avg_loss)}</div><div class="l">Avg loss</div></div>`:''}
+    ${a.profit_factor!=null?`<div class="stat"><div class="v" style="color:${a.profit_factor>=1?'var(--green)':'var(--red)'}">${a.profit_factor}</div><div class="l">Profit factor</div></div>`:''}
+    ${a.expectancy!=null?`<div class="stat"><div class="v" style="color:${retColor(a.expectancy)}">${fmtRet(a.expectancy)}</div><div class="l">Per trade</div></div>`:''}`;
   document.getElementById('agg').innerHTML = (a.samples>0) ? `
     <div class="stat"><div class="v" style="color:${retColor(a.avg_ret)}">${fmtRet(a.avg_ret)}</div><div class="l">Avg result</div></div>
     <div class="stat"><div class="v">${a.win_rate!=null?a.win_rate+'%':'&mdash;'}</div><div class="l">Win rate</div></div>
+    ${expTiles}
     ${tb?`<div class="stat"><div class="v" style="color:var(--green)">${a.hit||0}</div><div class="l">Target hit</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${a.stopped||0}</div><div class="l">Stopped</div></div>
     <div class="stat"><div class="v" style="color:var(--text2)">${(a.expired||0)}</div><div class="l">Expired</div></div>
@@ -99,6 +106,14 @@ function render(){
     :`<div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.best)}</div><div class="l">Best</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${fmtRet(a.worst)}</div><div class="l">Worst</div></div>
     <div class="stat"><div class="v">${a.samples}</div><div class="l">Picks tracked</div></div>`}` : '';
+  // honest sample-size caveat
+  const capEl = document.getElementById('samplecap');
+  if(capEl){
+    const n = a.resolved || a.samples || 0;
+    capEl.innerHTML = n>0
+      ? `Based on ${n} resolved pick${n===1?'':'s'} so far &middot; a young sample &mdash; the numbers firm up as more trades complete. Profit factor above 1.0 means wins outweigh losses.`
+      : '';
+  }
   const body=document.getElementById('body');
   if(!tool.days||!tool.days.length){
     body.innerHTML=`<div class="empty">No stored history for ${esc(tool.label)} yet.${tool.key==='master'?' Needs a few days of signals to form consensus.':''}</div>`;

@@ -42,6 +42,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .px{font-size:11px;font-family:var(--mono);color:var(--text2)}
 .ret{font-size:13px;font-weight:700;font-family:var(--mono);min-width:64px;text-align:right}
 .badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--cream2);color:var(--text2)}
+.pos{font-size:9px;font-weight:700;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--cream);border:1px solid var(--border)}
 .empty{padding:30px;text-align:center;color:var(--text3);font-size:12px}
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px}
 @media(max-width:560px){.agg{gap:6px}.stat{min-width:46%}}
@@ -64,10 +65,39 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 </div>
 <script>
 const API="https://dsepulse-backend-production.up.railway.app";
-let DATA=null, CUR=0;
+/* stock_52w read (Supabase anon, read-only). Track Record shows only the last 15
+   trading days, so today's rolling 52-week range is a fair proxy for the range as
+   of pick date — the high/low barely shifts over 15 days. Used to show where each
+   pick entered within its 52-week range (breakout vs reversal character). */
+const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+let DATA=null, CUR=0, RANGE52={};
 function retColor(r){ return r>0?'var(--green)':r<0?'var(--red)':'var(--text2)'; }
 function fmtRet(r){ return r==null?'&mdash;':(r>0?'+':'')+r.toFixed(2)+'%'; }
 function esc(x){ return (x==null?'':String(x)).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+async function loadRanges(){
+  try{
+    const codes=new Set();
+    (DATA.tools||[]).forEach(t=>(t.days||[]).forEach(d=>(d.picks||[]).forEach(p=>{ if(p.code)codes.add(String(p.code).toUpperCase()); })));
+    if(!codes.size)return;
+    const list=[...codes].join(',');
+    const r=await fetch(`${SB_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${list})`,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
+    if(!r.ok)return;
+    const rows=await r.json();
+    (rows||[]).forEach(x=>{ RANGE52[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });
+  }catch(e){}
+}
+function pos52(entry,code){
+  const r=RANGE52[String(code||'').toUpperCase()];
+  if(!r||!(r.hi>r.lo))return null;
+  const e=Number(entry);
+  if(!isFinite(e)||e<=0)return null;
+  let pct=(e-r.lo)/(r.hi-r.lo)*100;
+  pct=Math.max(0,Math.min(100,Math.round(pct)));
+  return {pct,days:r.days,hi:r.hi,lo:r.lo};
+}
+function posColor(pct){ return pct>=70?'var(--green)':pct<=35?'var(--gold)':'var(--text2)'; }
 
 async function load(){
   try{
@@ -77,6 +107,7 @@ async function load(){
   }catch(e){ document.getElementById('body').innerHTML='<div class="empty">Track record unavailable right now. Check back after the next trading session.</div>'; return; }
   if(DATA.updated) document.getElementById('sub').innerHTML=`Last 15 trading days &middot; top 3 picks per tool &middot; latest data ${esc(DATA.updated)}`;
   if(DATA.note_smartmoney) document.getElementById('note').textContent=DATA.note_smartmoney;
+  await loadRanges();
   renderTabs(); render();
 }
 function renderTabs(){
@@ -87,6 +118,10 @@ function pick(i){ CUR=i; renderTabs(); render(); }
 function render(){
   const tool=DATA.tools[CUR];
   const a=tool.agg||{};
+  const _pos=[];
+  (tool.days||[]).forEach(d=>(d.picks||[]).forEach(p=>{ const q=pos52(p.entry,p.code); if(q)_pos.push(q.pct); }));
+  const avgPos=_pos.length?Math.round(_pos.reduce((x,y)=>x+y,0)/_pos.length):null;
+  const posTile=avgPos!=null?`<div class="stat"><div class="v">${avgPos}%</div><div class="l">Entry vs 52-wk</div></div>`:'';
   const tb = tool.target_based;
   const expTiles = `
     ${a.avg_win!=null?`<div class="stat"><div class="v" style="color:var(--green)">${fmtRet(a.avg_win)}</div><div class="l">Avg win</div></div>`:''}
@@ -96,6 +131,7 @@ function render(){
   document.getElementById('agg').innerHTML = (a.samples>0) ? `
     <div class="stat"><div class="v" style="color:${retColor(a.avg_ret)}">${fmtRet(a.avg_ret)}</div><div class="l">Avg result</div></div>
     <div class="stat"><div class="v">${a.win_rate!=null?a.win_rate+'%':'&mdash;'}</div><div class="l">Win rate</div></div>
+    ${posTile}
     ${expTiles}
     ${tb?`<div class="stat"><div class="v" style="color:var(--green)">${a.hit||0}</div><div class="l">Target hit</div></div>
     <div class="stat"><div class="v" style="color:var(--red)">${a.stopped||0}</div><div class="l">Stopped</div></div>
@@ -110,9 +146,16 @@ function render(){
   const capEl = document.getElementById('samplecap');
   if(capEl){
     const n = a.resolved || a.samples || 0;
-    capEl.innerHTML = n>0
+    let base = n>0
       ? `Based on ${n} resolved pick${n===1?'':'s'} so far &middot; a young sample &mdash; the numbers firm up as more trades complete. Profit factor above 1.0 means wins outweigh losses.`
       : '';
+    if(avgPos!=null){
+      const character = avgPos>=70 ? 'a breakout-leaning engine (picks enter high in their range)'
+                      : avgPos<=35 ? 'a reversal-leaning engine (picks enter low in their range)'
+                      : 'a mid-range engine';
+      base += `${base?' ':''}Picks entered on average at <b>${avgPos}%</b> of their 52-week range &mdash; ${character}.`;
+    }
+    capEl.innerHTML = base;
   }
   const body=document.getElementById('body');
   if(!tool.days||!tool.days.length){
@@ -131,6 +174,7 @@ function render(){
             <span class="code">${esc(p.code)}</span>
             <span class="px">entry &#2547;${p.entry}${p.target?` &rarr; target &#2547;${p.target}`:''}${p.win_label?` <span style="color:var(--text3)">(${esc(p.win_label)})</span>`:''} &middot; last &#2547;${p.last}</span>
             ${statusBadge(p)}
+            ${(()=>{const q=pos52(p.entry,p.code);return q?`<span class="pos" title="52-wk range &#2547;${q.lo}&ndash;&#2547;${q.hi} (${q.days}d)" style="color:${posColor(q.pct)}">@ ${q.pct}% 52-wk</span>`:'';})()}
           </div>
           <span class="ret" style="color:${retColor(p.ret)}">${fmtRet(p.ret)}</span>
         </div>`).join('')}

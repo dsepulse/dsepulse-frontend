@@ -29,6 +29,15 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .thead{position:sticky;top:0;z-index:2;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
 .empty{padding:34px;text-align:center;color:var(--text3);font-size:12px}
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+.chev{display:inline-block;font-size:12px;color:var(--text3);transition:transform .2s ease}
+.chead:hover{background:var(--cream)!important}
+.cchip{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:7px 9px}
+.cchip .cl{font-size:8px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--text3);margin-bottom:2px}
+.cchip .cv{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--navy)}
+.cglabel{font-size:8px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--gold);margin:0 0 6px 2px}
+.bar-t{font-size:9px;color:var(--text2);font-family:var(--mono)}
+.bar-w{height:5px;background:var(--cream2);border-radius:3px;overflow:hidden;margin-top:3px}
+.bar-f{height:100%;background:var(--green);border-radius:3px}
 </style>
 </head>
 <body>
@@ -38,9 +47,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 </div></div>
 <div class="wrap">
   <div class="h-title">Combined Signal</div>
-  <div class="h-sub">Picker + WMA + Tech consensus</div>
+  <div class="h-sub">Picker + WMA + Tech consensus &middot; tap a row for the full read</div>
   <div class="tbl">
-    <div class="thead" style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px;gap:8px"><div>Stock</div><div style="text-align:right">Picker</div><div style="text-align:center">WMA</div><div style="text-align:right">Tech</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
+    <div class="thead" style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px 24px;gap:8px"><div>Stock</div><div style="text-align:right">Picker</div><div style="text-align:center">WMA</div><div style="text-align:right">Tech</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div><div></div></div>
     <div id="combined-rows"><div class="empty">Loading combined signals&hellip;</div></div>
   </div>
   <div id="combined-empty" style="display:none;font-size:12px;color:var(--text3);margin-top:10px">No STRONG BUY consensus today.</div>
@@ -48,10 +57,147 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 </div>
 <script>
 const API="https://dsepulse-backend-production.up.railway.app";
+/* Fundamentals feed (Supabase anon, read-only) — P/E, dividend yield, market cap.
+   52-week high/low now comes straight from /api/bd/eval, so no lookup needed here. */
+const FUND_URL="https://hpzaluxjzmgedkplimim.supabase.co";
+const FUND_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
-const scC=s=>s>=70?'var(--green)':s>=55?'var(--gold)':'var(--red)';
+const CD={};            /* per-code combined-feed row (picker/wma/tech/ltp/cat/signal) */
+const EVCACHE={};       /* per-code eval cache */
+const FUCACHE={};       /* per-code fundamentals cache */
+
 async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+async function fetchEval(code){ if(EVCACHE[code]!==undefined)return EVCACHE[code]; const v=await fetchJSON('/api/bd/eval/'+encodeURIComponent(code)); EVCACHE[code]=v; return v; }
+async function fetchFund(code){
+  if(FUCACHE[code]!==undefined)return FUCACHE[code];
+  try{
+    const r=await fetch(FUND_URL+'/rest/v1/fundamentals?code=eq.'+encodeURIComponent(code)+'&select=*&limit=1',{headers:{apikey:FUND_KEY,Authorization:'Bearer '+FUND_KEY}});
+    if(!r.ok){ FUCACHE[code]=null; return null; }
+    const j=await r.json(); const v=Array.isArray(j)&&j.length?j[0]:null; FUCACHE[code]=v; return v;
+  }catch(e){ FUCACHE[code]=null; return null; }
+}
+
+/* ---------- derived-metric helpers (from the eval payload) ---------- */
+const pick=(o,keys)=>{ if(!o)return null; for(const k of keys){ if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]; } return null; };
+function volRatio(v){ if(!Array.isArray(v)||v.length<3)return null; const today=v[v.length-1]; const prev=v.slice(Math.max(0,v.length-21),v.length-1); if(!prev.length)return null; const avg=prev.reduce((a,b)=>a+b,0)/prev.length; if(!avg)return null; return today/avg; }
+function bollinger(p){ if(!Array.isArray(p)||p.length<20)return null; const w=p.slice(-20); const sma=w.reduce((a,b)=>a+b,0)/w.length; const sd=Math.sqrt(w.reduce((a,b)=>a+(b-sma)*(b-sma),0)/w.length); const up=sma+2*sd, lo=sma-2*sd; const ltp=p[p.length-1]; if(ltp>up)return{label:'Breakout \u2191'}; if(ltp<lo)return{label:'Breakdown \u2193'}; const b=(up===lo)?0.5:(ltp-lo)/(up-lo); return{label:b>=0.8?'Near upper':b<=0.2?'Near lower':'Mid band'}; }
+function rsiZone(v){ if(v==null)return null; if(v>=70)return'Overbought'; if(v>=60)return'Bullish'; if(v>=45)return'Neutral'; if(v>=30)return'Weak'; return'Oversold'; }
+function macdState(bd){ if(!Array.isArray(bd))return null; const m=bd.find(x=>/macd/i.test(x.label||'')); if(!m)return null; const val=Number(m.value||0); const r=val/15; if(r>=0.8)return'Bullish'; if(r>=0.4)return'Turning up'; if(val>0)return'Flat'; return'Bearish'; }
+function fmtCap(n){ n=Number(n); if(!isFinite(n)||!n)return null; if(n>=1e9)return'\u09F3'+(n/1e9).toFixed(1)+'B'; if(n>=1e6)return'\u09F3'+(n/1e6).toFixed(1)+'M'; if(n>=1e3)return'\u09F3'+(n/1e3).toFixed(0)+'K'; return'\u09F3'+n.toLocaleString(); }
+const chip=(l,v)=>`<div class="cchip"><div class="cl">${l}</div><div class="cv">${v==null?'&mdash;':v}</div></div>`;
+
+/* ---------- card renderer ---------- */
+function renderCard(code,ev,fu){
+  const base=CD[code]||{};
+  const pk=Number(base.picker||0),tech=Number(base.tech||0),wma=base.wma||'';
+  const consensus=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      <div class="cchip"><div class="cl">Picker</div><div class="cv">${pk.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/45</span></div></div>
+      <div class="cchip"><div class="cl">WMA</div><div class="cv" style="font-size:11px;color:${sigTxt[wma]||'var(--text2)'}">${wma||'&mdash;'}</div></div>
+      <div class="cchip"><div class="cl">Tech</div><div class="cv">${tech.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/100</span></div></div>
+    </div>`;
+
+  if(!ev||ev.status==='error'){
+    return `<div style="padding:14px 18px">${consensus}<div style="font-size:11px;color:var(--text3)">Full technical read isn't available for ${code} right now.</div></div>`;
+  }
+
+  const rsi=ev.rsi!=null?Number(ev.rsi):null;
+  const vr=volRatio(ev.volumes);
+  const bb=bollinger(ev.prices);
+  const macd=macdState(ev.breakdown);
+  const score=ev.final_score!=null?Number(ev.final_score):null;
+  const vl=ev.verdict_level||'', vcol=vl==='success'?'var(--green)':vl==='danger'?'var(--red)':'var(--gold)';
+  const vbg=vl==='success'?'var(--green-bg)':vl==='danger'?'var(--red-bg)':'var(--gold-bg)';
+
+  /* 52-week range straight from eval (close-based, rolling) */
+  const h52=ev.high_52w, l52=ev.low_52w, d52=ev.range52_days;
+  const has52=(h52!=null&&l52!=null&&Number(h52)>0&&Number(l52)>0);
+  const lbl52=d52?('52-wk ('+d52+'d)'):'52-wk range';
+  let val52=null;
+  if(has52){
+    const ltp=Number(ev.ltp||base.ltp||0);
+    let mark='';
+    if(ltp>0&&Number(h52)>Number(l52)){
+      const pos=(ltp-Number(l52))/(Number(h52)-Number(l52));
+      if(pos>=0.97) mark=' <span style="color:var(--green);font-size:9px">\u00b7 at high</span>';
+      else if(pos<=0.03) mark=' <span style="color:var(--gold);font-size:9px">\u00b7 at low</span>';
+    }
+    val52='<span style="font-size:10px">\u09F3'+Number(l52).toFixed(2)+' \u2013 \u09F3'+Number(h52).toFixed(2)+'</span>'+mark;
+  }
+
+  /* fundamentals (Supabase) */
+  const pe=pick(fu,['pe','pe_ratio']);
+  const dy=pick(fu,['div_yield','dividend_yield','dy']);
+  const mc=pick(fu,['market_cap','mcap','marketcap']);
+
+  /* score breakdown bars */
+  const maxOf=l=>/wma/i.test(l)?25:/volume/i.test(l)?20:/macd/i.test(l)?15:/rsi/i.test(l)?15:/categ/i.test(l)?5:10;
+  const bars=(ev.breakdown||[]).map(b=>{ const v=Number(b.value||0); const w=Math.max(0,Math.min(100,(v/maxOf(b.label))*100)); return `<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between"><span class="bar-t">${b.label}</span><span class="bar-t" style="color:var(--navy);font-weight:600">+${v}</span></div><div class="bar-w"><div class="bar-f" style="width:${w}%"></div></div></div>`; }).join('');
+  const adj=(ev.adjustments||[]).map(a=>{ const v=Number(a.value||0); const c=v>=0?'var(--green)':'var(--red)'; return `<span style="font-size:9px;padding:2px 7px;border-radius:4px;background:var(--cream);border:1px solid var(--border);color:var(--text2);margin-right:5px;margin-bottom:5px;display:inline-block">${a.label} <b style="color:${c};font-family:var(--mono)">${v>=0?'+':''}${v}</b></span>`; }).join('');
+
+  return `
+  <div style="padding:14px 18px">
+    <div style="display:flex;align-items:center;gap:8px;background:${vbg};border:1px solid ${vcol};border-radius:7px;padding:9px 12px;margin-bottom:14px">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:${vcol}">${ev.verdict||'&mdash;'}</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--text3)">Score <b style="color:${vcol}">${score!=null?score:'&mdash;'}</b>/100</span>
+    </div>
+
+    ${consensus}
+
+    <div class="cglabel">Technical read</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px">
+      ${chip('RSI', rsi!=null?rsi+' <span style="font-size:9px;color:var(--text3)">'+(rsiZone(rsi)||'')+'</span>':null)}
+      ${chip('MACD', macd)}
+      ${chip('Volume', vr!=null?vr.toFixed(1)+'&times; avg':null)}
+      ${chip('Bollinger', bb?bb.label:null)}
+      ${chip('Circuit', ev.circuit_dist!=null?Number(ev.circuit_dist).toFixed(2)+'%':null)}
+      ${chip('Streak', ev.consec_up!=null?ev.consec_up+' up-days':null)}
+    </div>
+
+    <div class="cglabel">Market &amp; fundamentals</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px">
+      ${chip('Sector', ev.sector?'<span style="font-size:11px">'+ev.sector+'</span>':null)}
+      ${chip('Sector rank', ev.sector_rank!=null?'#'+ev.sector_rank:null)}
+      ${chip('P/E', pe!=null?Number(pe).toFixed(1):null)}
+      ${chip('Div yield', dy!=null?Number(dy).toFixed(2)+'%':null)}
+      ${chip('Mkt cap', fmtCap(mc))}
+      ${chip(lbl52, val52)}
+    </div>
+
+    <div class="cglabel">Score breakdown</div>
+    <div style="margin-bottom:8px">${bars||'<div style="font-size:10px;color:var(--text3)">&mdash;</div>'}</div>
+    ${adj?'<div style="margin-bottom:14px">'+adj+'</div>':''}
+
+    <div class="cglabel">Trade plan</div>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;background:var(--navy);border-radius:7px;padding:11px 14px">
+      <div><div style="font-size:8px;letter-spacing:0.4px;text-transform:uppercase;color:#8a93a8;margin-bottom:2px">Entry</div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:#DFE6EE">\u09F3${ev.entry!=null?Number(ev.entry).toFixed(2):'\u2014'}</div></div>
+      <div><div style="font-size:8px;letter-spacing:0.4px;text-transform:uppercase;color:#8a93a8;margin-bottom:2px">Target</div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:#8FD6B0">\u09F3${ev.target!=null?Number(ev.target).toFixed(2):'\u2014'}</div></div>
+      <div><div style="font-size:8px;letter-spacing:0.4px;text-transform:uppercase;color:#8a93a8;margin-bottom:2px">Stop</div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:#E8A99F">\u09F3${ev.sl!=null?Number(ev.sl).toFixed(2):'\u2014'}</div></div>
+      <div><div style="font-size:8px;letter-spacing:0.4px;text-transform:uppercase;color:#8a93a8;margin-bottom:2px">R:R</div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:#E6C987">${ev.rr!=null?Number(ev.rr).toFixed(1):'\u2014'}</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- expand / collapse ---------- */
+async function toggleRow(row){
+  const panel=row.querySelector('.cpanel'), head=row.querySelector('.chead'), chev=row.querySelector('.chev');
+  const isOpen=panel.dataset.open==='1';
+  if(isOpen){ panel.style.maxHeight='0'; panel.dataset.open='0'; head.setAttribute('aria-expanded','false'); if(chev)chev.style.transform='rotate(0deg)'; return; }
+  panel.dataset.open='1'; head.setAttribute('aria-expanded','true'); if(chev)chev.style.transform='rotate(180deg)';
+  if(panel.dataset.loaded!=='1'){
+    panel.innerHTML='<div style="padding:16px 18px;font-size:11px;color:var(--text3)">Loading full read&hellip;</div>';
+    panel.style.maxHeight='120px';
+    const code=row.dataset.code;
+    const [ev,fu]=await Promise.all([fetchEval(code),fetchFund(code)]);
+    panel.innerHTML=renderCard(code,ev,fu);
+    panel.dataset.loaded='1';
+  }
+  requestAnimationFrame(()=>{ panel.style.maxHeight=(panel.scrollHeight+40)+'px'; });
+}
+
+/* ---------- build list ---------- */
 async function buildCombined(){
   const el=document.getElementById('combined-rows');if(!el)return;
   const live=await fetchJSON('/api/combined/today');
@@ -60,9 +206,28 @@ async function buildCombined(){
   if(emp&&!live.some(r=>r.signal==='STRONG BUY'))emp.style.display='block';
   const rows=live.slice(0,60);
   el.innerHTML=rows.map((r,i)=>{
+    CD[r.code]=r;
     const pk=Number(r.picker||0),tech=Number(r.tech||0),ltp=Number(r.ltp||0),sig=r.signal||'',wma=r.wma||'';
-    return `<div style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${pk.toFixed(0)}<span style="font-size:8px;color:var(--text3)">/45</span></div><div style="text-align:center"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;color:${sigTxt[wma]||'var(--text3)'};background:${sigBg[wma]||'var(--cream2)'}">${wma||'–'}</span></div><div style="text-align:right;font-size:12px;font-weight:800;font-family:var(--mono);color:${tech>=70?'var(--green)':'var(--navy)'}">${tech.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
+    const last=i===rows.length-1;
+    return `<div class="crow" data-code="${r.code}">
+      <div class="chead" role="button" tabindex="0" aria-expanded="false" style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px 24px;gap:8px;padding:9px 18px;align-items:center;cursor:pointer;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}">
+        <div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div>
+        <div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${pk.toFixed(0)}<span style="font-size:8px;color:var(--text3)">/45</span></div>
+        <div style="text-align:center"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;color:${sigTxt[wma]||'var(--text3)'};background:${sigBg[wma]||'var(--cream2)'}">${wma||'\u2013'}</span></div>
+        <div style="text-align:right;font-size:12px;font-weight:800;font-family:var(--mono);color:${tech>=70?'var(--green)':'var(--navy)'}">${tech.toFixed(0)}</div>
+        <div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">\u09F3${ltp.toFixed(2)}</div>
+        <div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div>
+        <div style="text-align:center"><span class="chev">&#9662;</span></div>
+      </div>
+      <div class="cpanel" data-open="0" data-loaded="0" style="max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--cream);${last?'':'border-bottom:1px solid var(--border)'}"></div>
+    </div>`;
   }).join('');
+
+  document.querySelectorAll('.crow').forEach(row=>{
+    const head=row.querySelector('.chead');
+    head.addEventListener('click',()=>toggleRow(row));
+    head.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleRow(row); } });
+  });
 }
 buildCombined();
 </script>

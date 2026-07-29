@@ -111,6 +111,15 @@ function renderCard(code,ev,fu){
   const vl=ev.verdict_level||'', vcol=vl==='success'?'var(--green)':vl==='danger'?'var(--red)':'var(--gold)';
   const vbg=vl==='success'?'var(--green-bg)':vl==='danger'?'var(--red-bg)':'var(--gold-bg)';
 
+  /* Degenerate read: the BD-eval engine returned no usable evaluation for this
+     stock — the entire score breakdown sums to zero and the score is 0/none (or an
+     outright not_found). That renders as a spurious "AVOID / Score 0" that
+     contradicts the consensus, so we suppress the verdict + price-derived read and
+     show consensus and fundamentals only. Breakdown-sum is the reliable tell — a
+     genuinely-scored stock always has non-zero components, even a weak one. */
+  const bdSum = Array.isArray(ev.breakdown) ? ev.breakdown.reduce((s,b)=>s+Math.abs(Number(b.value||0)),0) : 0;
+  const noData = (ev.status==='not_found') || ((score==null||score===0) && bdSum===0);
+
   /* 52-week range straight from eval (close-based, rolling) */
   const h52=ev.high_52w, l52=ev.low_52w, d52=ev.range52_days;
   const has52=(h52!=null&&l52!=null&&Number(h52)>0&&Number(l52)>0);
@@ -131,6 +140,30 @@ function renderCard(code,ev,fu){
   const pe=pick(fu,['pe','pe_ratio']);
   const dy=pick(fu,['div_yield','dividend_yield','dy']);
   const mc=pick(fu,['market_cap','mcap','marketcap']);
+
+  /* market & fundamentals block (shared between full + no-data cards) */
+  const marketBlock = `
+    <div class="cglabel">Market &amp; fundamentals</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px">
+      ${chip('Sector', ev.sector?'<span style="font-size:11px">'+ev.sector+'</span>':null)}
+      ${chip('Sector rank', ev.sector_rank!=null?'#'+ev.sector_rank:null)}
+      ${chip('P/E', pe!=null?Number(pe).toFixed(1):null)}
+      ${chip('Div yield', dy!=null?Number(dy).toFixed(2)+'%':null)}
+      ${chip('Mkt cap', fmtCap(mc))}
+      ${chip(lbl52, val52)}
+    </div>`;
+
+  if(noData){
+    return `
+    <div style="padding:14px 18px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;padding:9px 12px;margin-bottom:14px">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--gold)">Full technical read unavailable</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:12px">The detailed price history for this stock isn't available right now, so RSI, MACD, volume and the trade plan can't be computed. This is a data gap &mdash; <b>not</b> a sell signal. The consensus below is unaffected.</div>
+      ${consensus}
+      ${marketBlock}
+    </div>`;
+  }
 
   /* score breakdown bars */
   const maxOf=l=>/wma/i.test(l)?25:/volume/i.test(l)?20:/macd/i.test(l)?15:/rsi/i.test(l)?15:/categ/i.test(l)?5:10;
@@ -156,15 +189,7 @@ function renderCard(code,ev,fu){
       ${chip('Streak', ev.consec_up!=null?ev.consec_up+' up-days':null)}
     </div>
 
-    <div class="cglabel">Market &amp; fundamentals</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px">
-      ${chip('Sector', ev.sector?'<span style="font-size:11px">'+ev.sector+'</span>':null)}
-      ${chip('Sector rank', ev.sector_rank!=null?'#'+ev.sector_rank:null)}
-      ${chip('P/E', pe!=null?Number(pe).toFixed(1):null)}
-      ${chip('Div yield', dy!=null?Number(dy).toFixed(2)+'%':null)}
-      ${chip('Mkt cap', fmtCap(mc))}
-      ${chip(lbl52, val52)}
-    </div>
+    ${marketBlock}
 
     <div class="cglabel">Score breakdown</div>
     <div style="margin-bottom:8px">${bars||'<div style="font-size:10px;color:var(--text3)">&mdash;</div>'}</div>

@@ -47,7 +47,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 </div></div>
 <div class="wrap">
   <div class="h-title">Combined Signal</div>
-  <div class="h-sub">Picker + WMA + Tech consensus &middot; tap a row for the full read</div>
+  <div class="h-sub">Picker + WMA + Tech consensus &middot; tap a row for the full read &middot; <span id="price-note" style="color:var(--gold)">prices loading&hellip;</span></div>
   <div class="tbl">
     <div class="thead" style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px 24px;gap:8px"><div>Stock</div><div style="text-align:right">Picker</div><div style="text-align:center">WMA</div><div style="text-align:right">Tech</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div><div></div></div>
     <div id="combined-rows"><div class="empty">Loading combined signals&hellip;</div></div>
@@ -227,12 +227,37 @@ async function buildCombined(){
   const el=document.getElementById('combined-rows');if(!el)return;
   const live=await fetchJSON('/api/combined/today');
   if(!Array.isArray(live)||!live.length){ el.innerHTML='<div class="empty">No combined signals available right now.</div>'; return; }
+
+  /* fetch today's live prices from the tech feed — updated every session by dse_tech.py.
+     This overrides the stale LTP stored with the signal (which was from the signal day).
+     Falls back to the signal-day price if the code isn't in today's tech feed. */
+  const techFeed=await fetchJSON('/api/tech/today');
+  const LIVE_PRICE={};
+  if(Array.isArray(techFeed)){
+    techFeed.forEach(t=>{ if(t.code&&t.ltp!=null) LIVE_PRICE[String(t.code).toUpperCase()]=Number(t.ltp); });
+  }
+
   const emp=document.getElementById('combined-empty');
   if(emp&&!live.some(r=>r.signal==='STRONG BUY'))emp.style.display='block';
+
+  /* update subtitle with price freshness note */
+  const priceNote=document.getElementById('price-note');
+  if(priceNote){
+    const liveCount=Object.keys(LIVE_PRICE).length;
+    const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    priceNote.textContent=liveCount>0?`prices as of ${today} (${liveCount} stocks)`:'prices from signal date';
+    priceNote.style.color=liveCount>0?'var(--text3)':'var(--gold)';
+  }
   const rows=live.slice(0,60);
   el.innerHTML=rows.map((r,i)=>{
     CD[r.code]=r;
-    const pk=Number(r.picker||0),tech=Number(r.tech||0),ltp=Number(r.ltp||0),sig=r.signal||'',wma=r.wma||'';
+    const pk=Number(r.picker||0),tech=Number(r.tech||0),sig=r.signal||'',wma=r.wma||'';
+    const signalLtp=Number(r.ltp||0);
+    const liveLtp=LIVE_PRICE[String(r.code).toUpperCase()]||signalLtp;
+    const ltp=liveLtp;
+    const ltpChanged=liveLtp>0&&signalLtp>0&&Math.abs(liveLtp-signalLtp)>0.01;
+    const ltpColor=ltpChanged?(liveLtp>signalLtp?'var(--green)':'var(--red)'):'var(--navy)';
+    const ltpTitle=ltpChanged?`Signal day: ৳${signalLtp.toFixed(2)} → now: ৳${liveLtp.toFixed(2)}`:'';
     const last=i===rows.length-1;
     return `<div class="crow" data-code="${r.code}">
       <div class="chead" role="button" tabindex="0" aria-expanded="false" style="display:grid;grid-template-columns:1fr 75px 110px 75px 90px 110px 24px;gap:8px;padding:9px 18px;align-items:center;cursor:pointer;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}">
@@ -240,7 +265,7 @@ async function buildCombined(){
         <div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${pk.toFixed(0)}<span style="font-size:8px;color:var(--text3)">/45</span></div>
         <div style="text-align:center"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;color:${sigTxt[wma]||'var(--text3)'};background:${sigBg[wma]||'var(--cream2)'}">${wma||'\u2013'}</span></div>
         <div style="text-align:right;font-size:12px;font-weight:800;font-family:var(--mono);color:${tech>=70?'var(--green)':'var(--navy)'}">${tech.toFixed(0)}</div>
-        <div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">\u09F3${ltp.toFixed(2)}</div>
+        <div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:${ltpColor}" title="${ltpTitle}">\u09F3${ltp.toFixed(2)}</div>
         <div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div>
         <div style="text-align:center"><span class="chev">&#9662;</span></div>
       </div>

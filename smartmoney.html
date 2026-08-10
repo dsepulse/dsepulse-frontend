@@ -198,11 +198,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
       '</div></div>';
   }
 
-  function renderBody(){
+  async function renderBody(){
     const body=document.getElementById('smf-body'), legend=document.getElementById('smf-legend');
     if(!body)return;
     if(!ITEMS.length){
-      body.innerHTML='<div class="smf-empty">No smart-money activity in the latest session. If your Activity Detector tool hasn\u2019t uploaded for the latest trading day, this stays blank until it does.</div>';
+      body.innerHTML=await quietBanner('Activity Detector ran — no unusual accumulation or distribution detected today','smart money signals');
       if(legend)legend.innerHTML=''; return;
     }
     const fs=val('sm-fsector'), fst=val('sm-fstatus'), q=(val('sm-fsearch')||'').toUpperCase().trim(), by=val('sm-fsort')||'strength';

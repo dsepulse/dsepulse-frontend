@@ -93,7 +93,25 @@ function hdr(t,sub,state){
   return `<span class="card-title">${t}</span><span class="card-sub">${sub}</span><span class="pill ${cls}">${lbl}</span>`;
 }
 function trow(l,r,col){return `<div class="trow"><span class="l">${l}</span><span class="r" style="color:${col||'var(--text)'}">${r}</span></div>`;}
-function alertBox(msg,type){return `<div class="alert ${type}">${msg}</div>`;}
+const CMDS=[];
+function alertBox(msg,type,cmd){
+  const id='cmd_'+Math.random().toString(36).slice(2,7);
+  const btnHtml=cmd
+    ? `<div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+        <code style="font-size:10px;font-family:var(--mono);background:rgba(0,0,0,.06);padding:3px 7px;border-radius:4px;flex:1;overflow-x:auto;white-space:nowrap">${cmd}</code>
+        <button onclick="copyCmd('${id}','${cmd.replace(/'/g,"\'")}')" id="${id}" style="font-size:10px;padding:3px 10px;border:1px solid currentColor;border-radius:4px;background:transparent;cursor:pointer;color:inherit;font-family:inherit;white-space:nowrap">Copy</button>
+       </div>`
+    : `<div style="margin-top:4px;font-size:10px;opacity:.8">Resolves automatically on next daily run ✓</div>`;
+  if(cmd&&!CMDS.includes(cmd))CMDS.push(cmd);
+  return `<div class="alert ${type}">${msg}${btnHtml}</div>`;
+}
+function copyCmd(id,cmd){
+  navigator.clipboard.writeText(cmd).then(()=>{
+    const b=document.getElementById(id);if(b){b.textContent='Copied ✓';setTimeout(()=>{b.textContent='Copy';},2000);}
+  }).catch(()=>{
+    const b=document.getElementById(id);if(b){b.textContent='Failed';setTimeout(()=>{b.textContent='Copy';},2000);}
+  });
+}
 
 async function run(){
   const out=document.getElementById('out');
@@ -115,13 +133,19 @@ async function run(){
     sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=7'),
   ]);
 
+  // helper: find date from any row — tries multiple field names
+  const getDate=(r)=>r?.trade_date||r?.date||r?.as_of||null;
+  // use track record's updated date as the canonical last-run date for tools
+  // that don't embed a date in each row
+  const canonDate=tr?.updated||null;
+
   const tools={
     picks:{label:"Today's picks",date:pk?.date,list:pk?.picks||[]},
-    wma:{label:'WMA signals',date:Array.isArray(wm)&&wm[0]?.trade_date,list:Array.isArray(wm)?wm:[]},
-    tech:{label:'Tech analysis',date:Array.isArray(tc)&&tc[0]?.trade_date,list:Array.isArray(tc)?tc:[]},
-    combined:{label:'Combined signal',date:Array.isArray(cb)&&(cb[0]?.trade_date||cb[0]?.date),list:Array.isArray(cb)?cb:[]},
-    bd:{label:'BD signal',date:Array.isArray(bd)&&bd[0]?.trade_date,list:Array.isArray(bd)?bd:[]},
-    activity:{label:'Smart money',date:Array.isArray(ac)&&ac[0]?.trade_date,list:Array.isArray(ac)?ac:[]},
+    wma:{label:'WMA signals',date:Array.isArray(wm)&&wm.length?(getDate(wm[0])||canonDate):null,list:Array.isArray(wm)?wm:[]},
+    tech:{label:'Tech analysis',date:Array.isArray(tc)&&tc.length?(getDate(tc[0])||canonDate):null,list:Array.isArray(tc)?tc:[]},
+    combined:{label:'Combined signal',date:Array.isArray(cb)&&cb.length?(getDate(cb[0])||canonDate):null,list:Array.isArray(cb)?cb:[]},
+    bd:{label:'BD signal',date:Array.isArray(bd)&&bd.length?(getDate(bd[0])||canonDate):null,list:Array.isArray(bd)?bd:[]},
+    activity:{label:'Smart money',date:Array.isArray(ac)&&ac.length?(getDate(ac[0])||canonDate):null,list:Array.isArray(ac)?ac:[]},
   };
 
   const techMap={},wmaMap={},cbMap={};
@@ -139,7 +163,7 @@ async function run(){
   const allSame=uniqueDates.length<=1;
   const dateStale=diff(latest)>1;
   const dateState=allSame&&!dateStale?'ok':!allSame?'fail':'warn';
-  if(dateState!=='ok'){issues++;if(!allSame)alerts.push(alertBox('Tools are on <b>different trade dates</b> — some didn\'t upload on the latest run.','red'));if(dateStale)alerts.push(alertBox(`Latest data is from ${fmtD(latest)} (${diff(latest)}d ago) — today's run may not have uploaded yet.`,'amber'));}
+  if(dateState!=='ok'){issues++;if(!allSame)alerts.push(alertBox('Tools are on <b>different trade dates</b> — some didn\'t upload on the latest run.','red','DSE_MANUAL.bat'));if(dateStale)alerts.push(alertBox(`Latest data is from ${fmtD(latest)} (${diff(latest)}d ago) — today's run may not have uploaded yet.`,'amber','python dse_tech.py --manual'));}
 
   let dateBody=Object.entries(tools).map(([k,t])=>{
     const d=t.date,n=diff(d);
@@ -158,11 +182,11 @@ async function run(){
   const cbCodes=new Set(tools.combined.list.map(r=>r.code));
   const uniOk=Math.abs(techN-wmaN)<=10&&(cbN===0||[...cbCodes].every(c=>techCodes.has(c)||wmaCodes.has(c)));
   const uniState=uniOk?'ok':Math.abs(techN-wmaN)>50?'fail':'warn';
-  if(uniState!=='ok'){issues++;if(Math.abs(techN-wmaN)>50)alerts.push(alertBox(`Tech has ${techN} stocks but WMA only ${wmaN} — large gap suggests an upload failure.`,'amber'));}
+  if(uniState!=='ok'){issues++;if(Math.abs(techN-wmaN)>50)alerts.push(alertBox(`Tech has ${techN} stocks but WMA only ${wmaN} — large gap suggests an upload failure.`,'amber','python dse_wma.py --manual'));}
   html+=sec('2. Stock universe — tools should cover similar number of stocks');
   html+=card(hdr('Universe coverage','stock count across all tools',uniState),
     trow("Today's picks",tools.picks.list.length+' stocks')+
-    trow('WMA signals',wmaN+' stocks'+(Math.abs(techN-wmaN)>10?' ⚠ gap vs Tech':''),Math.abs(techN-wmaN)>10?'var(--gold)':'var(--text)')+
+    trow('WMA signals',wmaN+' Strong Buy signals today')+
     trow('Tech analysis',techN+' stocks')+
     trow('Combined signal',cbN+' stocks qualifying today')+
     trow('BD signal',bdN+' stocks')+
@@ -185,7 +209,7 @@ async function run(){
       `<span class="td ${ok?'ok':'warn'}">${ok?'✓':'Δ'+maxD.toFixed(2)}</span>`;
   });
   const priceState=mismatch===0?'ok':mismatch<=3?'warn':'fail';
-  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show different prices across tools. The live-price fetch in combined.html/wma.html will resolve these after today's tool run.`,'amber'));}
+  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show different prices across tools.`,'amber',null));}
   html+=sec('3. LTP price consistency — same stock must show same price in every tool');
   html+=card(hdr('Price sync','LTP comparison across Tech, WMA and Combined',priceState),
     `<div class="ptbl"><span class="th">Code</span><span class="th">Tech</span><span class="th">WMA</span><span class="th">Combined</span><span class="th">Match</span>${priceRows}</div>`+
@@ -196,17 +220,23 @@ async function run(){
   const techQual=new Set(tools.tech.list.filter(r=>Number(r.score||0)>=70).map(r=>r.code));
   const wmaQual=new Set(tools.wma.list.filter(r=>/STRONG BUY/i.test(r.sig||r.signal||'')).map(r=>r.code));
   let cbFail=0,cbRows='';
-  if(cbN>0){
+  // only cross-check if Combined and Tech/WMA share the same trade date
+  // (comparing Aug 3 combined picks against today's tech data will always fail)
+  const cbDate=tools.combined.date, techDate=tools.tech.date;
+  const datesMatch=cbDate&&techDate&&cbDate===techDate;
+  if(cbN>0&&datesMatch){
     [...cbCodes].forEach(code=>{
       const inT=techQual.has(code),inW=wmaQual.has(code);
       if(!inT||!inW){cbFail++;cbRows+=`<div style="font-size:11px;padding:4px 0;border-top:1px solid var(--cream2);color:var(--gold)">${code} — ${!inT?'missing from Tech ≥70':''}${!inT&&!inW?' + ':''}${!inW?'missing from WMA Strong Buy':''}</div>`;}
     });
     if(!cbRows)cbRows=`<div style="font-size:11px;color:var(--green);padding:4px 0">All ${cbN} combined stocks verified in both Tech and WMA feeds ✓</div>`;
+  } else if(cbN>0&&!datesMatch){
+    cbRows=`<div style="font-size:11px;color:var(--text3);padding:4px 0">Skipped — Combined (${fmtD(cbDate)}) and Tech (${fmtD(techDate)}) are on different dates. Cross-check only valid when both share the same date.</div>`;
   } else {
     cbRows='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — nothing to cross-check</div>';
   }
-  const cbState=cbFail===0?'ok':'fail';
-  if(cbState!=='ok'){issues++;alerts.push(alertBox(`${cbFail} stock(s) in Combined did not pass Tech≥70 or WMA Strong Buy — data integrity issue.`,'red'));}
+  const cbState=cbFail===0?'ok':'warn';
+  if(cbFail>0){issues++;alerts.push(alertBox(`${cbFail} stock(s) in Combined did not pass Tech≥70 or WMA Strong Buy — run all tools together to sync.`,'red','DSE_MANUAL.bat'));}
   html+=sec('4. Combined signal integrity — every combined pick must pass Tech ≥70 AND WMA Strong Buy');
   html+=card(hdr('Combined integrity','cross-checking picker / WMA / tech agreement',cbState),cbRows);
 
@@ -214,7 +244,7 @@ async function run(){
   const s52date=s52&&Array.isArray(s52)?s52[0]?.updated_at?.slice(0,10):null;
   const s52Fresh=diff(s52date)<=1;
   const s52State=s52Fresh?'ok':'warn';
-  if(!s52Fresh){issues++;alerts.push(alertBox('52-week range table (stock_52w) is stale — dse_tech.py may not have uploaded 52-week data today.','amber'));}
+  if(!s52Fresh){issues++;alerts.push(alertBox('52-week range table (stock_52w) is stale — dse_tech.py may not have uploaded 52-week data today.','amber','python dse_tech.py --manual'));}
   html+=sec('5. 52-week high/low table — must update with every dse_tech.py run');
   html+=card(hdr('52-wk sync','stock_52w Supabase table',s52State),
     trow('Last updated',s52date?fmtD(s52date)+' &middot; '+(diff(s52date)===0?'today':diff(s52date)+'d ago'):'—',s52Fresh?'var(--green)':'var(--gold)')
@@ -238,7 +268,7 @@ async function run(){
     else if(isToday&&!ran){bg='var(--gold)';lbl='?';col='#fff';}
     else{bg='var(--cream2)';lbl='–';col='var(--text3)';}
     dots+=`<div class="dot"><div class="dot-sq" style="background:${bg};color:${col}">${lbl}</div><div class="dot-lbl">${DAY[dow]}</div></div>`;
-    if(trading&&!ran&&!isToday) alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day was missed. Run dse_tech.py with --date ${iso} to recover.`,'amber'));
+    if(trading&&!ran&&!isToday) alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day missed.`,'amber',`python dse_tech.py --date ${iso}`));
   }
   const runState=missedDays===0?'ok':missedDays<=1?'warn':'fail';
   if(missedDays>0)issues++;

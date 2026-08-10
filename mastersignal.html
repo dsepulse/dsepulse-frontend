@@ -377,7 +377,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   function render(){
     const board=document.getElementById('ms-board'); if(!board)return;
     if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day.</div>'; document.getElementById('ms-count').textContent=''; return; }
-    const top=STOCKS.slice(0,60);
+    const top=STOCKS.slice(0,3);
     board.innerHTML=top.map(rowHTML).join('');
     document.getElementById('ms-count').textContent=STOCKS.length+' ranked'+(STOCKS.length>60?' \u00b7 showing top 60':'');
   }
@@ -389,7 +389,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     DATA={};
     FEEDS.forEach((x,i)=>{ (x.pick(res[i])||[]).forEach(r=>{ const code=String(r.code||'').toUpperCase(); if(!code)return; (DATA[code]||(DATA[code]={}))[x.key]=r; }); });
     loaded=true;
-    STOCKS=Object.keys(DATA).map(c=>compute(c,DATA[c])).filter(s=>s.agreeN>=1).sort((a,b)=>b.conv-a.conv);
+    STOCKS=Object.keys(DATA).map(c=>compute(c,DATA[c])).filter(s=>s.agreeN>=2).sort((a,b)=>b.conv-a.conv);
     render();
   }
 

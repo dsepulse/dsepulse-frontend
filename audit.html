@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Data Sync Audit &middot; DSE Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF;--cream:#FAF8F3;--cream2:#F4F0E6;--navy:#0D1F3C;--gold:#B8860B;
+  --gold-bg:#FDF8EC;--gold-border:#E8D5A0;--green:#1A6B3C;--green-bg:#EDF7F1;--green-border:#A7D7C0;
+  --red:#B91C1C;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --text:#1A1A2E;--text2:#4A5568;--text3:#9AA3B0;--border:#E2DECE;--border2:#D1C9B8;
+  --mono:'JetBrains Mono',monospace;--serif:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--white);border-bottom:1px solid var(--border);padding:16px 22px}
+.hdr-in{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}.logo span{color:var(--gold)}
+.back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}.back:hover{text-decoration:underline}
+.wrap{max-width:900px;margin:0 auto;padding:22px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.h-title{font-family:var(--serif);font-weight:800;font-size:22px;color:var(--navy);margin-bottom:2px}
+.h-sub{font-size:12px;color:var(--text3)}
+.badge{font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+.refresh{padding:7px 14px;border:1px solid var(--border2);border-radius:7px;background:var(--white);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit}
+.refresh:hover{background:var(--cream);border-color:var(--navy)}
+.section-lbl{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);margin:18px 0 6px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px}
+.card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-title{font-size:13px;font-weight:700;color:var(--navy)}
+.card-sub{font-size:11px;color:var(--text3)}
+.pill{font-size:10px;font-weight:700;padding:2px 9px;border-radius:12px;margin-left:auto}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.fail{background:var(--red-bg);color:var(--red)}
+.pill.warn{background:var(--gold-bg);color:var(--gold)}
+.trow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--cream2);font-size:12px}
+.trow .l{color:var(--text2)}.trow .r{font-weight:600;font-family:var(--mono);font-size:11px}
+.ptbl{display:grid;grid-template-columns:120px 85px 85px 85px 75px;gap:4px;font-size:11px}
+.ptbl .th{font-size:9px;font-weight:700;color:var(--text3);text-align:right;padding:2px 0}
+.ptbl .th:first-child{text-align:left}
+.ptbl .td{text-align:right;padding:4px 0;border-top:1px solid var(--cream2);font-family:var(--mono)}
+.ptbl .td:first-child{text-align:left;font-weight:700;color:var(--navy)}
+.ptbl .td.ok{color:var(--green)}.ptbl .td.warn{color:var(--gold)}.ptbl .td.muted{color:var(--text3)}
+.alert{font-size:11px;padding:7px 11px;border-radius:7px;margin-bottom:5px;line-height:1.5}
+.alert.red{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
+.alert.amber{background:var(--gold-bg);border:1px solid var(--gold-border);color:#7a5500}
+.alert.green{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green)}
+.dot-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.dot{display:flex;flex-direction:column;align-items:center;gap:3px}
+.dot-sq{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.dot-lbl{font-size:9px;color:var(--text3)}
+.foot{text-align:center;font-size:11px;color:var(--text3);padding:22px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-in">
+  <div class="logo"><span>&#9670;</span> DSE Pulse</div>
+  <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
+</div></div>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="h-title">Data sync audit</div>
+      <div class="h-sub" id="run-time">Checking all tools&hellip;</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="badge" id="sync-badge"></span>
+      <button class="refresh" onclick="run()">&#8635; Refresh</button>
+    </div>
+  </div>
+  <div id="alerts"></div>
+  <div id="out"></div>
+  <div class="foot">Admin audit &middot; DSE Pulse &middot; not for users</div>
+</div>
+<script>
+const API='https://dsepulse-backend-production.up.railway.app';
+const SB='https://hpzaluxjzmgedkplimim.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU';
+
+const fmtD=s=>{if(!s)return'—';try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return s;}};
+const diff=s=>{if(!s)return 999;try{const a=new Date(s.slice(0,10)+'T00:00:00'),b=new Date();b.setHours(0,0,0,0);return Math.round((b-a)/864e5);}catch(e){return 999;}};
+const todayISO=()=>{const d=new Date();d.setUTCHours(d.getUTCHours()+6);return d.toISOString().slice(0,10);};
+async function fj(p){try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbq(t,q){try{const r=await fetch(`${SB}/rest/v1/${t}?${q}`,{headers:{apikey:SK,Authorization:'Bearer '+SK}});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+
+function sec(t){return `<div class="section-lbl">${t}</div>`;}
+function card(h,body){return `<div class="card"><div class="card-hdr">${h}</div>${body}</div>`;}
+function hdr(t,sub,state){
+  const cls=state==='ok'?'ok':state==='warn'?'warn':'fail';
+  const lbl=state==='ok'?'In sync':state==='warn'?'Warning':'Out of sync';
+  return `<span class="card-title">${t}</span><span class="card-sub">${sub}</span><span class="pill ${cls}">${lbl}</span>`;
+}
+function trow(l,r,col){return `<div class="trow"><span class="l">${l}</span><span class="r" style="color:${col||'var(--text)'}">${r}</span></div>`;}
+function alertBox(msg,type){return `<div class="alert ${type}">${msg}</div>`;}
+
+async function run(){
+  const out=document.getElementById('out');
+  const alEl=document.getElementById('alerts');
+  const badge=document.getElementById('sync-badge');
+  const rt=document.getElementById('run-time');
+  out.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Checking all tools&hellip;</div>';
+  alEl.innerHTML=''; badge.textContent=''; badge.className='badge';
+
+  const [pk,wm,tc,cb,bd,ac,tr,s52,techHist] = await Promise.all([
+    fj('/api/picks/today'),
+    fj('/api/wma/today'),
+    fj('/api/tech/today'),
+    fj('/api/combined/today'),
+    fj('/api/bd/all'),
+    fj('/api/activity/today'),
+    fj('/api/track-record?days=10&top=3'),
+    sbq('stock_52w','select=code,updated_at&order=updated_at.desc&limit=1'),
+    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=7'),
+  ]);
+
+  const tools={
+    picks:{label:"Today's picks",date:pk?.date,list:pk?.picks||[]},
+    wma:{label:'WMA signals',date:Array.isArray(wm)&&wm[0]?.trade_date,list:Array.isArray(wm)?wm:[]},
+    tech:{label:'Tech analysis',date:Array.isArray(tc)&&tc[0]?.trade_date,list:Array.isArray(tc)?tc:[]},
+    combined:{label:'Combined signal',date:Array.isArray(cb)&&(cb[0]?.trade_date||cb[0]?.date),list:Array.isArray(cb)?cb:[]},
+    bd:{label:'BD signal',date:Array.isArray(bd)&&bd[0]?.trade_date,list:Array.isArray(bd)?bd:[]},
+    activity:{label:'Smart money',date:Array.isArray(ac)&&ac[0]?.trade_date,list:Array.isArray(ac)?ac:[]},
+  };
+
+  const techMap={},wmaMap={},cbMap={};
+  (tools.tech.list).forEach(r=>{techMap[r.code]=Number(r.ltp||0);});
+  (tools.wma.list).forEach(r=>{wmaMap[r.code]=Number(r.ltp||0);});
+  (tools.combined.list).forEach(r=>{cbMap[r.code]=Number(r.ltp||0);});
+
+  let issues=0; const alerts=[];
+  let html='';
+
+  // ── 1. DATE ALIGNMENT ─────────────────────────────────────
+  const dates=Object.values(tools).map(t=>t.date).filter(Boolean);
+  const uniqueDates=[...new Set(dates)].sort();
+  const latest=uniqueDates[uniqueDates.length-1]||'—';
+  const allSame=uniqueDates.length<=1;
+  const dateStale=diff(latest)>1;
+  const dateState=allSame&&!dateStale?'ok':!allSame?'fail':'warn';
+  if(dateState!=='ok'){issues++;if(!allSame)alerts.push(alertBox('Tools are on <b>different trade dates</b> — some didn\'t upload on the latest run.','red'));if(dateStale)alerts.push(alertBox(`Latest data is from ${fmtD(latest)} (${diff(latest)}d ago) — today's run may not have uploaded yet.`,'amber'));}
+
+  let dateBody=Object.entries(tools).map(([k,t])=>{
+    const d=t.date,n=diff(d);
+    const col=!d?'var(--text3)':d===latest&&n<=1?'var(--green)':d===latest?'var(--gold)':'var(--red)';
+    const note=!d?'no data':n===0?'today':n===1?'yesterday':n+'d ago';
+    return trow(t.label,(d?fmtD(d)+' &middot; '+note:'—'),col);
+  }).join('');
+  dateBody+=trow('Latest date across tools',fmtD(latest),diff(latest)<=1?'var(--green)':'var(--red)');
+  html+=sec('1. Trade date alignment — all tools must show same date');
+  html+=card(hdr('Date sync','every tool should upload on the same day',dateState),dateBody);
+
+  // ── 2. STOCK UNIVERSE ─────────────────────────────────────
+  const techN=tools.tech.list.length,wmaN=tools.wma.list.length,bdN=tools.bd.list.length,cbN=tools.combined.list.length;
+  const techCodes=new Set(tools.tech.list.map(r=>r.code));
+  const wmaCodes=new Set(tools.wma.list.map(r=>r.code));
+  const cbCodes=new Set(tools.combined.list.map(r=>r.code));
+  const uniOk=Math.abs(techN-wmaN)<=10&&(cbN===0||[...cbCodes].every(c=>techCodes.has(c)||wmaCodes.has(c)));
+  const uniState=uniOk?'ok':Math.abs(techN-wmaN)>50?'fail':'warn';
+  if(uniState!=='ok'){issues++;if(Math.abs(techN-wmaN)>50)alerts.push(alertBox(`Tech has ${techN} stocks but WMA only ${wmaN} — large gap suggests an upload failure.`,'amber'));}
+  html+=sec('2. Stock universe — tools should cover similar number of stocks');
+  html+=card(hdr('Universe coverage','stock count across all tools',uniState),
+    trow("Today's picks",tools.picks.list.length+' stocks')+
+    trow('WMA signals',wmaN+' stocks'+(Math.abs(techN-wmaN)>10?' ⚠ gap vs Tech':''),Math.abs(techN-wmaN)>10?'var(--gold)':'var(--text)')+
+    trow('Tech analysis',techN+' stocks')+
+    trow('Combined signal',cbN+' stocks qualifying today')+
+    trow('BD signal',bdN+' stocks')+
+    trow('Smart money',tools.activity.list.length+' signals')
+  );
+
+  // ── 3. PRICE CONSISTENCY ──────────────────────────────────
+  const sample=[...new Set([...Object.keys(techMap),...Object.keys(wmaMap),...Object.keys(cbMap)])].slice(0,12);
+  let mismatch=0,priceRows='';
+  sample.forEach(code=>{
+    const tl=techMap[code]||0,wl=wmaMap[code]||0,cl=cbMap[code]||0;
+    const active=[tl,wl,cl].filter(x=>x>0);
+    const maxD=active.length>1?Math.max(...active)-Math.min(...active):0;
+    const ok=maxD<1;
+    if(!ok)mismatch++;
+    priceRows+=`<span class="td${ok?'':' warn'}" title="${code}">${code}</span>`+
+      `<span class="td ${tl?'':'muted'}">${tl?'৳'+tl.toFixed(2):'—'}</span>`+
+      `<span class="td ${wl?'':'muted'}">${wl?'৳'+wl.toFixed(2):'—'}</span>`+
+      `<span class="td ${cl?'':'muted'}">${cl?'৳'+cl.toFixed(2):'—'}</span>`+
+      `<span class="td ${ok?'ok':'warn'}">${ok?'✓':'Δ'+maxD.toFixed(2)}</span>`;
+  });
+  const priceState=mismatch===0?'ok':mismatch<=3?'warn':'fail';
+  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show different prices across tools. The live-price fetch in combined.html/wma.html will resolve these after today's tool run.`,'amber'));}
+  html+=sec('3. LTP price consistency — same stock must show same price in every tool');
+  html+=card(hdr('Price sync','LTP comparison across Tech, WMA and Combined',priceState),
+    `<div class="ptbl"><span class="th">Code</span><span class="th">Tech</span><span class="th">WMA</span><span class="th">Combined</span><span class="th">Match</span>${priceRows}</div>`+
+    (mismatch?`<div style="margin-top:8px;font-size:11px;color:var(--gold)">⚠ ${mismatch} mismatch${mismatch>1?'es':''}. Prices refresh from today's tech run. Hard-refresh the site after each daily run.</div>`:'')
+  );
+
+  // ── 4. COMBINED INTEGRITY ─────────────────────────────────
+  const techQual=new Set(tools.tech.list.filter(r=>Number(r.score||0)>=70).map(r=>r.code));
+  const wmaQual=new Set(tools.wma.list.filter(r=>/STRONG BUY/i.test(r.sig||r.signal||'')).map(r=>r.code));
+  let cbFail=0,cbRows='';
+  if(cbN>0){
+    [...cbCodes].forEach(code=>{
+      const inT=techQual.has(code),inW=wmaQual.has(code);
+      if(!inT||!inW){cbFail++;cbRows+=`<div style="font-size:11px;padding:4px 0;border-top:1px solid var(--cream2);color:var(--gold)">${code} — ${!inT?'missing from Tech ≥70':''}${!inT&&!inW?' + ':''}${!inW?'missing from WMA Strong Buy':''}</div>`;}
+    });
+    if(!cbRows)cbRows=`<div style="font-size:11px;color:var(--green);padding:4px 0">All ${cbN} combined stocks verified in both Tech and WMA feeds ✓</div>`;
+  } else {
+    cbRows='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — nothing to cross-check</div>';
+  }
+  const cbState=cbFail===0?'ok':'fail';
+  if(cbState!=='ok'){issues++;alerts.push(alertBox(`${cbFail} stock(s) in Combined did not pass Tech≥70 or WMA Strong Buy — data integrity issue.`,'red'));}
+  html+=sec('4. Combined signal integrity — every combined pick must pass Tech ≥70 AND WMA Strong Buy');
+  html+=card(hdr('Combined integrity','cross-checking picker / WMA / tech agreement',cbState),cbRows);
+
+  // ── 5. 52-WEEK TABLE ──────────────────────────────────────
+  const s52date=s52&&Array.isArray(s52)?s52[0]?.updated_at?.slice(0,10):null;
+  const s52Fresh=diff(s52date)<=1;
+  const s52State=s52Fresh?'ok':'warn';
+  if(!s52Fresh){issues++;alerts.push(alertBox('52-week range table (stock_52w) is stale — dse_tech.py may not have uploaded 52-week data today.','amber'));}
+  html+=sec('5. 52-week high/low table — must update with every dse_tech.py run');
+  html+=card(hdr('52-wk sync','stock_52w Supabase table',s52State),
+    trow('Last updated',s52date?fmtD(s52date)+' &middot; '+(diff(s52date)===0?'today':diff(s52date)+'d ago'):'—',s52Fresh?'var(--green)':'var(--gold)')
+  );
+
+  // ── 6. 7-DAY RUN HISTORY ──────────────────────────────────
+  const hist=Array.isArray(techHist)?[...new Set(techHist.map(r=>r.trade_date))].sort().reverse():[];
+  const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today=todayISO();
+  let dots='';let missedDays=0;
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const iso=d.toISOString().slice(0,10);
+    const dow=d.getDay();
+    const trading=dow>=0&&dow<=4;
+    const ran=hist.includes(iso);
+    const isToday=iso===today;
+    let bg,lbl,col;
+    if(ran){bg='var(--green)';lbl='✓';col='#fff';}
+    else if(trading&&!isToday){bg='var(--red)';lbl='✗';col='#fff';missedDays++;}
+    else if(isToday&&!ran){bg='var(--gold)';lbl='?';col='#fff';}
+    else{bg='var(--cream2)';lbl='–';col='var(--text3)';}
+    dots+=`<div class="dot"><div class="dot-sq" style="background:${bg};color:${col}">${lbl}</div><div class="dot-lbl">${DAY[dow]}</div></div>`;
+    if(trading&&!ran&&!isToday) alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day was missed. Run dse_tech.py with --date ${iso} to recover.`,'amber'));
+  }
+  const runState=missedDays===0?'ok':missedDays<=1?'warn':'fail';
+  if(missedDays>0)issues++;
+  html+=sec('6. 7-day upload history — tech_signals table');
+  html+=card(hdr('Daily run history','green=uploaded · red=missed trading day · grey=weekend',runState),
+    `<div class="dot-row">${dots}</div>`+
+    `<div style="font-size:10px;color:var(--text3);margin-top:8px">Green = uploaded &middot; Red = trading day missed &middot; Gold = today pending &middot; Grey = weekend/holiday</div>`
+  );
+
+  // ── TRACK RECORD ──────────────────────────────────────────
+  const trDate=tr?.updated;
+  const trState=diff(trDate)<=2?'ok':'warn';
+  html+=sec('7. Track record currency');
+  html+=card(hdr('Track record','reflects latest resolved picks',trState),
+    trow('Last updated',fmtD(trDate),diff(trDate)<=2?'var(--green)':'var(--gold)')+
+    trow('Tools tracked',(tr?.tools||[]).length)+
+    trow('Total resolved picks',(tr?.tools||[]).reduce((s,t)=>s+(t.agg?.resolved||0),0))
+  );
+
+  // ── ALERTS + SUMMARY ──────────────────────────────────────
+  const allGood=issues===0;
+  const passed=7-issues;
+  badge.textContent=allGood?`${passed}/7 All synced ✓`:`${passed}/7 checks passed`;
+  badge.className='badge '+(allGood?'ok':issues>2?'fail':'warn');
+  badge.style.cssText=`background:${allGood?'var(--green-bg)':issues>2?'var(--red-bg)':'var(--gold-bg)'};color:${allGood?'var(--green)':issues>2?'var(--red)':'var(--gold)'}`;
+
+  alEl.innerHTML = allGood
+    ? alertBox('All 7 checks passed — every tool is in sync with the same data.','green')
+    : alerts.join('');
+
+  const now=new Date();now.setUTCHours(now.getUTCHours()+6);
+  rt.textContent='Last checked: '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' BD time';
+  out.innerHTML=html;
+}
+run();
+</script>
+</body>
+</html>

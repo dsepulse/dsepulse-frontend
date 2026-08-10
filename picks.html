@@ -115,6 +115,25 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
 <script>
 const API="https://dsepulse-backend-production.up.railway.app";
+
+const MOOD_ICON={BULLISH:"ti-trending-up",BEARISH:"ti-trending-down",NEUTRAL:"ti-minus",GREEN:"ti-trending-up",RED:"ti-trending-down"};
+const MOOD_COLOR={BULLISH:"var(--green)",BEARISH:"var(--red)",NEUTRAL:"var(--gold)",GREEN:"var(--green)",RED:"var(--red)"};
+const MOOD_BG={BULLISH:"var(--green-bg)",BEARISH:"var(--red-bg)",NEUTRAL:"var(--gold-bg)",GREEN:"var(--green-bg)",RED:"var(--red-bg)"};
+async function quietBanner(reason,toolLabel){
+  let ctx={};
+  try{const ov=await fetchJSON("/api/dashboard/overview");if(ov){ctx.dsex=ov.dsex!=null?Number(ov.dsex).toFixed(1):null;ctx.chg=ov.dsex_change!=null?Number(ov.dsex_change).toFixed(2):null;ctx.mood=(ov.mood||"").toUpperCase();ctx.updated=ov.updated||ov.as_of||null;}}catch(e){}
+  const today=new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+  const mood=ctx.mood||"NEUTRAL";
+  const moodLabel=mood.charAt(0)+mood.slice(1).toLowerCase();
+  const moodCol=MOOD_COLOR[mood]||"var(--gold)";
+  const moodBg=MOOD_BG[mood]||"var(--gold-bg)";
+  const moodIcon=MOOD_ICON[mood]||"ti-minus";
+  const chgSign=ctx.chg&&Number(ctx.chg)>0?"+":"";
+  const chgColor=ctx.chg&&Number(ctx.chg)>0?"var(--green)":ctx.chg&&Number(ctx.chg)<0?"var(--red)":"var(--text2)";
+  const fmtDate=d=>{try{return new Date(d+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}catch(e){return d;}};
+  const lastActive=ctx.updated?fmtDate(ctx.updated):"\u2014";
+  return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;max-width:920px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="width:38px;height:38px;border-radius:8px;background:${moodBg};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${moodIcon}" style="font-size:18px;color:${moodCol}" aria-hidden="true"></i></div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">No ${toolLabel} today &middot; ${today}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${reason}</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Market mood</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${moodCol}">${moodLabel}</div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">DSEX</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${ctx.dsex||"\u2014"} <span style="font-size:10px;color:${chgColor}">${ctx.chg?chgSign+ctx.chg+"%":""}</span></div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Last active</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${lastActive}</div></div></div></div>`;
+}
 async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
 
 function setDashTrial(s,el){
@@ -128,10 +147,57 @@ async function buildPicks(){
   const el=document.getElementById('dt-picks-active');if(!el)return;
   const data=await fetchJSON('/api/picks/today');
   const fmt=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}};
+
+  /* check if picks date matches today — DSE trades Sun-Thu so we allow
+     the last known trading day's picks to show without a banner */
+  function isTodayOrLastTradingDay(dateStr){
+    if(!dateStr)return false;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const d=new Date(dateStr+'T00:00:00'); d.setHours(0,0,0,0);
+    const diffDays=Math.round((today-d)/(1000*60*60*24));
+    /* same day = definitely today's picks */
+    if(diffDays===0)return true;
+    /* up to 4 calendar days gap covers weekends + public holidays */
+    if(diffDays>0&&diffDays<=4){
+      /* if today is a trading day (Sun=0,Mon=1,Tue=2,Wed=3,Thu=4) and
+         picks are older, it means today had no qualifying picks */
+      const todayDow=today.getDay(); /* 0=Sun..6=Sat */
+      const isTrading=todayDow>=0&&todayDow<=4; /* Sun-Thu */
+      if(isTrading)return false; /* today traded but picks are old → quiet day */
+      return true; /* today is Fri/Sat, picks from last session are current */
+    }
+    return false;
+  }
+
   if(!data||data.status!=='live'||!Array.isArray(data.picks)||!data.picks.length){
-    const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent='Showing sample picks \u2014 live list updates after the next upload';
+    const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent='No qualifying picks today — check back after the next session';
+    el.innerHTML=await quietBanner('Engine ran — no stock met the short-term conviction criteria today','picks');
     return;
   }
+
+  /* picks exist but are from a previous date → quiet day today */
+  if(!isTodayOrLastTradingDay(data.date)){
+    const sub=document.getElementById('dt-picks-sub');
+    if(sub)sub.textContent='No qualifying picks today — last active '+fmt(data.date);
+    const banner=await quietBanner('Engine ran — no stock met the short-term conviction criteria today','picks');
+    /* show banner + last qualifying picks as reference */
+    const picks=data.picks.slice(0,12);
+    const num=v=>Number(v||0);
+    const lastPicks=picks.map(p=>{
+      const rank=num(p.rank),isBuy=rank>0&&rank<=3;
+      const sig=isBuy?'BUY':'WATCH',sigC=isBuy?'var(--green)':'var(--gold)';
+      const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),vol=num(p.vol),score=num(p.score);
+      const tf=isBuy?'1\u20133 days':'3\u20135 days';
+      return `<div class="pick-card"><div class="pc-code">${p.code||''}</div><div class="pc-co">Cat ${p.cat||'A'} \u00b7 Rank #${rank}</div><div class="pc-score-row"><div class="pc-score">${score.toFixed(0)}</div><div><div class="pc-sig" style="color:${sigC}">${sig}</div><div class="pc-meta">R/R ${rr.toFixed(1)}\u00d7 \u00b7 Vol ${vol.toFixed(1)}\u00d7</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">\u09F3${ltp.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">\u09F3${l1.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">\u09F3${sl.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">${tf}</div></div></div></div>`;
+    }).join('');
+    el.innerHTML=banner+
+      `<div style="margin-top:18px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Last qualifying picks &middot; ${fmt(data.date)}</div>
+        <div class="pick-grid" style="opacity:.7">${lastPicks}</div>
+      </div>`;
+    return;
+  }
+
   const picks=data.picks.slice(0,12);
   const hdr=document.getElementById('dt-picks-hdr');if(hdr)hdr.textContent='Daily Picker \u00b7 '+fmt(data.date);
   const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent=picks.length+' picks \u00b7 updated '+fmt(data.date);

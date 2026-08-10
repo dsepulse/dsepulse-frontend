@@ -79,6 +79,25 @@ async function fetchFund(code){
   }catch(e){ FUCACHE[code]=null; return null; }
 }
 
+
+const MOOD_ICON={BULLISH:"ti-trending-up",BEARISH:"ti-trending-down",NEUTRAL:"ti-minus",GREEN:"ti-trending-up",RED:"ti-trending-down"};
+const MOOD_COLOR={BULLISH:"var(--green)",BEARISH:"var(--red)",NEUTRAL:"var(--gold)",GREEN:"var(--green)",RED:"var(--red)"};
+const MOOD_BG={BULLISH:"var(--green-bg)",BEARISH:"var(--red-bg)",NEUTRAL:"var(--gold-bg)",GREEN:"var(--green-bg)",RED:"var(--red-bg)"};
+async function quietBanner(reason,toolLabel){
+  let ctx={};
+  try{const ov=await fetchJSON("/api/dashboard/overview");if(ov){ctx.dsex=ov.dsex!=null?Number(ov.dsex).toFixed(1):null;ctx.chg=ov.dsex_change!=null?Number(ov.dsex_change).toFixed(2):null;ctx.mood=(ov.mood||"").toUpperCase();ctx.updated=ov.updated||ov.as_of||null;}}catch(e){}
+  const today=new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+  const mood=ctx.mood||"NEUTRAL";
+  const moodLabel=mood.charAt(0)+mood.slice(1).toLowerCase();
+  const moodCol=MOOD_COLOR[mood]||"var(--gold)";
+  const moodBg=MOOD_BG[mood]||"var(--gold-bg)";
+  const moodIcon=MOOD_ICON[mood]||"ti-minus";
+  const chgSign=ctx.chg&&Number(ctx.chg)>0?"+":"";
+  const chgColor=ctx.chg&&Number(ctx.chg)>0?"var(--green)":ctx.chg&&Number(ctx.chg)<0?"var(--red)":"var(--text2)";
+  const fmtDate=d=>{try{return new Date(d+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}catch(e){return d;}};
+  const lastActive=ctx.updated?fmtDate(ctx.updated):"—";
+  return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;max-width:920px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="width:38px;height:38px;border-radius:8px;background:${moodBg};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${moodIcon}" style="font-size:18px;color:${moodCol}" aria-hidden="true"></i></div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">No ${toolLabel} today &middot; ${today}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${reason}</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Market mood</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${moodCol}">${moodLabel}</div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">DSEX</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${ctx.dsex||"—"} <span style="font-size:10px;color:${chgColor}">${ctx.chg?chgSign+ctx.chg+"%":""}</span></div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Last active</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${lastActive}</div></div></div></div>`;
+}
 /* ---------- derived-metric helpers (from the eval payload) ---------- */
 const pick=(o,keys)=>{ if(!o)return null; for(const k of keys){ if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]; } return null; };
 function volRatio(v){ if(!Array.isArray(v)||v.length<3)return null; const today=v[v.length-1]; const prev=v.slice(Math.max(0,v.length-21),v.length-1); if(!prev.length)return null; const avg=prev.reduce((a,b)=>a+b,0)/prev.length; if(!avg)return null; return today/avg; }
@@ -226,7 +245,7 @@ async function toggleRow(row){
 async function buildCombined(){
   const el=document.getElementById('combined-rows');if(!el)return;
   const live=await fetchJSON('/api/combined/today');
-  if(!Array.isArray(live)||!live.length){ el.innerHTML='<div class="empty">No combined signals available right now.</div>'; return; }
+  if(!Array.isArray(live)||!live.length){ el.innerHTML=await quietBanner('No stock met all three criteria — Picker, WMA Strong Buy, and Tech 70+ — on the same day','combined signals'); return; }
 
   /* fetch today's live prices from the tech feed — updated every session by dse_tech.py.
      This overrides the stale LTP stored with the signal (which was from the signal day).

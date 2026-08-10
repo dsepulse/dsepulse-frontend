@@ -55,9 +55,20 @@ async function buildWMA(){
   const el=document.getElementById('wma-rows');if(!el)return;
   const live=await fetchJSON('/api/wma/today');
   const raw=Array.isArray(live)&&live.length?live:[];
-  if(!raw.length){ el.innerHTML='<div class="empty">No WMA signals available right now.</div>'; return; }
-  const WDr=raw.map(r=>({code:r.code,cat:r.cat,ltp:Number(r.ltp||0),w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal,fresh:r.fresh||""}));
-  el.innerHTML=WDr.map((r,i)=>`<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[r.sig]||'transparent'}${i===WDr.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span>${r.fresh?` <span style="font-size:11px">${r.fresh}</span>`:''}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w9?'var(--green)':'var(--red)'}">${r.w9.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w34?'var(--green)':'var(--red)'}">${r.w34.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w89?'var(--green)':'var(--red)'}">${r.w89.toFixed(2)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${r.ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[r.sig]};background:${sigBg[r.sig]};border:1px solid currentColor;border-radius:4px;opacity:0.85">${r.sig}</span></div></div>`).join('');
+  if(!raw.length){ el.innerHTML=await quietBanner('WMA engine ran — no Strong Buy alignments today','WMA signals'); return; }
+
+  /* live prices from tech feed override stale WMA LTPs */
+  const techFeed=await fetchJSON('/api/tech/today');
+  const LP={};
+  if(Array.isArray(techFeed)) techFeed.forEach(t=>{ if(t.code&&t.ltp!=null) LP[String(t.code).toUpperCase()]=Number(t.ltp); });
+
+  const WDr=raw.map(r=>{
+    const sl=Number(r.ltp||0), ll=LP[String(r.code||'').toUpperCase()]||sl;
+    const chg=ll>0&&sl>0&&Math.abs(ll-sl)>0.01;
+    const lc=chg?(ll>sl?'var(--green)':'var(--red)'):'var(--navy)';
+    return {code:r.code,cat:r.cat,ltp:ll,storedLtp:sl,ltpColor:lc,w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal,fresh:r.fresh||""};
+  });
+  el.innerHTML=WDr.map((r,i)=>`<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[r.sig]||'transparent'}${i===WDr.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span>${r.fresh?` <span style="font-size:11px">${r.fresh}</span>`:''}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w9?'var(--green)':'var(--red)'}">${r.w9.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w34?'var(--green)':'var(--red)'}">${r.w34.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w89?'var(--green)':'var(--red)'}">${r.w89.toFixed(2)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}" title="${r.ltpColor!=='var(--navy)'?'Signal day: ৳'+r.storedLtp.toFixed(2)+' → now: ৳'+r.ltp.toFixed(2):''}">৳${r.ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[r.sig]};background:${sigBg[r.sig]};border:1px solid currentColor;border-radius:4px;opacity:0.85">${r.sig}</span></div></div>`).join('');
 }
 buildWMA();
 </script>

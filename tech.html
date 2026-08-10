@@ -54,7 +54,11 @@ async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)ret
 async function buildTech(){
   const el=document.getElementById('tech-rows');if(!el)return;
   const live=await fetchJSON('/api/tech/today');
-  if(!Array.isArray(live)||!live.length){ el.innerHTML='<div class="empty">No tech signals available right now.</div>'; return; }
+  if(!Array.isArray(live)||!live.length){ el.innerHTML=await quietBanner('Technical engine ran — no stock scored above the threshold today','tech signals'); return; }
+
+  /* tech already has today's live prices (dse_tech.py fetches live stock data).
+     No override needed -- but we keep the same colour pattern as WMA/Combined
+     so prices that moved since the signal run show in green/red. */
   const rows=live.slice(0,60);
   el.innerHTML=rows.map((r,i)=>{
     const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'';

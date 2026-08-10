@@ -1514,6 +1514,28 @@ async function buildSectors(){
   const ENG=["PK","WMA","TCH","CMB","BD","ACT"];
   const msFor=c=>(window.__ms&&window.__ms.for)?window.__ms.for(c):null;
 
+  /* 52-week high/low for holdings cards (Supabase stock_52w, close-based rolling) */
+  const SB52_URL="https://hpzaluxjzmgedkplimim.supabase.co";
+  const SB52_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+  const RANGE52H={};
+  async function loadRanges52(codes){
+    if(!codes||!codes.length)return;
+    try{
+      const r=await fetch(`${SB52_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${codes.join(',')})`,
+        {headers:{apikey:SB52_KEY,Authorization:'Bearer '+SB52_KEY}});
+      if(!r.ok)return;
+      (await r.json()||[]).forEach(x=>{ RANGE52H[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });
+    }catch(e){}
+  }
+  function pos52H(avg,code){
+    const r=RANGE52H[String(code||'').toUpperCase()];
+    if(!r||!(r.hi>r.lo))return null;
+    const e=Number(avg);if(!isFinite(e)||e<=0)return null;
+    let pct=(e-r.lo)/(r.hi-r.lo)*100;pct=Math.max(0,Math.min(100,Math.round(pct)));
+    return{pct,days:r.days,hi:r.hi,lo:r.lo};
+  }
+  function pos52Color(pct){return pct>=70?'var(--green)':pct<=35?'var(--gold)':'var(--text2)';}
+
   let HOLD=[], realized=0;
 
   async function api(path,opts){
@@ -1615,7 +1637,8 @@ async function buildSectors(){
         recBanner+
         '<div class="hd-lbl mt">Six engines</div><div class="hd-eng">'+engHTML(L)+'</div>'+
         '<div class="hd-lbl mt">Technical indicators</div><div class="hd-ind">'+indHTML(L.tech)+'</div>'+
-        '<div class="hd-lbl mt">Your position</div>'+pos+levels;
+        '<div class="hd-lbl mt">Your position</div>'+pos+levels+
+        (()=>{ const q=pos52H(h.avg,h.code); if(!q)return ''; const lbl='52-wk ('+q.days+'d)'; return '<div style="margin-top:8px;display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)">'+lbl+'</span><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--text2)">৳'+q.lo.toFixed(2)+' – ৳'+q.hi.toFixed(2)+'</span><span style="font-size:10px;font-weight:700;font-family:var(--mono);padding:2px 8px;border-radius:5px;background:var(--cream);border:1px solid var(--border);color:'+pos52Color(q.pct)+'" title="Avg cost entered at '+q.pct+'% of its 52-wk range">avg @ '+q.pct+'%</span></div>'; })();
     } else {
       detail='<div class="hd-muted">No live signal \u2014 this stock isn\u2019t in the engine universe right now, so conviction, engines, technicals, price &amp; levels show \u201c\u2014\u201d. Your shares and average cost are still tracked.</div>';
     }
@@ -1671,6 +1694,8 @@ async function buildSectors(){
     const rows=(res.data&&res.data.holdings)||[];
     HOLD=rows.map(h=>({code:String(h.code||'').toUpperCase(),qty:+h.qty||0,avg:+h.avg_buy_price||0})).filter(h=>h.code&&h.qty>0);
     try{ if(window.__ms&&window.__ms.ready) await window.__ms.ready(); }catch(e){}
+    // load 52-wk ranges for all held stocks before rendering
+    await loadRanges52(HOLD.map(h=>h.code));
     renderHoldings();
   }
   window.__buildHoldings=buildHoldings;

@@ -40,7 +40,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div class="h-title">Tech Analysis</div>
   <div class="h-sub">Technical score &middot; /100</div>
   <div class="tbl">
-    <div class="thead" style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px"><div>Stock</div><div style="text-align:right">Score</div><div style="text-align:right">RSI</div><div style="text-align:right">LTP</div><div style="text-align:center">Signal</div></div>
+    
     <div id="tech-rows"><div class="empty">Loading tech signals&hellip;</div></div>
   </div>
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
@@ -60,11 +60,29 @@ async function buildTech(){
      No override needed -- but we keep the same colour pattern as WMA/Combined
      so prices that moved since the signal run show in green/red. */
   const rows=live.slice(0,60);
-  el.innerHTML=rows.map((r,i)=>{
-    const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'';
-    const sccol=sc>=70?'var(--green)':sc>=55?'#1A6B3C':sc>=40?'var(--gold)':'var(--red)';
-    return `<div style="display:grid;grid-template-columns:1fr 90px 70px 90px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[sig]||'transparent'}${i===rows.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span></div><div style="text-align:right;font-size:13px;font-weight:800;font-family:var(--mono);color:${sccol}">${sc.toFixed(0)}<span style="font-size:9px;color:var(--text3)">/100</span></div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:var(--text2)">${rsi.toFixed(0)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[sig]||'var(--text2)'};background:${sigBg[sig]||'var(--cream2)'};border:1px solid currentColor;border-radius:4px;opacity:0.85">${sig}</span></div></div>`;
-  }).join('');
+  /* compact 4-col: code+signal+rsi, LTP, score */
+  const hdrTech='<div style="padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 52px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)"><span>Stock · signal · RSI</span><span style="text-align:right">LTP</span><span style="text-align:right">Score</span></div>';
+  el.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:9px;overflow:hidden;max-width:920px">'+hdrTech+
+    rows.map((r,i)=>{
+      const sc=Number(r.score||0),rsi=Number(r.rsi||0),ltp=Number(r.ltp||0),sig=r.signal||'';
+      const sccol=sc>=80?'var(--green)':sc>=65?'#2D6A4F':sc>=50?'var(--gold)':'var(--text2)';
+      const rsiZone=rsi>65?'overbought':rsi<35?'oversold':'neutral';
+      const rsiCol=rsi>65?'var(--red)':rsi<35?'var(--green)':'var(--text3)';
+      const sigEl=sig==='STRONG BUY'
+        ?`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--green-bg);color:var(--green)">Strong buy</span>`
+        :sig==='BUY'
+        ?`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#EAF4EF;color:#2D6A4F">Buy</span>`
+        :`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--gold-bg);color:var(--gold)">${sig}</span>`;
+      return `<div style="padding:8px 16px;border-bottom:${i===rows.length-1?'none':'1px solid var(--border)'};display:grid;grid-template-columns:1fr 70px 52px;gap:8px;align-items:center">
+        <div>
+          <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span>
+          <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3);margin-left:4px">${r.cat}</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px">${sigEl}<span style="font-size:9px;font-family:var(--mono);color:${rsiCol}">RSI ${rsi.toFixed(0)} · ${rsiZone}</span></div>
+        </div>
+        <div style="text-align:right;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${ltp.toFixed(2)}</div>
+        <div style="text-align:right;font-size:18px;font-weight:700;font-family:var(--mono);color:${sccol}">${sc.toFixed(0)}</div>
+      </div>`;
+    }).join('')+'</div>';
 }
 buildTech();
 </script>

@@ -1354,6 +1354,8 @@ async function buildSectors(){
     }
     const t = getToken();
     if (t){
+      // user was logged in — go straight to dashboard, skip landing page
+      if(typeof window.showView === 'function') window.showView('dashboard');
       fetch(API + "/api/auth/me", { headers:{ "Authorization":"Bearer " + t } })
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(u => {
@@ -1367,10 +1369,12 @@ async function buildSectors(){
               '/comparison.html','/fundamentals.html','/crosstool.html',
               '/trackrecord.html','/holdings.html'];
             if(lastTool && validTools.includes(lastTool)){
-              // find the matching tab and activate it
-              const tab = [...document.querySelectorAll('#view-dashboard .tab')]
-                .find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(lastTool));
-              openTool(lastTool, tab || null);
+              // delay slightly so showView('dashboard') + openFirstVisibleTool complete first
+              setTimeout(function(){
+                const tab = [...document.querySelectorAll('#view-dashboard .tab')]
+                  .find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(lastTool));
+                openTool(lastTool, tab || null);
+              }, 300);
             }
           }catch(e){}
         })

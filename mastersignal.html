@@ -374,9 +374,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     s._enriched=true;
     render();
   }
-  function render(){
+  async function render(){
     const board=document.getElementById('ms-board'); if(!board)return;
-    if(!STOCKS.length){ board.innerHTML='<div class="ms-empty">No stocks scored across the engines yet. On a weekend the feeds carry the last session and may be sparse \u2014 check back after a trading day.</div>'; document.getElementById('ms-count').textContent=''; return; }
+    if(!STOCKS.length){ board.innerHTML=await quietBanner('No stock reached consensus across 2+ engines today — the signal bar is strict by design','Master Signal picks'); document.getElementById('ms-count').textContent=''; return; }
     const top=STOCKS.slice(0,3);
     board.innerHTML=top.map(rowHTML).join('');
     document.getElementById('ms-count').textContent=STOCKS.length+' ranked'+(STOCKS.length>60?' \u00b7 showing top 60':'');

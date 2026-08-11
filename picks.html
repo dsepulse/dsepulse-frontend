@@ -32,18 +32,24 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .btn-navy{background:var(--navy);border:1px solid var(--navy);color:var(--white)}
 .btn-navy:hover{background:var(--navy2)}
 
-.pick-card{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:12px}
-.pc-code{font-size:13px;font-weight:800;font-family:var(--mono);color:var(--navy)}
-.pc-co{font-size:9px;color:var(--text3);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.pc-score-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.pc-score{width:34px;height:34px;border:2px solid var(--navy);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:var(--mono);color:var(--navy);flex-shrink:0}
-.pc-sig{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.3px}
-.pc-meta{font-size:9px;color:var(--text3);margin-top:1px}
-.pc-levels{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.pc-lvl{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:5px 7px}
-.pc-lvl-lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
-.pc-lvl-val{font-size:11px;font-weight:700;font-family:var(--mono)}
-.pc-lvl-val.g{color:var(--green)}.pc-lvl-val.r{color:var(--red)}.pc-lvl-val.gold{color:var(--gold)}
+.ptbl{background:var(--white);border:1px solid var(--border);border-radius:9px;overflow:hidden;max-width:920px}
+.pth{padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 40px 110px 42px 44px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+.ptr{padding:8px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 40px 110px 42px 44px;gap:8px;align-items:center;cursor:pointer;transition:background .1s}
+.ptr:last-child{border-bottom:none}
+.ptr:hover{background:var(--cream)}
+.pcode{font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)}
+.pcat{font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3)}
+.pmeta{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.psig-b{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;color:var(--green);background:var(--green-bg);text-align:center}
+.psig-w{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;color:var(--gold);background:var(--gold-bg);text-align:center}
+.psc{font-size:14px;font-weight:700;font-family:var(--mono);text-align:right}
+.prr{font-size:10px;font-weight:700;font-family:var(--mono);text-align:right}
+.pexp{max-height:0;overflow:hidden;transition:max-height .25s ease;background:var(--cream)}
+.pexp.open{max-height:200px}
+.pexp-in{padding:10px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-top:1px solid var(--border)}
+.plvl{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 9px}
+.plvl-l{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+.plvl-v{font-size:12px;font-weight:700;font-family:var(--mono)}
 
 .trial-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden}
 .tt-btn{padding:6px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;cursor:pointer;background:transparent;color:var(--text3);border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
@@ -57,8 +63,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .lock-title{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px}
 .lock-sub{font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.5}
 
-.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media(max-width:760px){.pick-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -185,15 +190,25 @@ async function buildPicks(){
     const num=v=>Number(v||0);
     const lastPicks=picks.map(p=>{
       const rank=num(p.rank),isBuy=rank>0&&rank<=3;
-      const sig=isBuy?'BUY':'WATCH',sigC=isBuy?'var(--green)':'var(--gold)';
-      const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),vol=num(p.vol),score=num(p.score);
-      const tf=isBuy?'1\u20133 days':'3\u20135 days';
-      return `<div class="pick-card"><div class="pc-code">${p.code||''}</div><div class="pc-co">Cat ${p.cat||'A'} \u00b7 Rank #${rank}</div><div class="pc-score-row"><div class="pc-score">${score.toFixed(0)}</div><div><div class="pc-sig" style="color:${sigC}">${sig}</div><div class="pc-meta">R/R ${rr.toFixed(1)}\u00d7 \u00b7 Vol ${vol.toFixed(1)}\u00d7</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">\u09F3${ltp.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">\u09F3${l1.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">\u09F3${sl.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">${tf}</div></div></div></div>`;
+      const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),score=num(p.score);
+      const tf=isBuy?'1\u20133d':'3\u20135d';
+      const scCol=score>=30?'var(--green)':score>=20?'var(--gold)':'var(--text2)';
+      const rrCol=rr>=3?'var(--green)':rr>=1.5?'var(--gold)':'var(--red)';
+      return `<div style="padding:8px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 40px 110px 42px 44px;gap:8px;align-items:center">
+        <div><span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${p.code||''}</span> <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3)">${p.cat||'A'}</span><div style="font-size:10px;color:var(--text3);font-family:var(--mono)">\u09F3${ltp.toFixed(2)} \u2192 <span style="color:var(--green)">\u09F3${l1.toFixed(2)}</span> \u00b7 SL <span style="color:var(--red)">\u09F3${sl.toFixed(2)}</span> \u00b7 ${tf}</div></div>
+        <div>${isBuy?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;color:var(--green);background:var(--green-bg)">BUY</span>':'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;color:var(--gold);background:var(--gold-bg)">WATCH</span>'}</div>
+        <div></div>
+        <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-align:right;color:${rrCol}">${rr.toFixed(1)}\u00d7</div>
+        <div style="font-size:14px;font-weight:700;font-family:var(--mono);text-align:right;color:${scCol}">${score.toFixed(0)}</div>
+      </div>`;
     }).join('');
     el.innerHTML=banner+
       `<div style="margin-top:18px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Last qualifying picks &middot; ${fmt(data.date)}</div>
-        <div class="pick-grid" style="opacity:.7">${lastPicks}</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px">Last qualifying picks \u00b7 ${fmt(data.date)}</div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:9px;overflow:hidden;opacity:.75">
+          <div style="padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 40px 110px 42px 44px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)"><span>Stock \u00b7 entry \u2192 target</span><span style="text-align:center">Signal</span><span></span><span style="text-align:right">R:R</span><span style="text-align:right">Score</span></div>
+          ${lastPicks}
+        </div>
       </div>`;
     return;
   }
@@ -202,13 +217,35 @@ async function buildPicks(){
   const hdr=document.getElementById('dt-picks-hdr');if(hdr)hdr.textContent='Daily Picker \u00b7 '+fmt(data.date);
   const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent=picks.length+' picks \u00b7 updated '+fmt(data.date);
   const num=v=>Number(v||0);
-  el.innerHTML='<div class="pick-grid">'+picks.map(p=>{
+  /* compact table render — tap row to expand detail */
+  function renderRow(p){
     const rank=num(p.rank),isBuy=rank>0&&rank<=3;
-    const sig=isBuy?'BUY':'WATCH',sigC=isBuy?'var(--green)':'var(--gold)';
-    const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),vol=num(p.vol),score=num(p.score);
-    const tf=isBuy?'1\u20133 days':'3\u20135 days';
-    return `<div class="pick-card"><div class="pc-code">${p.code||''}</div><div class="pc-co">Cat ${p.cat||'A'} · Rank #${rank}</div><div class="pc-score-row"><div class="pc-score">${score.toFixed(0)}</div><div><div class="pc-sig" style="color:${sigC}">${sig}</div><div class="pc-meta">R/R ${rr.toFixed(1)}× · Vol ${vol.toFixed(1)}×</div></div></div><div class="pc-levels"><div class="pc-lvl"><div class="pc-lvl-lbl">Entry</div><div class="pc-lvl-val g">৳${ltp.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Target L1</div><div class="pc-lvl-val g">৳${l1.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Stop loss</div><div class="pc-lvl-val r">৳${sl.toFixed(2)}</div></div><div class="pc-lvl"><div class="pc-lvl-lbl">Timeframe</div><div class="pc-lvl-val gold">${tf}</div></div></div></div>`;
-  }).join('')+'</div>';
+    const ltp=num(p.ltp),l1=num(p.l1),sl=num(p.sl),rr=num(p.rr),score=num(p.score);
+    const tf=isBuy?'1\u20133d':'3\u20135d';
+    const sigHtml=isBuy?'<span class="psig-b">BUY</span>':'<span class="psig-w">WATCH</span>';
+    const scCol=score>=30?'var(--green)':score>=20?'var(--gold)':'var(--text2)';
+    const rrCol=rr>=3?'var(--green)':rr>=1.5?'var(--gold)':'var(--red)';
+    return `<div class="ptr" onclick="toggleRow(this)" role="button" tabindex="0">
+      <div><span class="pcode">${p.code||''}</span> <span class="pcat">${p.cat||'A'}</span><div class="pmeta">৳${ltp.toFixed(2)} \u2192 <span style="color:var(--green)">৳${l1.toFixed(2)}</span> \u00b7 SL <span style="color:var(--red)">৳${sl.toFixed(2)}</span> \u00b7 ${tf}</div></div>
+      <div>${sigHtml}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center">tap to expand</div>
+      <div class="prr" style="color:${rrCol}">${rr.toFixed(1)}\u00d7</div>
+      <div class="psc" style="color:${scCol}">${score.toFixed(0)}</div>
+    </div>
+    <div class="pexp">
+      <div class="pexp-in">
+        <div class="plvl"><div class="plvl-l">Entry</div><div class="plvl-v" style="color:var(--navy)">৳${ltp.toFixed(2)}</div></div>
+        <div class="plvl"><div class="plvl-l">Target L1</div><div class="plvl-v" style="color:var(--green)">৳${l1.toFixed(2)}</div></div>
+        <div class="plvl"><div class="plvl-l">Stop loss</div><div class="plvl-v" style="color:var(--red)">৳${sl.toFixed(2)}</div></div>
+        <div class="plvl"><div class="plvl-l">Timeframe</div><div class="plvl-v" style="color:var(--gold)">${tf.replace('d','\u202fdays')}</div></div>
+      </div>
+    </div>`;
+  }
+  function toggleRow(row){
+    const exp=row.nextElementSibling;
+    if(exp&&exp.classList.contains('pexp')){exp.classList.toggle('open');}
+  }
+  el.innerHTML='<div class="ptbl"><div class="pth"><span>Stock · entry \u2192 target</span><span style="text-align:center">Signal</span><span></span><span style="text-align:right">R:R</span><span style="text-align:right">Score</span></div>'+picks.map(renderRow).join('')+'</div>';
 }
 buildPicks();
 </script>

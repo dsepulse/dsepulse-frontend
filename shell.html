@@ -1360,23 +1360,6 @@ async function buildSectors(){
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(u => {
           setLoggedInNav(u.name || localStorage.getItem(NAME_KEY) || "");
-          // restore last visited tool after login confirmed
-          try{
-            const lastTool = localStorage.getItem('dse_last_tool');
-            const validTools = ['/overview.html','/market.html','/sectors.html',
-              '/picks.html','/wma.html','/tech.html','/combined.html','/bd.html',
-              '/smartmoney.html','/mastersignal.html','/risk.html','/screener.html',
-              '/comparison.html','/fundamentals.html','/crosstool.html',
-              '/trackrecord.html','/holdings.html'];
-            if(lastTool && validTools.includes(lastTool)){
-              // delay slightly so showView('dashboard') + openFirstVisibleTool complete first
-              setTimeout(function(){
-                const tab = [...document.querySelectorAll('#view-dashboard .tab')]
-                  .find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(lastTool));
-                openTool(lastTool, tab || null);
-              }, 300);
-            }
-          }catch(e){}
         })
         .catch(() => clearSession());
     }
@@ -1843,6 +1826,21 @@ function applyToolGates(){
     }).catch(function(){});
 }
 function openFirstVisibleTool(){
+  // check if user had a previous tool open — restore it instead of opening first tab
+  var VALID=['/overview.html','/market.html','/sectors.html','/picks.html',
+    '/wma.html','/tech.html','/combined.html','/bd.html','/smartmoney.html',
+    '/mastersignal.html','/risk.html','/screener.html','/comparison.html',
+    '/fundamentals.html','/crosstool.html','/trackrecord.html','/holdings.html'];
+  try{
+    var last=localStorage.getItem('dse_last_tool');
+    if(last && VALID.indexOf(last)>=0){
+      var tab=[].slice.call(document.querySelectorAll('#view-dashboard .tab'))
+        .find(function(t){ return (t.getAttribute('onclick')||'').indexOf(last)>=0; });
+      openTool(last, tab||null);
+      return;
+    }
+  }catch(e){}
+  // default: open first visible tab
   var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
   for(var i=0;i<tabs.length;i++){
     if(tabs[i].style.display==='none') continue;

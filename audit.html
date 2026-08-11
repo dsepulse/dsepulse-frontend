@@ -130,7 +130,7 @@ async function run(){
     fj('/api/activity/today'),
     fj('/api/track-record?days=10&top=3'),
     sbq('stock_52w','select=code,updated_at&order=updated_at.desc&limit=1'),
-    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=400'),
+    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=1&offset=0'),
   ]);
 
   // helper: find date from any row — tries multiple field names
@@ -252,7 +252,16 @@ async function run(){
   );
 
   // ── 6. 7-DAY RUN HISTORY ──────────────────────────────────
-  const hist=Array.isArray(techHist)?[...new Set(techHist.map(r=>r.trade_date))].sort().reverse():[];
+  // fetch distinct dates by checking each of last 7 days individually
+  // (bulk fetch doesn't work well since each date has 391 rows)
+  const today2=todayISO();
+  const daysToCheck=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);daysToCheck.push(d.toISOString().slice(0,10));}
+  const dateChecks=await Promise.all(daysToCheck.map(d=>
+    fetch(`${SB}/rest/v1/tech_signals?select=trade_date&trade_date=eq.${d}&limit=1`,{headers:{apikey:SK,Authorization:'Bearer '+SK}})
+      .then(r=>r.ok?r.json():null).then(rows=>rows&&rows.length?d:null).catch(()=>null)
+  ));
+  const hist=dateChecks.filter(Boolean);
   const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const today=todayISO();
   let dots='';let missedDays=0;

@@ -68,7 +68,27 @@ async function buildWMA(){
     const lc=chg?(ll>sl?'var(--green)':'var(--red)'):'var(--navy)';
     return {code:r.code,cat:r.cat,ltp:ll,storedLtp:sl,ltpColor:lc,w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal,fresh:r.fresh||""};
   });
-  el.innerHTML=WDr.map((r,i)=>`<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 110px;gap:8px;padding:9px 18px;align-items:center;border-bottom:1px solid var(--border);background:${sigBg[r.sig]||'transparent'}${i===WDr.length-1?';border-bottom:none':''}"><div><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span> <span style="font-size:9px;padding:1px 6px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">${r.cat}</span>${r.fresh?` <span style="font-size:11px">${r.fresh}</span>`:''}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w9?'var(--green)':'var(--red)'}">${r.w9.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w34?'var(--green)':'var(--red)'}">${r.w34.toFixed(2)}</div><div style="text-align:right;font-size:11px;font-family:var(--mono);color:${r.ltp>r.w89?'var(--green)':'var(--red)'}">${r.w89.toFixed(2)}</div><div style="text-align:right;font-size:12px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}" title="${r.ltpColor!=='var(--navy)'?'Signal day: ৳'+r.storedLtp.toFixed(2)+' → now: ৳'+r.ltp.toFixed(2):''}">৳${r.ltp.toFixed(2)}</div><div style="text-align:center"><span style="padding:3px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:${sigTxt[r.sig]};background:${sigBg[r.sig]};border:1px solid currentColor;border-radius:4px;opacity:0.85">${r.sig}</span></div></div>`).join('');
+  /* compact 3-column render: code+pills, LTP, signal */
+  const hdrRow='<div style="padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 75px 95px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)"><span>Stock · WMA alignment</span><span style="text-align:right">LTP</span><span style="text-align:center">Signal</span></div>';
+  el.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:9px;overflow:hidden;max-width:920px">'+hdrRow+
+    WDr.map((r,i)=>{
+      const p9=r.ltp>r.w9,p34=r.ltp>r.w34,p89=r.ltp>r.w89;
+      const chip=(ok,label)=>`<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:${ok?'var(--green-bg)':'var(--red-bg)'};color:${ok?'var(--green)':'var(--red)'}">${label}${ok?'✓':'✗'}</span>`;
+      const sigEl=r.sig==='STRONG BUY'
+        ?`<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--green-bg);color:var(--green)">Strong buy</span>`
+        :`<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--gold-bg);color:var(--gold)">${r.sig}</span>`;
+      const ltpTip=r.ltpColor!=='var(--navy)'?`Signal: ৳${r.storedLtp.toFixed(2)} → now: ৳${r.ltp.toFixed(2)}`:'';
+      return `<div style="padding:8px 16px;border-bottom:${i===WDr.length-1?'none':'1px solid var(--border)'};display:grid;grid-template-columns:1fr 75px 95px;gap:8px;align-items:center">
+        <div>
+          <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span>
+          <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3);margin-left:4px">${r.cat}</span>
+          ${r.fresh?`<span style="font-size:10px;margin-left:4px">${r.fresh}</span>`:''}
+          <div style="display:flex;gap:3px;margin-top:3px">${chip(p9,'9 ')}${chip(p34,'34 ')}${chip(p89,'89 ')}</div>
+        </div>
+        <div style="text-align:right;font-size:13px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}" title="${ltpTip}">৳${r.ltp.toFixed(2)}</div>
+        <div style="text-align:center">${sigEl}</div>
+      </div>`;
+    }).join('')+'</div>';
 }
 buildWMA();
 </script>

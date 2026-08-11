@@ -157,7 +157,9 @@ async function run(){
   let html='';
 
   // ── 1. DATE ALIGNMENT ─────────────────────────────────────
-  const dates=Object.values(tools).map(t=>t.date).filter(Boolean);
+  // exclude Today's Picks from date alignment — it only stores rows when
+  // stocks qualify, so an older date just means a quiet stretch, not a sync failure
+  const dates=Object.entries(tools).filter(([k])=>k!=='picks').map(([,t])=>t.date).filter(Boolean);
   const uniqueDates=[...new Set(dates)].sort();
   const latest=uniqueDates[uniqueDates.length-1]||'—';
   const allSame=uniqueDates.length<=1;
@@ -221,9 +223,9 @@ async function run(){
   const wmaQual=new Set(tools.wma.list.filter(r=>/STRONG BUY/i.test(r.sig||r.signal||'')).map(r=>r.code));
   let cbFail=0,cbRows='';
   // only cross-check if Combined and Tech/WMA share the same trade date
-  // (comparing Aug 3 combined picks against today's tech data will always fail)
+  // AND Tech has enough data (>50 stocks) — if Tech is empty/thin the check is meaningless
   const cbDate=tools.combined.date, techDate=tools.tech.date;
-  const datesMatch=cbDate&&techDate&&cbDate===techDate;
+  const datesMatch=cbDate&&techDate&&cbDate===techDate&&tools.tech.list.length>50;
   if(cbN>0&&datesMatch){
     [...cbCodes].forEach(code=>{
       const inT=techQual.has(code),inW=wmaQual.has(code);
@@ -268,7 +270,9 @@ async function run(){
     else if(isToday&&!ran){bg='var(--gold)';lbl='?';col='#fff';}
     else{bg='var(--cream2)';lbl='–';col='var(--text3)';}
     dots+=`<div class="dot"><div class="dot-sq" style="background:${bg};color:${col}">${lbl}</div><div class="dot-lbl">${DAY[dow]}</div></div>`;
-    if(trading&&!ran&&!isToday) alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day missed.`,'amber',`python dse_tech.py --date ${iso}`));
+    if(trading&&!ran&&!isToday){
+      alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day missed.`,'amber',`python dse_tech.py --date ${iso}`));
+    }
   }
   const runState=missedDays===0?'ok':missedDays<=1?'warn':'fail';
   if(missedDays>0)issues++;

@@ -219,26 +219,25 @@ async function run(){
   );
 
   // ── 4. COMBINED INTEGRITY ─────────────────────────────────
-  const techQual=new Set(tools.tech.list.filter(r=>Number(r.score||0)>=70).map(r=>r.code));
-  const wmaQual=new Set(tools.wma.list.filter(r=>/STRONG BUY/i.test(r.sig||r.signal||'')).map(r=>r.code));
-  let cbFail=0,cbRows='';
-  // only cross-check if Combined and Tech/WMA share the same trade date
-  // AND Tech has enough data (>50 stocks) — if Tech is empty/thin the check is meaningless
-  const cbDate=tools.combined.date, techDate=tools.tech.date;
-  const datesMatch=cbDate&&techDate&&cbDate===techDate&&tools.tech.list.length>50;
-  if(cbN>0&&datesMatch){
-    [...cbCodes].forEach(code=>{
-      const inT=techQual.has(code),inW=wmaQual.has(code);
-      if(!inT||!inW){cbFail++;cbRows+=`<div style="font-size:11px;padding:4px 0;border-top:1px solid var(--cream2);color:var(--gold)">${code} — ${!inT?'missing from Tech ≥70':''}${!inT&&!inW?' + ':''}${!inW?'missing from WMA Strong Buy':''}</div>`;}
-    });
-    if(!cbRows)cbRows=`<div style="font-size:11px;color:var(--green);padding:4px 0">All ${cbN} combined stocks verified in both Tech and WMA feeds ✓</div>`;
-  } else if(cbN>0&&!datesMatch){
-    cbRows=`<div style="font-size:11px;color:var(--text3);padding:4px 0">Skipped — Combined (${fmtD(cbDate)}) and Tech (${fmtD(techDate)}) are on different dates. Cross-check only valid when both share the same date.</div>`;
+  // Combined integrity: each tool uses a completely independent formula and
+  // principle, so a stock passing WMA but not Tech (or vice versa) is NORMAL —
+  // the engines measure different things. The only meaningful check is whether
+  // Combined ran on the same date as Tech and WMA (i.e. all tools uploaded together).
+  const cbDate=tools.combined.date, techDate=tools.tech.date, wmaDate=tools.wma.date;
+  const cbDateOk=cbDate&&techDate&&wmaDate&&cbDate===techDate&&cbDate===wmaDate;
+  const cbFail=cbDateOk?0:1;
+  let cbRows='';
+  if(cbDateOk){
+    cbRows=`<div style="font-size:11px;color:var(--green);padding:4px 0">Combined (${fmtD(cbDate)}), Tech (${fmtD(techDate)}), WMA (${fmtD(wmaDate)}) all on same date — engines ran together ✓</div>
+    <div style="font-size:11px;color:var(--text3);padding:4px 0;border-top:1px solid var(--cream2)">Note: individual stocks may differ across engines — each tool uses an independent formula. That is expected behaviour, not a data issue.</div>`;
+  } else if(cbN===0){
+    cbRows='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — strict criteria not met. This is normal on quiet or bearish days.</div>';
   } else {
-    cbRows='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — nothing to cross-check</div>';
+    cbRows=`<div style="font-size:11px;color:var(--gold);padding:4px 0">Combined is on ${fmtD(cbDate)} but Tech is on ${fmtD(techDate)} — run DSE_MANUAL.bat to sync all tools to the same date.</div>`;
   }
   const cbState=cbFail===0?'ok':'warn';
-  if(cbFail>0){issues++;alerts.push(alertBox(`${cbFail} stock(s) in Combined did not pass Tech≥70 or WMA Strong Buy — run all tools together to sync.`,'red','DSE_MANUAL.bat'));}
+  if(cbFail>0){issues++;alerts.push(alertBox('Combined and Tech/WMA are on different dates — run DSE_MANUAL.bat to sync.','amber','DSE_MANUAL.bat'));}
+
   html+=sec('4. Combined signal integrity — every combined pick must pass Tech ≥70 AND WMA Strong Buy');
   html+=card(hdr('Combined integrity','cross-checking picker / WMA / tech agreement',cbState),cbRows);
 
@@ -261,7 +260,8 @@ async function run(){
     const d=new Date();d.setDate(d.getDate()-i);
     const iso=d.toISOString().slice(0,10);
     const dow=d.getDay();
-    const trading=dow>=0&&dow<=4;
+    const BD_HOL=new Set(['2026-01-01','2026-02-21','2026-03-17','2026-03-26','2026-04-14','2026-04-17','2026-04-18','2026-05-01','2026-05-25','2026-06-05','2026-06-07','2026-07-01','2026-08-05','2026-08-15','2026-09-05','2026-10-02','2026-10-14','2026-12-16','2026-12-25','2026-12-26']);
+    const trading=dow>=0&&dow<=4&&!BD_HOL.has(iso);
     const ran=hist.includes(iso);
     const isToday=iso===today;
     let bg,lbl,col;

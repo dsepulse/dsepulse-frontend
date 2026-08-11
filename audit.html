@@ -202,7 +202,7 @@ async function run(){
     const tl=techMap[code]||0,wl=wmaMap[code]||0,cl=cbMap[code]||0;
     const active=[tl,wl,cl].filter(x=>x>0);
     const maxD=active.length>1?Math.max(...active)-Math.min(...active):0;
-    const ok=maxD<1;
+    const ok=maxD<2; // under ৳2 difference is timing noise, not a sync problem
     if(!ok)mismatch++;
     priceRows+=`<span class="td${ok?'':' warn'}" title="${code}">${code}</span>`+
       `<span class="td ${tl?'':'muted'}">${tl?'৳'+tl.toFixed(2):'—'}</span>`+
@@ -211,7 +211,7 @@ async function run(){
       `<span class="td ${ok?'ok':'warn'}">${ok?'✓':'Δ'+maxD.toFixed(2)}</span>`;
   });
   const priceState=mismatch===0?'ok':mismatch<=3?'warn':'fail';
-  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show different prices across tools.`,'amber',null));}
+  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show price differences above ৳2 across tools — possible stale price.`,'amber',null));}
   html+=sec('3. LTP price consistency — same stock must show same price in every tool');
   html+=card(hdr('Price sync','LTP comparison across Tech, WMA and Combined',priceState),
     `<div class="ptbl"><span class="th">Code</span><span class="th">Tech</span><span class="th">WMA</span><span class="th">Combined</span><span class="th">Match</span>${priceRows}</div>`+

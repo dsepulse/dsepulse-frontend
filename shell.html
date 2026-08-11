@@ -823,8 +823,8 @@ function switchDashTab(t,el){
   if(fns[t]){try{fns[t]();}catch(e){}}
 }
 function openTool(url,el){
-  // remember last visited tool so Ctrl+Shift+R restores it, not the homepage
-  try{ localStorage.setItem('dse_last_tool', url); }catch(e){}
+  // save last tool in URL hash — survives Ctrl+Shift+R without localStorage
+  try{ history.replaceState(null,'',location.pathname+'#'+url.replace('/','').replace('.html','')); }catch(e){}
   document.querySelectorAll('#view-dashboard .dash-content > [id^="dt-"]').forEach(function(e){e.style.display='none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(function(b){b.classList.remove('active');});
   if(el) el.classList.add('active');
@@ -1826,18 +1826,21 @@ function applyToolGates(){
     }).catch(function(){});
 }
 function openFirstVisibleTool(){
-  // check if user had a previous tool open — restore it instead of opening first tab
+  // restore last tool from URL hash (e.g. #wma → /wma.html)
   var VALID=['/overview.html','/market.html','/sectors.html','/picks.html',
     '/wma.html','/tech.html','/combined.html','/bd.html','/smartmoney.html',
     '/mastersignal.html','/risk.html','/screener.html','/comparison.html',
     '/fundamentals.html','/crosstool.html','/trackrecord.html','/holdings.html'];
   try{
-    var last=localStorage.getItem('dse_last_tool');
-    if(last && VALID.indexOf(last)>=0){
-      var tab=[].slice.call(document.querySelectorAll('#view-dashboard .tab'))
-        .find(function(t){ return (t.getAttribute('onclick')||'').indexOf(last)>=0; });
-      openTool(last, tab||null);
-      return;
+    var hash=location.hash.replace('#','');
+    if(hash){
+      var last='/'+hash+'.html';
+      if(VALID.indexOf(last)>=0){
+        var tab=[].slice.call(document.querySelectorAll('#view-dashboard .tab'))
+          .find(function(t){ return (t.getAttribute('onclick')||'').indexOf(last)>=0; });
+        openTool(last, tab||null);
+        return;
+      }
     }
   }catch(e){}
   // default: open first visible tab

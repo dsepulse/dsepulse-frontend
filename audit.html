@@ -130,7 +130,7 @@ async function run(){
     fj('/api/activity/today'),
     fj('/api/track-record?days=10&top=3'),
     sbq('stock_52w','select=code,updated_at&order=updated_at.desc&limit=1'),
-    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=7'),
+    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=400'),
   ]);
 
   // helper: find date from any row — tries multiple field names

@@ -823,6 +823,8 @@ function switchDashTab(t,el){
   if(fns[t]){try{fns[t]();}catch(e){}}
 }
 function openTool(url,el){
+  // remember last visited tool so Ctrl+Shift+R restores it, not the homepage
+  try{ localStorage.setItem('dse_last_tool', url); }catch(e){}
   document.querySelectorAll('#view-dashboard .dash-content > [id^="dt-"]').forEach(function(e){e.style.display='none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(function(b){b.classList.remove('active');});
   if(el) el.classList.add('active');
@@ -1354,7 +1356,24 @@ async function buildSectors(){
     if (t){
       fetch(API + "/api/auth/me", { headers:{ "Authorization":"Bearer " + t } })
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(u => setLoggedInNav(u.name || localStorage.getItem(NAME_KEY) || ""))
+        .then(u => {
+          setLoggedInNav(u.name || localStorage.getItem(NAME_KEY) || "");
+          // restore last visited tool after login confirmed
+          try{
+            const lastTool = localStorage.getItem('dse_last_tool');
+            const validTools = ['/overview.html','/market.html','/sectors.html',
+              '/picks.html','/wma.html','/tech.html','/combined.html','/bd.html',
+              '/smartmoney.html','/mastersignal.html','/risk.html','/screener.html',
+              '/comparison.html','/fundamentals.html','/crosstool.html',
+              '/trackrecord.html','/holdings.html'];
+            if(lastTool && validTools.includes(lastTool)){
+              // find the matching tab and activate it
+              const tab = [...document.querySelectorAll('#view-dashboard .tab')]
+                .find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(lastTool));
+              openTool(lastTool, tab || null);
+            }
+          }catch(e){}
+        })
         .catch(() => clearSession());
     }
   }

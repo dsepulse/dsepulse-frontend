@@ -438,6 +438,9 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="flags-row" id="sr-flags">
         <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-right:4px">BD Checks:</span>
       </div>
+      <div style="padding:0 22px 20px">
+        <a id="sr-calc-link" href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;border:1px solid var(--border2);border-radius:7px;padding:8px 14px">Use these levels in Calculator →</a>
+      </div>
     </div>
   </div>
 </div>
@@ -795,6 +798,7 @@ function renderScan(s,dc){
   document.getElementById('sr-target').textContent='৳'+s.t1.toFixed(2);
   document.getElementById('sr-sl').textContent='৳'+s.sl.toFixed(2);
   document.getElementById('sr-rr').textContent='R/R '+s.rr.toFixed(1)+'×';
+  document.getElementById('sr-calc-link').href='/calculator.html?code='+encodeURIComponent(dc)+'&entry='+s.entry+'&target='+s.t1+'&sl='+s.sl+'&tf='+encodeURIComponent(s.tf||'');
   document.getElementById('sr-bars').innerHTML=(s.bars||[]).map(([l,v,m,c])=>`<div class="bar-row"><div class="bar-label">${l}</div><div class="bar-track"><div class="bar-fill" style="width:${v/m*100}%;background:${c}"></div></div><div class="bar-num">${v}/${m}</div></div>`).join('');
   const fm={'✅':'ok','⚠':'warn','🔔':'info'};
   document.getElementById('sr-flags').innerHTML='<span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-right:4px">BD Checks:</span>'+(s.flags||[]).map(f=>`<span class="flag ${Object.entries(fm).find(([k])=>f.startsWith(k))?.[1]||'ok'}">${f}</span>`).join('');

@@ -87,11 +87,15 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 .sp-navy{background:var(--navy);padding:22px 24px}
 .sp-eyebrow{font-size:11px;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
 .sp-headline{font-size:17px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:16px}
-.sp-check-row{display:flex;gap:8px}
+.sp-check-row{display:flex;gap:8px;position:relative}
 .sp-check-input{flex:1;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;padding:0 14px;font-size:13px;font-family:var(--mono);outline:none}
 .sp-check-input::placeholder{color:rgba(255,255,255,0.4)}
-.sp-check-btn{height:44px;padding:0 22px;border-radius:8px;border:none;background:var(--gold2);color:var(--navy);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;white-space:nowrap}
+.sp-check-btn{height:44px;padding:0 22px;border-radius:8px;border:none;background:var(--gold2);color:var(--navy);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;min-width:118px}
 .sp-check-btn:hover{background:#E8B324}
+.sp-check-btn:disabled{opacity:0.7;cursor:default}
+.sp-suggest{position:absolute;top:48px;left:0;right:78px;background:var(--white);border:1px solid var(--border2);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.18);z-index:50;overflow:hidden;display:none}
+.sp-suggest-item{padding:9px 14px;font-size:12px;font-family:var(--mono);font-weight:700;color:var(--navy);cursor:pointer}
+.sp-suggest-item:hover,.sp-suggest-item.hi{background:var(--cream2)}
 .sp-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .sp-title{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px}
 .sp-live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
@@ -363,8 +367,9 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
           <div class="sp-eyebrow">Try it free — no signup</div>
           <div class="sp-headline">See what our engines say about any DSE stock, right now</div>
           <div class="sp-check-row">
-            <input class="sp-check-input" id="checkInput" placeholder="Type a stock code — e.g. BEXIMCO, GP, SQUARPHARMA" onkeydown="if(event.key==='Enter')runCheck()">
-            <button class="sp-check-btn" onclick="runCheck()">Check score</button>
+            <input class="sp-check-input" id="checkInput" placeholder="Type a stock code — e.g. BEXIMCO, GP, SQUARPHARMA" onkeydown="if(event.key==='Enter')runCheck()" autocomplete="off">
+            <button class="sp-check-btn" id="checkBtn" onclick="runCheck()">Check score</button>
+            <div class="sp-suggest" id="checkSuggest"></div>
           </div>
         </div>
         <div class="sp-stats">
@@ -797,15 +802,67 @@ function renderScan(s,dc){
   document.getElementById('scan-result').scrollIntoView({behavior:'smooth'});
 }
 
+const DSE_CODES=["AAMRANET","AAMRATECH","ABBANK","ACI","ACIFORMULA","ACMELAB","ACTIVEFINE","ADNTEL","ADVENT","AFCAGRO","AGNISYSL","AGRANINS","ALARABANK","ALLTEX","AMANTEX","AMBEEPHA","AMCLPRAN","ANLIMAYARN","ANWARGALV","ANWARGALW","APEXFOODS","APEXFOOT","APEXSPINN","APEXTANRY","APOLOISPAT","ARAMIT","ARAMITCEM","ARGONDENIM","ASIAINS","ASIAPACINS","ATLASBANG","AZIZPIPES","BANGAS","BANGLAMILK","BANKASIA","BARKAPOWER","BASHUNDPAP","BATASHOE","BATBC","BAYLEASING","BBS","BBSCABLES","BDAUTOCA","BDCOM","BDFINANCE","BDLAMPS","BDSERVICE","BDTHAI","BEACHHATCH","BEACONPHAR","BEDL","BENGALWTL","BERGERPBL","BEXIMCO","BGIC","BIFC","BNICL","BRACBANK","BSCCL","BSRMLTD","BSRMSTEEL","BXPHARMA","CENTRALINS","CENTRALPHL","CHARTLIFE","CITYBANK","CLICL","CONFIDCEM","CONTININS","COPPERTECH","CROWNCEMNT","CRYSTALINS","DACCADYE","DAFODILCOM","DATASOFT","DBH","DELTASPINN","DESCO","DESHGARMNT","DESHGENERL","DESHGENINS","DHAKABANK","DHAKAINS","DOMINAGE","DOREENPWR","DRAGONSWET","DUTCHBANGL","EASTERNCAB","EASTERNINS","EASTLAND","EBL","EGEN","EHL","EMERALDOIL","ENERGYPAC","ENVOYTEX","ESQUIRE","EVINCE","EXIMBANK","FAMILYTEX","FARCHEM","FAREASTFIN","FAREASTLIF","FASFIN","FEDERALINS","FINEFOODS","FIRSTFIN","FIRSTSBANK","FORTUNE","FUWANGCER","FUWANGFOOD","GBBPOWER","GEMINISEA","GENEXIL","GHAIL","GIB","GLOBALINS","GOLDENHARV","GP","GPHISPAT","GQBALLPEN","GREENDELT","GSPFINANCE","HAKKANIPUL","HAMIDFAB","HAMIDTEX","HEIDELBCEM","HRTEX","HWAWELLTEX","IBNSINA","IBP","ICB","ICBIBANK","IDLC","IFADAUTOS","IFIC","ILFSL","INDEXAGRO","INTECH","INTRACO","IPDC","ISLAMIBANK","ISLAMICFIN","ISLAMIGEN","ISLAMIINS","ISNLTD","IT","ITC","JAMUNABANK","JAMUNAOIL","JANATAINS","JMISMDL","JUTESPINN","KARNAPHULI","KATTALITEX","KDSALTD","KEYA","KEYACOSMET","KHULNAPOWER","KOHINOOR","KPCL","LAFARGEHOL","LANKABAFIN","LEGACYFOOT","LHBL","LIBRAINFU","LINDEBD","LINDEBGL","LOVELLO","MAKSONSPIN","MALEKSPIN","MARICO","MATINSPINN","MEGCONMILK","MEGHNACEM","MEGHNAINS","MEGHNALIFE","MERCANBANK","METROSPIN","MICEMENT","MIDASFIN","MIDLANDBNK","MIRACLEIND","MITHUNKNIT","MJLBD","MLDYEING","MONNOAGML","MONNOCERA","MONNOFABR","MONOSPOOL","MOZAFFAR","MPETROLEUM","MTB","NATIONALFE","NATIONALTU","NATLIFEINS","NAVANACNG","NAVANAPHAR","NBFI","NBL","NCCBANK","NEWLINE","NHFIL","NITOLINS","NORTHRNGEN","NORTHRNJUTE","NPOLYMER","NRBBANK","NRBCBANK","NTC","NURANI","NWPGCL","OIMEX","OLYMPIC","ONEBANKPLC","ORIONINFU","ORIONPHARM","PADMABANK","PADMALIFE","PADMAOIL","PAPERPROC","PEOPLESINS","PHARMAID","PHENIXINS","PHOENIXFIN","PIONEERINS","PLFSL","POPULARLIF","POWERGRID","PRAGATIINS","PRAGATILIF","PREMIERBAN","PREMIERCEM","PREMIERLE","PRIMEBANK","PRIMEFIN","PRIMELIFE","PRIMETEX","PRIMTEX","PROGRESLIF","PROVATIINS","PUBALIBANK","PURABIGEN","QUASEMIND","QUEENSOUTH","RAKCERAMIC","RANFOUNDRY","RANGPURFO","RDFOOD","REGENTTEX","RELIANINS","RENATA","RENWICKJA","RINGSHINE","RINTEX","RNSPIN","ROBI","RSRMSTEEL","RUNNERAUTO","RUPALIBANK","RUPALIINS","RUPALILIFE","SAFKOSPIN","SAIFPOWER","SAIHAMCOT","SAIHAMTEX","SALAMCRST","SALVOCHEM","SAMATALETH","SAMORITA","SANDHANINS","SAVAREFR","SBACBANK","SEAPEARL","SHAHJABANK","SHAHJIBAZ","SHEPHERD","SHYAMPSUG","SIBL","SILCOPHL","SIMTEX","SINGERBD","SINOBANGLA","SONALIANSH","SONALILIFE","SONALIPAPR","SONARGAON","SOUTHBANGL","SOUTHEASTB","SPCL","SQUARETEXT","SQURPHARMA","SSSTEEL","STANCERAM","STANDBANKL","STYLECRAFT","SUMITPOWER","SUNLIFEINS","TAKAFULINS","TALLUSPIN","TILIL","TITASGAS","TOSRIFA","TRUSTBANK","TUNGHAI","UCB","UNILEVERCL","UNIONBANK","UNIONCAP","UNIQUEHRL","UNITEDAIR","UNITEDINS","UPGDCL","USMANIAGL","UTTARABANK","UTTARAFIN","WALTONHIL","WATACHEM","WMSHIPYARD","WSCABLES","WZPDCL","YPL","ZAHEENSPIN","ZAHINTEX","ZEALBANGLA"];
+
 async function runCheck(){
-  const code=(document.getElementById('checkInput').value||'DBH').trim().toUpperCase();
-  if(!code){ return; }
-  let live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
-  if(!live) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
-  const s=live||SD[code]||SD.DBH;
-  const dc=live?code:(SD[code]?code:'DBH');
-  renderScan(s,dc);
+  const input=document.getElementById('checkInput');
+  const btn=document.getElementById('checkBtn');
+  hideSuggest();
+  const code=(input.value||'').trim().toUpperCase();
+  if(!code){ input.focus(); return; }
+  const origLabel=btn.textContent;
+  btn.textContent='Checking…'; btn.disabled=true;
+  try{
+    let live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
+    if(!live) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
+    const s=live||SD[code]||SD.DBH;
+    const dc=live?code:(SD[code]?code:'DBH');
+    renderScan(s,dc);
+    setTimeout(()=>{
+      const el=document.getElementById('scan-result');
+      if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    },60);
+  }finally{
+    btn.textContent=origLabel; btn.disabled=false;
+  }
 }
+
+function hideSuggest(){
+  const box=document.getElementById('checkSuggest');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+}
+function showSuggest(list){
+  const box=document.getElementById('checkSuggest');
+  if(!box) return;
+  if(!list.length){ hideSuggest(); return; }
+  box.innerHTML=list.map(c=>`<div class="sp-suggest-item" data-code="${c}">${c}</div>`).join('');
+  box.style.display='block';
+  box.querySelectorAll('.sp-suggest-item').forEach(function(el){
+    el.onmousedown=function(e){
+      e.preventDefault();
+      document.getElementById('checkInput').value=el.getAttribute('data-code');
+      hideSuggest();
+      runCheck();
+    };
+  });
+}
+(function(){
+  const input=document.getElementById('checkInput');
+  if(!input) return;
+  input.addEventListener('input',function(){
+    const q=input.value.trim().toUpperCase();
+    if(!q){ hideSuggest(); return; }
+    const matches=DSE_CODES.filter(c=>c.indexOf(q)===0).slice(0,8);
+    showSuggest(matches);
+  });
+  input.addEventListener('blur',function(){ setTimeout(hideSuggest,120); });
+  input.addEventListener('focus',function(){
+    if(input.value.trim()) input.dispatchEvent(new Event('input'));
+  });
+  document.addEventListener('click',function(e){
+    if(e.target!==input) hideSuggest();
+  });
+})();
 
 const METHODOLOGY={
   picker:{n:"Daily Picker",t:"Momentum Scan · Score /45 · runs first",

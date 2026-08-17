@@ -66,6 +66,8 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .for-banner b{color:var(--navy);font-family:var(--mono);font-size:13px}
 .for-banner .fb-clear{margin-left:auto;font-size:11px;color:var(--gold);cursor:pointer;font-weight:600}
 .for-banner .fb-loading{color:var(--text3);font-style:italic}
+.warn-banner{display:none;align-items:flex-start;gap:10px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5}
+.warn-banner b{color:var(--red)}
 </style>
 </head>
 <body>
@@ -121,6 +123,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
         <input type="number" id="sl" placeholder="e.g. 168.90" step="0.10" oninput="calc()" class="r">
       </div>
     </div>
+  </div>
+
+  <div class="warn-banner" id="warnBanner">
+    <span>&#9888;&#65039;</span>
+    <span><b>This doesn't look like a valid buy setup</b> — the target price is at or below the entry price, so "profit" and risk:reward below will be negative or meaningless. This can happen when a stock has no active buy signal right now. Double-check the levels, or try a different stock.</span>
   </div>
 
   <!-- RESULTS CARD -->
@@ -292,6 +299,7 @@ function calc(){
     document.getElementById('r-rr-bar').style.width='0%';
     document.getElementById('kelly-note').style.display='none';
     document.getElementById('breakeven-card').style.display='none';
+    document.getElementById('warnBanner').style.display='none';
     return;
   }
 
@@ -302,6 +310,9 @@ function calc(){
   const rr=(target-entry)/Math.abs(sl-entry);
   const capPct=(cost/cap)*100;
   const remaining=cap-cost;
+
+  const invalidSetup=(target<=entry)||(sl>=entry);
+  document.getElementById('warnBanner').style.display=invalidSetup?'flex':'none';
 
   document.getElementById('r-shares').textContent=shares.toLocaleString();
   document.getElementById('r-cost').innerHTML=fmt(cost);

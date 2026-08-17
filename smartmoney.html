@@ -195,7 +195,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
         '<div class="smf-fc"><div class="smf-fl">Target</div>'+fv(target,'g')+'</div>'+
         '<div class="smf-fc"><div class="smf-fl">Stop</div>'+fv(stop,'r')+'</div>'+
         '<div class="smf-fc"><div class="smf-fl">R:R</div><div class="smf-fv">'+(rr!=null&&isFinite(rr)?(+rr).toFixed(1)+'\u00d7':'\u2014')+'</div></div>'+
-      '</div></div>';
+      '</div>'+
+      '<div style="padding:0 2px"><a href="/calculator.html?code='+encodeURIComponent(x.code)+(entry!=null&&target!=null&&stop!=null?'&entry='+entry+'&target='+target+'&sl='+stop:'')+'" style="font-size:10px;font-weight:700;color:var(--gold);text-decoration:none">Use in Calculator \u2192</a></div>'+
+      '</div>';
   }
 
   async function renderBody(){

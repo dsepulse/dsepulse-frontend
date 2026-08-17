@@ -112,7 +112,7 @@ async function buildWMA(){
           <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span>
           <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3);margin-left:4px">${r.cat}</span>
           ${r.fresh?`<span style="font-size:10px;margin-left:4px">${r.fresh}</span>`:''}
-          <div style="display:flex;gap:3px;margin-top:3px">${chip(p9,'9 ')}${chip(p34,'34 ')}${chip(p89,'89 ')}</div>
+          <div style="display:flex;gap:3px;margin-top:3px">${chip(p9,'9 ')}${chip(p34,'34 ')}${chip(p89,'89 ')}<a href="/calculator.html?code=${encodeURIComponent(r.code)}" style="font-size:9px;font-weight:700;color:var(--gold);text-decoration:none;margin-left:4px">Calc →</a></div>
         </div>
         <div style="text-align:right;font-size:13px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}" title="${ltpTip}">৳${r.ltp.toFixed(2)}</div>
         <div style="text-align:center">${sigEl}</div>

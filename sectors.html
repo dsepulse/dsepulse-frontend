@@ -118,6 +118,7 @@ function card(s,i){
         <span class="best-code">${esc(best.code)}</span>
         <span class="best-score">${best.score}</span>
         ${best.signal?`<span class="best-tag" style="color:${(String(best.signal).toUpperCase().includes('BUY'))?'var(--green)':'var(--text3)'}">${esc(best.signal)}</span>`:''}
+        <a href="/calculator.html?code=${esc(best.code)}" style="font-size:9px;font-weight:700;color:var(--gold);text-decoration:none">Calc →</a>
       </div>
       <span class="best-px">${ltpTxt} ${pctTxt?`<span style="color:${pctColor(best.pct)}">${pctTxt}</span>`:''}</span>
     </div>

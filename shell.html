@@ -678,7 +678,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
-        <span style="padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px">Trial · 7 days left</span>
+        <span id="trialBadge" style="display:none;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px"></span>
         <button class="btn btn-outline" onclick="showView('landing')">← Back to site</button>
       </div>
     </div>
@@ -688,6 +688,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="tab active" onclick="openTool('/overview.html',this)">Overview</div>
       <div class="tab" onclick="openTool('/market.html',this)">Market Pulse</div>
       <div class="tab" onclick="openTool('/sectors.html',this)">Sector Ranking</div>
+      <div class="tab" onclick="openTool('/trackrecord.html',this)">Track Record</div>
       <div class="dash-grp">Signals</div>
       <div class="tab" onclick="openTool('/picks.html',this)">Today's Picks</div>
       <div class="tab" onclick="openTool('/wma.html',this)">WMA Signals</div>
@@ -884,6 +885,16 @@ function openTool(url,el){
             '.hero,.hero-inner,main,.tool-content,.page-body,.wrap,.container,section:first-of-type{padding-top:14px!important;margin-top:0!important}';
           (d.head||d.documentElement).appendChild(st);
         }
+        var STICKY=['/overview.html','/market.html','/picks.html'];
+        if(STICKY.indexOf(url)>-1 && !d.getElementById('shell-sticky')){
+          var ss=d.createElement('style'); ss.id='shell-sticky';
+          ss.textContent =
+            'thead th,thead td,table thead th,.data-table thead th,.tbl thead th,.table thead th{'+
+              'position:sticky!important;top:0;z-index:30;'+
+              'background:var(--white,#fff);'+
+              'box-shadow:inset 0 -1px 0 var(--border,#e6e2d8)}';
+          (d.head||d.documentElement).appendChild(ss);
+        }
       }catch(e){}
     };
   }
@@ -936,7 +947,7 @@ async function buildOverview(){
     ${turnBlk}
     ${m.hot&&m.hot.length?DIV+sect(m.hot,'Hot Sectors','#4ADE80'):''}
     ${sect(m.cold,'Cold Sectors','#F87171')}
-    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated?fmtD(d.updated):'—'}</span></div>
+    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated_time||(d.updated?fmtD(d.updated):'—')}</span></div>
   </div>`;
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';
@@ -1317,6 +1328,7 @@ async function buildSectors(){
     <label>Password</label><input id="au-pass" type="password" placeholder="••••••••">
     <button class="submit" id="au-submit">Sign in</button>
     <div class="err" id="au-err"></div>
+    <div id="au-forgot" style="text-align:center;margin-top:10px;font-size:11.5px"><a href="#" id="au-forgot-link" style="color:#B8860B;text-decoration:none">Forgot password?</a></div>
   </div>`;
   document.body.appendChild(ov);
 
@@ -1326,7 +1338,8 @@ async function buildSectors(){
     $("tab-signup").classList.toggle("on", m === "signup");
     $("fld-name").style.display = m === "signup" ? "block" : "none";
     $("au-submit").textContent = m === "signup" ? "Create account" : "Sign in";
-    $("au-err").textContent = ""; }
+    $("au-err").textContent = ""; $("au-err").style.color = "";
+    var _f=$("au-forgot"); if(_f) _f.style.display = m === "signup" ? "none" : "block"; }
   window.openAuth = function(m){ setMode(m || "login"); ov.classList.add("show"); };
   function closeAuth(){ ov.classList.remove("show"); }
   $("dse-x").onclick = closeAuth;
@@ -1361,6 +1374,16 @@ async function buildSectors(){
         onAuthed(await post("/api/auth/register", { name, email, password: pass }));
       } else { onAuthed(await post("/api/auth/login", { email, password: pass })); }
     }catch(e){ $("au-err").textContent = e.message; }
+  };
+  $("au-forgot-link").onclick = async function(e){
+    e.preventDefault();
+    const email = $("au-email").value.trim();
+    if (!email){ $("au-err").style.color=""; $("au-err").textContent = "Enter your email above, then tap Forgot password."; return; }
+    $("au-err").style.color = "#1A6B3C"; $("au-err").textContent = "Sending reset link…";
+    try{ const d = await post("/api/auth/forgot", { email });
+      $("au-err").style.color = "#1A6B3C";
+      $("au-err").textContent = d.message || "If that email is registered, a reset link is on its way.";
+    }catch(err){ $("au-err").style.color=""; $("au-err").textContent = err.message; }
   };
 
   window.dseGoogle = async function(resp){
@@ -1811,28 +1834,6 @@ async function buildSectors(){
 </script>
 <!-- ===== end My Holdings ===== -->
 <script>
-/* Tool visibility — reads config.features [{id,on}] saved from the Admin panel */
-function applyToolGates(){
-  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
-    .then(function(r){return r.json();})
-    .then(function(c){
-      var off={}; (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; });
-      document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
-        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
-        if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
-      });
-    }).catch(function(){});
-}
-function openFirstVisibleTool(){
-  var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
-  for(var i=0;i<tabs.length;i++){
-    if(tabs[i].style.display==='none') continue;
-    var m=(tabs[i].getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
-    if(m){ openTool(m[1], tabs[i]); return; }
-  }
-}
-</script>
-<script>
 /* Tool visibility — reads config.features [{id,on}] saved from the Admin panel.
    Admin preview: open dsepulse.com/?preview=on to see ALL tools this session
    (regardless of toggles); use ?preview=off to exit. */
@@ -1848,17 +1849,71 @@ function showPreviewBadge(){
   b.innerHTML='Preview: all tools shown <a href="?preview=off" style="color:#D4A017;text-decoration:underline;margin-left:6px">exit</a>';
   document.body.appendChild(b);
 }
+function updateTrialBadge(u){
+  var el=document.getElementById('trialBadge'); if(!el) return;
+  var plan=(u&&u.plan)||"free";
+  if(plan==="premium"||plan==="pro"){ el.style.display='none'; return; }
+  var left=(u&&typeof u.trial_days_left==="number")?u.trial_days_left:null;
+  var expired=(u&&u.trial_expired===true);
+  if(expired){
+    el.textContent="Trial ended · Upgrade";
+    el.style.borderColor="#B91C1C"; el.style.color="#B91C1C"; el.style.background="rgba(185,28,28,0.08)";
+  }else if(left!==null){
+    el.textContent="Trial · "+left+(left===1?" day left":" days left");
+    el.style.borderColor="var(--gold-border)"; el.style.color="var(--gold)"; el.style.background="var(--gold-bg)";
+  }else{ el.style.display='none'; return; }
+  el.style.display='';
+}
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
-  return fetch("https://dsepulse-backend-production.up.railway.app/api/config")
-    .then(function(r){return r.json();})
-    .then(function(c){
+  var API="https://dsepulse-backend-production.up.railway.app";
+  var tok=null; try{ tok=localStorage.getItem("dse_token"); }catch(e){}
+  var planP = tok
+    ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})
+        .then(function(r){return r.ok?r.json():{};})
+        .then(function(u){
+          updateTrialBadge(u);
+          var plan=(u&&u.plan)||"free";
+          if(plan==="free" && u && u.trial_expired===false) return "pro";
+          return plan;
+        })
+        .catch(function(){return "free";})
+    : Promise.resolve("free");
+  return Promise.all([
+      planP,
+      fetch(API+"/api/config").then(function(r){return r.json();}).catch(function(){return {};})
+    ])
+    .then(function(res){
+      var plan=res[0]||"free", c=res[1]||{};
       var off={};
-      if(!isPreview()){ (Array.isArray(c.features)?c.features:[]).forEach(function(f){ if(f&&f.id&&f.on===false) off[f.id]=1; }); }
+      if(!isPreview()){
+        (Array.isArray(c.features)?c.features:[]).forEach(function(f){
+          if(!f||!f.id) return;
+          var allowed;
+          if(typeof f.free==="boolean"||typeof f.premium==="boolean"||typeof f.pro==="boolean"){
+            allowed = (f[plan]===true);
+          }else{
+            allowed = (f.on!==false);
+          }
+          if(!allowed) off[f.id]=1;
+        });
+      }
       document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
-        var m=(t.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+        var oc=(t.getAttribute('onclick')||'');
+        var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);
         if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
       });
+      var kids=document.querySelectorAll('#view-dashboard .tabs > *');
+      var curHdr=null, anyVisible=false;
+      kids.forEach(function(el){
+        if(el.classList.contains('dash-grp')){
+          if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
+          curHdr=el; anyVisible=false;
+        }else if(el.classList.contains('tab')){
+          if(el.style.display!=='none') anyVisible=true;
+        }
+      });
+      if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
     }).catch(function(){});
 }
 function openFirstVisibleTool(){

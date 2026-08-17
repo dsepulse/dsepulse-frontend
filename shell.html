@@ -1956,6 +1956,7 @@ function applyToolGates(){
           if(!allowed) off[f.id]=1;
         });
       }
+      delete off['/calculator.html']; // free for everyone — not yet wired into Admin panel's Tool Visibility list
       document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
         var oc=(t.getAttribute('onclick')||'');
         var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);

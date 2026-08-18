@@ -368,8 +368,8 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     <div class="hero-right">
       <div class="search-panel">
         <div class="sp-navy">
-          <div class="sp-eyebrow">Try it free — no signup</div>
-          <div class="sp-headline">See what our engines say about any DSE stock, right now</div>
+          <div class="sp-eyebrow" id="spEyebrow">Try it free — no signup</div>
+          <div class="sp-headline" id="spHeadline">See what our engines say about any DSE stock, right now</div>
           <div class="sp-check-row">
             <input class="sp-check-input" id="checkInput" placeholder="Type a stock code — e.g. BEXIMCO, GP, SQUARPHARMA" onkeydown="if(event.key==='Enter')runCheck()" autocomplete="off">
             <button class="sp-check-btn" id="checkBtn" onclick="runCheck()">Check score</button>
@@ -1438,6 +1438,9 @@ async function buildSectors(){
     const na = document.querySelector(".nav-actions"); if (!na) return;
     na.innerHTML = `<div class="dse-userchip"><span class="nm">${name || "Account"}</span><button class="btn btn-outline" id="dse-logout">Log out</button></div>`;
     $("dse-logout").onclick = logout;
+    const eb=$("spEyebrow"), hl=$("spHeadline");
+    if(eb) eb.textContent = "Welcome back";
+    if(hl) hl.textContent = "Check any DSE stock, or jump into your dashboard";
   }
   function onAuthed(data){
     setSession(data.token, data.name || "");

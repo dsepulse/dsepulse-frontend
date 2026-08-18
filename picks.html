@@ -239,6 +239,7 @@ async function buildPicks(){
         <div class="plvl"><div class="plvl-l">Stop loss</div><div class="plvl-v" style="color:var(--red)">৳${sl.toFixed(2)}</div></div>
         <div class="plvl"><div class="plvl-l">Timeframe</div><div class="plvl-v" style="color:var(--gold)">${tf.replace('d','\u202fdays')}</div></div>
       </div>
+      <div style="padding:0 14px 14px"><a href="/calculator.html?code=${encodeURIComponent(p.code||'')}&entry=${ltp}&target=${l1}&sl=${sl}&tf=${encodeURIComponent(tf)}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:9px 15px">Use in Calculator →</a></div>
     </div>`;
   }
   function toggleRow(row){

@@ -270,6 +270,7 @@ function renderCard(code,ev,fu){
           <div class="cw-loss" style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--red)">-</div>
         </div>
       </div>
+      <div style="margin-top:10px"><a href="/calculator.html?code=${code}&entry=${Number(ev.entry).toFixed(2)}&target=${Number(ev.target).toFixed(2)}&sl=${Number(ev.sl).toFixed(2)}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--white);border:1px solid var(--gold-border);border-radius:8px;padding:9px 15px">Open full calculator (Kelly, breakeven) →</a></div>
     </div>`:''}
   </div>`;
 }

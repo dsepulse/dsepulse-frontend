@@ -2008,7 +2008,7 @@ function applyToolGates(){
           if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
           curHdr=el; anyVisible=false;
         }else if(el.classList.contains('tab')){
-          if(el.style.display!=='none') anyVisible=true;
+          if(el.dataset.gatedOff!=='1') anyVisible=true;
         }
       });
       if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';

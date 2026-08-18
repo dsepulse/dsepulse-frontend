@@ -778,7 +778,10 @@ function pickLabel(p){
 (async function(){
   const d=await fetchJSON('/api/track-record?days=15&top=3');
   if(!d||!d.tools||!d.tools.length) return;
-  const pick=d.tools.find(t=>t.key==='combined')||d.tools.find(t=>t.key==='tech')||d.tools[0];
+  const qualified=(d.tools||[]).filter(t=>t.agg && (t.agg.resolved||0)>=10 && t.agg.win_rate!=null);
+  const pick=qualified.length
+    ? qualified.reduce(function(best,t){ return t.agg.win_rate>best.agg.win_rate ? t : best; })
+    : (d.tools.find(t=>t.key==='combined')||d.tools.find(t=>t.key==='tech')||d.tools[0]);
   if(!pick||!pick.agg||pick.agg.win_rate==null) return;
   document.getElementById('tr-winrate').textContent=pick.agg.win_rate+'%';
   document.getElementById('tr-winrate-lbl').textContent=(pick.label||'Signal')+' win rate · '+(pick.agg.samples||0)+' picks';

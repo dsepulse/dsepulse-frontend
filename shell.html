@@ -310,11 +310,17 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 .dash-layout .tabs .tab{display:block;width:100%;text-align:left;border-bottom:none;border-left:3px solid transparent;border-radius:7px;padding:8px 11px;font-size:12.5px;margin:0;white-space:normal;line-height:1.3}
 .dash-layout .tabs .tab:hover{background:var(--cream2)}
 .dash-layout .tabs .tab.active{border-left:3px solid var(--gold);border-bottom:none;background:var(--gold-bg);color:var(--navy);font-weight:700}
-.dash-grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:14px 8px 4px;font-weight:700}
+.dash-grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:14px 8px 4px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.dash-grp .grp-arrow{font-size:9px;transition:transform .15s;color:var(--text3)}
+.dash-grp.grp-collapsed .grp-arrow{transform:rotate(-90deg)}
+.pinned-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin:2px 8px 4px;font-weight:700}
+.dash-layout .tabs .tab.pinned{background:var(--gold-bg);border-left:3px solid var(--gold-border);margin-bottom:2px}
+.dash-layout .tabs .tab.pinned.active{border-left:3px solid var(--gold)}
+.pin-divider{height:1px;background:var(--border);margin:8px 8px 4px}
 .dash-grp:first-child{margin-top:4px}
 .dash-content{flex:1;min-width:0;padding:0 0 0 24px}
 #tool-frame{width:100%;height:80vh;border:0;border-radius:10px;background:#fff;display:block}
-@media(max-width:760px){.dash-layout{flex-direction:column}.dash-layout .tabs{width:auto;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-grp{width:100%}.dash-content{padding:16px 0 0}}
+@media(max-width:760px){.dash-layout{flex-direction:column}.dash-layout .tabs{width:auto;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-grp{width:100%}.pinned-lbl{width:100%}.pin-divider{display:none}.dash-content{padding:16px 0 0}}
 </style>
 </head>
 <body>
@@ -692,28 +698,30 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     </div>
     <div class="dash-layout">
     <div class="tabs">
-      <div class="dash-grp">Market</div>
-      <div class="tab active" onclick="openTool('/overview.html',this)">Overview</div>
+      <div class="pinned-lbl">Quick access</div>
+      <div class="tab pinned active" onclick="openTool('/overview.html',this)">Overview</div>
+      <div class="tab pinned" onclick="openTool('/combined.html',this)">Combined Signal</div>
+      <div class="tab pinned" onclick="openTool('/picks.html',this)">Today's Picks</div>
+      <div class="tab pinned" onclick="openTool('/calculator.html',this)">Calculator</div>
+      <div class="pin-divider"></div>
+      <div class="dash-grp" onclick="toggleGrp(this)">Market<span class="grp-arrow">▾</span></div>
       <div class="tab" onclick="openTool('/market.html',this)">Market Pulse</div>
       <div class="tab" onclick="openTool('/sectors.html',this)">Sector Ranking</div>
       <div class="tab" onclick="openTool('/trackrecord.html',this)">Track Record</div>
-      <div class="dash-grp">Signals</div>
-      <div class="tab" onclick="openTool('/picks.html',this)">Today's Picks</div>
+      <div class="dash-grp grp-collapsed" onclick="toggleGrp(this)">Signals<span class="grp-arrow">▾</span></div>
       <div class="tab" onclick="openTool('/wma.html',this)">WMA Signals</div>
       <div class="tab" onclick="openTool('/tech.html',this)">Tech Analysis</div>
-      <div class="tab" onclick="openTool('/combined.html',this)">Combined Signal</div>
       <div class="tab" onclick="openTool('/bd.html',this)">BD Signal</div>
       <div class="tab" onclick="openTool('/smartmoney.html',this)">Smart Money</div>
       <div class="tab" onclick="openTool('/mastersignal.html',this)">Master Signal</div>
-      <div class="dash-grp">Portfolio</div>
+      <div class="dash-grp" onclick="toggleGrp(this)">Portfolio<span class="grp-arrow">▾</span></div>
       <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
       <div class="tab" onclick="openTool('/risk.html',this)">Risk</div>
-      <div class="dash-grp">Tools</div>
+      <div class="dash-grp grp-collapsed" onclick="toggleGrp(this)">Tools<span class="grp-arrow">▾</span></div>
       <div class="tab" onclick="openTool('/screener.html',this)">Screener</div>
       <div class="tab" onclick="openTool('/comparison.html',this)">Compare</div>
       <div class="tab" onclick="openTool('/fundamentals.html',this)">Fundamentals</div>
       <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
-      <div class="tab" onclick="openTool('/calculator.html',this)">Calculator</div>
     </div>
     <div class="dash-content">
       <iframe id="tool-frame" style="display:none"></iframe>
@@ -1929,6 +1937,31 @@ function updateTrialBadge(u){
   }else{ el.style.display='none'; return; }
   el.style.display='';
 }
+function recomputeTabDisplay(t){
+  t.style.display = (t.dataset.gatedOff==='1' || t.dataset.collapsed==='1') ? 'none' : '';
+}
+function toggleGrp(hdr){
+  var collapsing = !hdr.classList.contains('grp-collapsed');
+  hdr.classList.toggle('grp-collapsed', collapsing);
+  var el=hdr.nextElementSibling;
+  while(el && el.classList && el.classList.contains('tab')){
+    el.dataset.collapsed = collapsing ? '1' : '';
+    recomputeTabDisplay(el);
+    el=el.nextElementSibling;
+  }
+}
+function initGrpCollapse(){
+  document.querySelectorAll('#view-dashboard .dash-grp.grp-collapsed').forEach(function(hdr){
+    var el=hdr.nextElementSibling;
+    while(el && el.classList && el.classList.contains('tab')){
+      el.dataset.collapsed='1';
+      recomputeTabDisplay(el);
+      el=el.nextElementSibling;
+    }
+  });
+}
+if(document.readyState!=='loading') initGrpCollapse(); else document.addEventListener('DOMContentLoaded', initGrpCollapse);
+
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
   var API="https://dsepulse-backend-production.up.railway.app";
@@ -1963,11 +1996,10 @@ function applyToolGates(){
           if(!allowed) off[f.id]=1;
         });
       }
-      delete off['/calculator.html']; // free for everyone — not yet wired into Admin panel's Tool Visibility list
       document.querySelectorAll('#view-dashboard .tabs .tab').forEach(function(t){
         var oc=(t.getAttribute('onclick')||'');
         var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);
-        if(m){ t.style.display = off[m[1]] ? 'none' : ''; }
+        if(m){ t.dataset.gatedOff = off[m[1]] ? '1' : ''; recomputeTabDisplay(t); }
       });
       var kids=document.querySelectorAll('#view-dashboard .tabs > *');
       var curHdr=null, anyVisible=false;

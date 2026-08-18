@@ -766,11 +766,13 @@ const TK=[{s:"DSEX",p:"5,847.2",c:"+0.66%",u:1},{s:"DS30",p:"2,108.5",c:"+0.58%"
 function renderTicker(list){const t=document.getElementById('tickerTrack');if(!t)return;t.innerHTML=[...list,...list].map(x=>`<div class="tk"><span class="tk-sym">${x.s}</span><span class="tk-price">${x.p}</span><span class="${x.u?'tk-up':'tk-dn'}">${x.c}</span></div>`).join('')}
 (async function(){const live=await fetchJSON('/api/ticker');renderTicker(Array.isArray(live)&&live.length?live:TK);})();
 
-function statusColor(st){
-  if(st==='HIT') return {bg:'var(--green-bg)',c:'var(--green)'};
-  if(st==='STOPPED') return {bg:'var(--red-bg)',c:'var(--red)'};
-  if(st==='HOLDING') return {bg:'var(--gold-bg)',c:'var(--gold)'};
-  return {bg:'var(--cream3)',c:'var(--text3)'};
+function pickLabel(p){
+  if(p.status==='HOLDING') return {text:'HOLDING',bg:'var(--gold-bg)',c:'var(--gold)'};
+  if(p.status==='STOPPED') return {text:'STOPPED',bg:'var(--red-bg)',c:'var(--red)'};
+  if(p.status==='HIT') return {text:'HIT',bg:'var(--green-bg)',c:'var(--green)'};
+  // EXPIRED, RETURN, or any other resolved-but-unlabeled status — derive win/loss from the actual return
+  const won = p.ret!=null && p.ret>=0;
+  return won ? {text:'WIN',bg:'var(--green-bg)',c:'var(--green)'} : {text:'LOSS',bg:'var(--red-bg)',c:'var(--red)'};
 }
 
 (async function(){
@@ -784,9 +786,9 @@ function statusColor(st){
   (pick.days||[]).forEach(day=>(day.picks||[]).forEach(p=>flat.push(p)));
   const recent=flat.filter(p=>p.status).slice(0,5);
   document.getElementById('tr-recent').innerHTML=recent.map(p=>{
-    const sc=statusColor(p.status);
+    const lbl=pickLabel(p);
     const ret=p.ret!=null?(p.ret>=0?'+':'')+p.ret.toFixed(1)+'%':'—';
-    return `<div class="tr-pick"><div class="tr-pick-code">${p.code}</div><span class="tr-pick-status" style="background:${sc.bg};color:${sc.c}">${p.status}</span><div class="tr-pick-ret" style="color:${p.ret>=0?'var(--green)':'var(--red)'}">${ret}</div></div>`;
+    return `<div class="tr-pick"><div class="tr-pick-code">${p.code}</div><span class="tr-pick-status" style="background:${lbl.bg};color:${lbl.c}">${lbl.text}</span><div class="tr-pick-ret" style="color:${p.ret>=0?'var(--green)':'var(--red)'}">${ret}</div></div>`;
   }).join('');
   if(recent.length) document.getElementById('tr-glimpse').style.display='block';
 })();

@@ -1956,9 +1956,20 @@ function updateTrialBadge(u){
 function recomputeTabDisplay(t){
   t.style.display = t.dataset.gatedOff==='1' ? 'none' : '';
 }
-function selectCat(id){
+function selectCat(id, skipAutoOpen){
   document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-cat')===id); });
   document.querySelectorAll('.cat-panel').forEach(function(p){ p.style.display = p.getAttribute('data-cat')===id ? 'flex' : 'none'; });
+  if(skipAutoOpen) return;
+  var panel=document.querySelector('.cat-panel[data-cat="'+id+'"]');
+  if(!panel) return;
+  var tabs=panel.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++){
+    if(tabs[i].dataset.gatedOff!=='1'){
+      var m=(tabs[i].getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+      if(m) openTool(m[1], tabs[i]); else tabs[i].click();
+      break;
+    }
+  }
 }
 function catOf(tabEl){
   var p=tabEl.closest('.cat-panel');
@@ -2025,7 +2036,7 @@ function openFirstVisibleTool(){
       if(VALID.indexOf(last)>=0){
         var tab=[].slice.call(document.querySelectorAll('#view-dashboard .tab'))
           .find(function(t){ return (t.getAttribute('onclick')||'').indexOf(last)>=0; });
-        if(tab){ var c=catOf(tab); if(c) selectCat(c); }
+        if(tab){ var c=catOf(tab); if(c) selectCat(c, true); }
         openTool(last, tab||null);
         return;
       }

@@ -306,21 +306,19 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 </style>
 <style>
 .dash-layout{display:flex;gap:0;align-items:flex-start}
-.dash-layout .tabs{flex-direction:column;width:184px;flex-shrink:0;border-right:1px solid var(--border);border-bottom:none;padding:6px 8px 18px;gap:1px;background:var(--cream);overflow:visible}
-.dash-layout .tabs .tab{display:block;width:100%;text-align:left;border-bottom:none;border-left:3px solid transparent;border-radius:7px;padding:8px 11px;font-size:12.5px;margin:0;white-space:normal;line-height:1.3}
-.dash-layout .tabs .tab:hover{background:var(--cream2)}
-.dash-layout .tabs .tab.active{border-left:3px solid var(--gold);border-bottom:none;background:var(--gold-bg);color:var(--navy);font-weight:700}
-.dash-grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:14px 8px 4px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
-.dash-grp .grp-arrow{font-size:9px;transition:transform .15s;color:var(--text3)}
-.dash-grp.grp-collapsed .grp-arrow{transform:rotate(-90deg)}
-.pinned-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin:2px 8px 4px;font-weight:700}
-.dash-layout .tabs .tab.pinned{background:var(--gold-bg);border-left:3px solid var(--gold-border);margin-bottom:2px}
-.dash-layout .tabs .tab.pinned.active{border-left:3px solid var(--gold)}
-.pin-divider{height:1px;background:var(--border);margin:8px 8px 4px}
-.dash-grp:first-child{margin-top:4px}
-.dash-content{flex:1;min-width:0;padding:0 0 0 24px}
+.cat-rail{width:150px;flex-shrink:0;border-right:1px solid var(--border);padding:10px 6px;background:var(--cream)}
+.cat-btn{display:flex;align-items:center;gap:8px;padding:10px 10px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:7px;border-left:2px solid transparent;user-select:none}
+.cat-btn:hover{background:var(--cream2)}
+.cat-btn.active{color:var(--navy);background:var(--gold-bg);border-left:2px solid var(--gold)}
+.dash-main{flex:1;min-width:0}
+.dash-layout .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.dash-layout .tabs .cat-panel{display:flex;gap:6px;flex-wrap:nowrap}
+.dash-layout .tabs .tab{white-space:nowrap;flex-shrink:0;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text2);background:var(--white)}
+.dash-layout .tabs .tab:hover{border-color:var(--navy2);color:var(--navy)}
+.dash-layout .tabs .tab.active{border-color:var(--gold);background:var(--gold-bg);color:var(--navy);font-weight:700}
+.dash-content{flex:1;min-width:0;padding:0 24px}
 #tool-frame{width:100%;height:80vh;border:0;border-radius:10px;background:#fff;display:block}
-@media(max-width:760px){.dash-layout{flex-direction:column}.dash-layout .tabs{width:auto;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-grp{width:100%}.pinned-lbl{width:100%}.pin-divider{display:none}.dash-content{padding:16px 0 0}}
+@media(max-width:760px){.dash-layout{flex-direction:column}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:16px 0 0}}
 </style>
 </head>
 <body>
@@ -697,31 +695,40 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       </div>
     </div>
     <div class="dash-layout">
+    <div class="cat-rail">
+      <div class="cat-btn active" data-cat="quick" onclick="selectCat('quick')"><i class="ti ti-star" aria-hidden="true"></i>Quick access</div>
+      <div class="cat-btn" data-cat="tech" onclick="selectCat('tech')"><i class="ti ti-chart-line" aria-hidden="true"></i>Technical Analysis</div>
+      <div class="cat-btn" data-cat="portfolio" onclick="selectCat('portfolio')"><i class="ti ti-briefcase" aria-hidden="true"></i>Portfolio</div>
+      <div class="cat-btn" data-cat="tools" onclick="selectCat('tools')"><i class="ti ti-tool" aria-hidden="true"></i>Tools</div>
+    </div>
+    <div class="dash-main">
     <div class="tabs">
-      <div class="pinned-lbl">Quick access</div>
-      <div class="tab pinned active" onclick="openTool('/overview.html',this)">Overview</div>
-      <div class="tab pinned" onclick="openTool('/combined.html',this)">Combined Signal</div>
-      <div class="tab pinned" onclick="openTool('/picks.html',this)">Today's Picks</div>
-      <div class="tab pinned" onclick="openTool('/calculator.html',this)">Calculator</div>
-      <div class="pin-divider"></div>
-      <div class="dash-grp" onclick="toggleGrp(this)">Market<span class="grp-arrow">▾</span></div>
-      <div class="tab" onclick="openTool('/market.html',this)">Market Pulse</div>
-      <div class="tab" onclick="openTool('/sectors.html',this)">Sector Ranking</div>
-      <div class="tab" onclick="openTool('/trackrecord.html',this)">Track Record</div>
-      <div class="dash-grp grp-collapsed" onclick="toggleGrp(this)">Signals<span class="grp-arrow">▾</span></div>
-      <div class="tab" onclick="openTool('/wma.html',this)">WMA Signals</div>
-      <div class="tab" onclick="openTool('/tech.html',this)">Tech Analysis</div>
-      <div class="tab" onclick="openTool('/bd.html',this)">BD Signal</div>
-      <div class="tab" onclick="openTool('/smartmoney.html',this)">Smart Money</div>
-      <div class="tab" onclick="openTool('/mastersignal.html',this)">Master Signal</div>
-      <div class="dash-grp" onclick="toggleGrp(this)">Portfolio<span class="grp-arrow">▾</span></div>
-      <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
-      <div class="tab" onclick="openTool('/risk.html',this)">Risk</div>
-      <div class="dash-grp grp-collapsed" onclick="toggleGrp(this)">Tools<span class="grp-arrow">▾</span></div>
-      <div class="tab" onclick="openTool('/screener.html',this)">Screener</div>
-      <div class="tab" onclick="openTool('/comparison.html',this)">Compare</div>
-      <div class="tab" onclick="openTool('/fundamentals.html',this)">Fundamentals</div>
-      <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
+      <div class="cat-panel" data-cat="quick">
+        <div class="tab active" onclick="openTool('/overview.html',this)">Overview</div>
+        <div class="tab" onclick="openTool('/market.html',this)">Market Pulse</div>
+        <div class="tab" onclick="openTool('/trackrecord.html',this)">Track Record</div>
+        <div class="tab" onclick="openTool('/sectors.html',this)">Sector Ranking</div>
+        <div class="tab" onclick="openTool('/picks.html',this)">Today's Picks</div>
+      </div>
+      <div class="cat-panel" data-cat="tech" style="display:none">
+        <div class="tab" onclick="openTool('/wma.html',this)">WMA Signals</div>
+        <div class="tab" onclick="openTool('/tech.html',this)">Tech Analysis</div>
+        <div class="tab" onclick="openTool('/combined.html',this)">Combined Signal</div>
+        <div class="tab" onclick="openTool('/bd.html',this)">BD Signal</div>
+        <div class="tab" onclick="openTool('/smartmoney.html',this)">Smart Money</div>
+        <div class="tab" onclick="openTool('/mastersignal.html',this)">Master Signal</div>
+      </div>
+      <div class="cat-panel" data-cat="portfolio" style="display:none">
+        <div class="tab" onclick="switchDashTab('holdings',this)">My Holdings</div>
+        <div class="tab" onclick="openTool('/risk.html',this)">Risk</div>
+      </div>
+      <div class="cat-panel" data-cat="tools" style="display:none">
+        <div class="tab" onclick="openTool('/screener.html',this)">Screener</div>
+        <div class="tab" onclick="openTool('/comparison.html',this)">Compare</div>
+        <div class="tab" onclick="openTool('/fundamentals.html',this)">Fundamentals</div>
+        <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
+        <div class="tab" onclick="openTool('/calculator.html',this)">Calculator</div>
+      </div>
     </div>
     <div class="dash-content">
       <iframe id="tool-frame" style="display:none"></iframe>
@@ -731,6 +738,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -1938,29 +1946,16 @@ function updateTrialBadge(u){
   el.style.display='';
 }
 function recomputeTabDisplay(t){
-  t.style.display = (t.dataset.gatedOff==='1' || t.dataset.collapsed==='1') ? 'none' : '';
+  t.style.display = t.dataset.gatedOff==='1' ? 'none' : '';
 }
-function toggleGrp(hdr){
-  var collapsing = !hdr.classList.contains('grp-collapsed');
-  hdr.classList.toggle('grp-collapsed', collapsing);
-  var el=hdr.nextElementSibling;
-  while(el && el.classList && el.classList.contains('tab')){
-    el.dataset.collapsed = collapsing ? '1' : '';
-    recomputeTabDisplay(el);
-    el=el.nextElementSibling;
-  }
+function selectCat(id){
+  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-cat')===id); });
+  document.querySelectorAll('.cat-panel').forEach(function(p){ p.style.display = p.getAttribute('data-cat')===id ? 'flex' : 'none'; });
 }
-function initGrpCollapse(){
-  document.querySelectorAll('#view-dashboard .dash-grp.grp-collapsed').forEach(function(hdr){
-    var el=hdr.nextElementSibling;
-    while(el && el.classList && el.classList.contains('tab')){
-      el.dataset.collapsed='1';
-      recomputeTabDisplay(el);
-      el=el.nextElementSibling;
-    }
-  });
+function catOf(tabEl){
+  var p=tabEl.closest('.cat-panel');
+  return p ? p.getAttribute('data-cat') : null;
 }
-if(document.readyState!=='loading') initGrpCollapse(); else document.addEventListener('DOMContentLoaded', initGrpCollapse);
 
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
@@ -2001,17 +1996,11 @@ function applyToolGates(){
         var m=oc.match(/openTool\('([^']+)'/)||oc.match(/switchDashTab\('([^']+)'/);
         if(m){ t.dataset.gatedOff = off[m[1]] ? '1' : ''; recomputeTabDisplay(t); }
       });
-      var kids=document.querySelectorAll('#view-dashboard .tabs > *');
-      var curHdr=null, anyVisible=false;
-      kids.forEach(function(el){
-        if(el.classList.contains('dash-grp')){
-          if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
-          curHdr=el; anyVisible=false;
-        }else if(el.classList.contains('tab')){
-          if(el.dataset.gatedOff!=='1') anyVisible=true;
-        }
+      document.querySelectorAll('.cat-panel').forEach(function(panel){
+        var anyVisible=[].slice.call(panel.querySelectorAll('.tab')).some(function(t){ return t.dataset.gatedOff!=='1'; });
+        var btn=document.querySelector('.cat-btn[data-cat="'+panel.getAttribute('data-cat')+'"]');
+        if(btn) btn.style.display = anyVisible ? '' : 'none';
       });
-      if(curHdr) curHdr.style.display = anyVisible ? '' : 'none';
     }).catch(function(){});
 }
 function openFirstVisibleTool(){
@@ -2019,7 +2008,8 @@ function openFirstVisibleTool(){
   var VALID=['/overview.html','/market.html','/sectors.html','/picks.html',
     '/wma.html','/tech.html','/combined.html','/bd.html','/smartmoney.html',
     '/mastersignal.html','/risk.html','/screener.html','/comparison.html',
-    '/fundamentals.html','/crosstool.html','/trackrecord.html','/holdings.html'];
+    '/fundamentals.html','/crosstool.html','/trackrecord.html','/holdings.html',
+    '/calculator.html'];
   try{
     var hash=location.hash.replace('#','');
     if(hash){
@@ -2027,6 +2017,7 @@ function openFirstVisibleTool(){
       if(VALID.indexOf(last)>=0){
         var tab=[].slice.call(document.querySelectorAll('#view-dashboard .tab'))
           .find(function(t){ return (t.getAttribute('onclick')||'').indexOf(last)>=0; });
+        if(tab){ var c=catOf(tab); if(c) selectCat(c); }
         openTool(last, tab||null);
         return;
       }
@@ -2035,7 +2026,7 @@ function openFirstVisibleTool(){
   // default: open first visible tab
   var tabs=document.querySelectorAll('#view-dashboard .tabs .tab');
   for(var i=0;i<tabs.length;i++){
-    if(tabs[i].style.display==='none') continue;
+    if(getComputedStyle(tabs[i]).display==='none') continue;
     var m=(tabs[i].getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
     if(m){ openTool(m[1], tabs[i]); return; }
   }

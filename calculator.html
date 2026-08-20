@@ -34,6 +34,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .field input:focus{border-color:var(--navy)}
 .field input.g{border-color:var(--green);background:var(--green-bg)}
 .field input.r{border-color:var(--red);background:var(--red-bg)}
+.field .hint{font-size:10px;color:var(--text3);margin-top:4px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
@@ -58,6 +59,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .qbtn{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:var(--mono)}
 .qbtn:hover{border-color:var(--navy);color:var(--navy)}
+.qbtn.on{border-color:var(--navy);background:var(--navy);color:#fff}
 .code-row{position:relative}
 .code-suggest{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--border2);border-radius:7px;box-shadow:0 8px 20px rgba(0,0,0,0.15);z-index:50;overflow:hidden;display:none;max-height:220px;overflow-y:auto}
 .code-suggest-item{padding:8px 12px;font-size:12px;font-family:var(--mono);font-weight:700;color:var(--navy);cursor:pointer}
@@ -68,6 +70,8 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .for-banner .fb-loading{color:var(--text3);font-style:italic}
 .warn-banner{display:none;align-items:flex-start;gap:10px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5}
 .warn-banner b{color:var(--red)}
+.note-banner{display:none;align-items:flex-start;gap:10px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5}
+.note-banner b{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -90,7 +94,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     <div class="sec-lbl">Stock (optional)</div>
     <div class="field code-row">
       <label>Type a code to auto-fill levels from live analysis</label>
-      <input type="text" id="stockCode" placeholder="e.g. SQUARPHARMA" autocomplete="off" oninput="onCodeInput()" onkeydown="onCodeKeydown(event)" onfocus="if(this.value.trim())onCodeInput()">
+      <input type="text" id="stockCode" placeholder="e.g. SQURPHARMA" autocomplete="off" oninput="onCodeInput()" onkeydown="onCodeKeydown(event)" onfocus="if(this.value.trim())onCodeInput()">
       <div class="code-suggest" id="codeSuggest"></div>
     </div>
 
@@ -106,6 +110,19 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
         <button class="qbtn" onclick="setcap(250000)">&#2547;2.5L</button>
         <button class="qbtn" onclick="setcap(500000)">&#2547;5L</button>
       </div>
+    </div>
+
+    <div class="field">
+      <label>Risk per trade (% of capital)</label>
+      <input type="number" id="riskPct" value="2" min="0.1" max="100" step="0.5" oninput="calc()">
+      <div class="quick-row">
+        <button class="qbtn" data-risk="1" onclick="setrisk(1)">1%</button>
+        <button class="qbtn" data-risk="2" onclick="setrisk(2)">2%</button>
+        <button class="qbtn" data-risk="3" onclick="setrisk(3)">3%</button>
+        <button class="qbtn" data-risk="5" onclick="setrisk(5)">5%</button>
+        <button class="qbtn" data-risk="100" onclick="setrisk(100)">All-in</button>
+      </div>
+      <div class="hint">Position size is calculated so that a loss at your stop costs roughly this much of your capital.</div>
     </div>
 
     <div class="sec-lbl" style="margin-top:6px">Trade setup</div>
@@ -127,7 +144,12 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
   <div class="warn-banner" id="warnBanner">
     <span>&#9888;&#65039;</span>
-    <span><b>This doesn't look like a valid buy setup</b> — the target price is at or below the entry price, so "profit" and risk:reward below will be negative or meaningless. This can happen when a stock has no active buy signal right now. Double-check the levels, or try a different stock.</span>
+    <span id="warnText"></span>
+  </div>
+
+  <div class="note-banner" id="noteBanner">
+    <span>&#9432;</span>
+    <span id="noteText"></span>
   </div>
 
   <!-- RESULTS CARD -->
@@ -142,7 +164,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
         <div class="lbl">Total cost</div>
         <div class="val" id="r-cost">&mdash;</div>
       </div>
-      <div class="res pos">
+      <div class="res pos" id="tile-profit">
         <div class="lbl">Target profit</div>
         <div class="val" id="r-profit">&mdash;</div>
       </div>
@@ -179,7 +201,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
       </div>
       <div>
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:3px">Upside to target</div>
-        <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="b-upside">&mdash;</div>
+        <div style="font-size:14px;font-weight:700;font-family:var(--mono)" id="b-upside">&mdash;</div>
       </div>
       <div>
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:3px">Downside to stop</div>
@@ -189,16 +211,20 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   </div>
 
   <div class="disc">
-    Informational only &mdash; not investment advice. Brokerage not included in calculations.
-    Position sizing is based on your full capital; adjust for your actual risk tolerance.
-    The Kelly fraction shown is mathematical guidance &mdash; not a recommendation.
+    Informational only &mdash; not investment advice. Brokerage is excluded from profit and loss figures
+    and shown only in the breakeven price. The Kelly fraction is mathematical guidance, not a recommendation,
+    and full Kelly is widely considered too aggressive for discretionary trading.
   </div>
 </div>
 
 <script>
-function setcap(v){ document.getElementById('capital').value=v; calc(); }
 const API="https://dsepulse-backend-production.up.railway.app";
-const DSE_CODES=["AAMRANET","AAMRATECH","ABBANK","ACI","ACIFORMULA","ACMELAB","ACTIVEFINE","ADNTEL","ADVENT","AFCAGRO","AGNISYSL","AGRANINS","ALARABANK","ALLTEX","AMANTEX","AMBEEPHA","AMCLPRAN","ANLIMAYARN","ANWARGALV","ANWARGALW","APEXFOODS","APEXFOOT","APEXSPINN","APEXTANRY","APOLOISPAT","ARAMIT","ARAMITCEM","ARGONDENIM","ASIAINS","ASIAPACINS","ATLASBANG","AZIZPIPES","BANGAS","BANGLAMILK","BANKASIA","BARKAPOWER","BASHUNDPAP","BATASHOE","BATBC","BAYLEASING","BBS","BBSCABLES","BDAUTOCA","BDCOM","BDFINANCE","BDLAMPS","BDSERVICE","BDTHAI","BEACHHATCH","BEACONPHAR","BEDL","BENGALWTL","BERGERPBL","BEXIMCO","BGIC","BIFC","BNICL","BRACBANK","BSCCL","BSRMLTD","BSRMSTEEL","BXPHARMA","CENTRALINS","CENTRALPHL","CHARTLIFE","CITYBANK","CLICL","CONFIDCEM","CONTININS","COPPERTECH","CROWNCEMNT","CRYSTALINS","DACCADYE","DAFODILCOM","DATASOFT","DBH","DELTASPINN","DESCO","DESHGARMNT","DESHGENERL","DESHGENINS","DHAKABANK","DHAKAINS","DOMINAGE","DOREENPWR","DRAGONSWET","DUTCHBANGL","EASTERNCAB","EASTERNINS","EASTLAND","EBL","EGEN","EHL","EMERALDOIL","ENERGYPAC","ENVOYTEX","ESQUIRE","EVINCE","EXIMBANK","FAMILYTEX","FARCHEM","FAREASTFIN","FAREASTLIF","FASFIN","FEDERALINS","FINEFOODS","FIRSTFIN","FIRSTSBANK","FORTUNE","FUWANGCER","FUWANGFOOD","GBBPOWER","GEMINISEA","GENEXIL","GHAIL","GIB","GLOBALINS","GOLDENHARV","GP","GPHISPAT","GQBALLPEN","GREENDELT","GSPFINANCE","HAKKANIPUL","HAMIDFAB","HAMIDTEX","HEIDELBCEM","HRTEX","HWAWELLTEX","IBNSINA","IBP","ICB","ICBIBANK","IDLC","IFADAUTOS","IFIC","ILFSL","INDEXAGRO","INTECH","INTRACO","IPDC","ISLAMIBANK","ISLAMICFIN","ISLAMIGEN","ISLAMIINS","ISNLTD","IT","ITC","JAMUNABANK","JAMUNAOIL","JANATAINS","JMISMDL","JUTESPINN","KARNAPHULI","KATTALITEX","KDSALTD","KEYA","KEYACOSMET","KHULNAPOWER","KOHINOOR","KPCL","LAFARGEHOL","LANKABAFIN","LEGACYFOOT","LHBL","LIBRAINFU","LINDEBD","LINDEBGL","LOVELLO","MAKSONSPIN","MALEKSPIN","MARICO","MATINSPINN","MEGCONMILK","MEGHNACEM","MEGHNAINS","MEGHNALIFE","MERCANBANK","METROSPIN","MICEMENT","MIDASFIN","MIDLANDBNK","MIRACLEIND","MITHUNKNIT","MJLBD","MLDYEING","MONNOAGML","MONNOCERA","MONNOFABR","MONOSPOOL","MOZAFFAR","MPETROLEUM","MTB","NATIONALFE","NATIONALTU","NATLIFEINS","NAVANACNG","NAVANAPHAR","NBFI","NBL","NCCBANK","NEWLINE","NHFIL","NITOLINS","NORTHRNGEN","NORTHRNJUTE","NPOLYMER","NRBBANK","NRBCBANK","NTC","NURANI","NWPGCL","OIMEX","OLYMPIC","ONEBANKPLC","ORIONINFU","ORIONPHARM","PADMABANK","PADMALIFE","PADMAOIL","PAPERPROC","PEOPLESINS","PHARMAID","PHENIXINS","PHOENIXFIN","PIONEERINS","PLFSL","POPULARLIF","POWERGRID","PRAGATIINS","PRAGATILIF","PREMIERBAN","PREMIERCEM","PREMIERLE","PRIMEBANK","PRIMEFIN","PRIMELIFE","PRIMETEX","PRIMTEX","PROGRESLIF","PROVATIINS","PUBALIBANK","PURABIGEN","QUASEMIND","QUEENSOUTH","RAKCERAMIC","RANFOUNDRY","RANGPURFO","RDFOOD","REGENTTEX","RELIANINS","RENATA","RENWICKJA","RINGSHINE","RINTEX","RNSPIN","ROBI","RSRMSTEEL","RUNNERAUTO","RUPALIBANK","RUPALIINS","RUPALILIFE","SAFKOSPIN","SAIFPOWER","SAIHAMCOT","SAIHAMTEX","SALAMCRST","SALVOCHEM","SAMATALETH","SAMORITA","SANDHANINS","SAVAREFR","SBACBANK","SEAPEARL","SHAHJABANK","SHAHJIBAZ","SHEPHERD","SHYAMPSUG","SIBL","SILCOPHL","SIMTEX","SINGERBD","SINOBANGLA","SONALIANSH","SONALILIFE","SONALIPAPR","SONARGAON","SOUTHBANGL","SOUTHEASTB","SPCL","SQUARETEXT","SQURPHARMA","SSSTEEL","STANCERAM","STANDBANKL","STYLECRAFT","SUMITPOWER","SUNLIFEINS","TAKAFULINS","TALLUSPIN","TILIL","TITASGAS","TOSRIFA","TRUSTBANK","TUNGHAI","UCB","UNILEVERCL","UNIONBANK","UNIONCAP","UNIQUEHRL","UNITEDAIR","UNITEDINS","UPGDCL","USMANIAGL","UTTARABANK","UTTARAFIN","WALTONHIL","WATACHEM","WMSHIPYARD","WSCABLES","WZPDCL","YPL","ZAHEENSPIN","ZAHINTEX","ZEALBANGLA"];
+const DSE_CODES=[...new Set(["AAMRANET","AAMRATECH","ABBANK","ACI","ACIFORMULA","ACMELAB","ACTIVEFINE","ADNTEL","ADVENT","AFCAGRO","AGNISYSL","AGRANINS","ALARABANK","ALLTEX","AMANTEX","AMBEEPHA","AMCLPRAN","ANLIMAYARN","ANWARGALV","APEXFOODS","APEXFOOT","APEXSPINN","APEXTANRY","APOLOISPAT","ARAMIT","ARAMITCEM","ARGONDENIM","ASIAINS","ASIAPACINS","ATLASBANG","AZIZPIPES","BANGAS","BANGLAMILK","BANKASIA","BARKAPOWER","BASHUNDPAP","BATASHOE","BATBC","BAYLEASING","BBS","BBSCABLES","BDAUTOCA","BDCOM","BDFINANCE","BDLAMPS","BDSERVICE","BDTHAI","BEACHHATCH","BEACONPHAR","BEDL","BENGALWTL","BERGERPBL","BEXIMCO","BGIC","BIFC","BNICL","BRACBANK","BSCCL","BSRMLTD","BSRMSTEEL","BXPHARMA","CENTRALINS","CENTRALPHL","CHARTLIFE","CITYBANK","CLICL","CONFIDCEM","CONTININS","COPPERTECH","CROWNCEMNT","CRYSTALINS","DACCADYE","DAFODILCOM","DATASOFT","DBH","DELTASPINN","DESCO","DESHGARMNT","DESHGENERL","DESHGENINS","DHAKABANK","DHAKAINS","DOMINAGE","DOREENPWR","DRAGONSWET","DUTCHBANGL","EASTERNCAB","EASTERNINS","EASTLAND","EBL","EGEN","EHL","EMERALDOIL","ENERGYPAC","ENVOYTEX","ESQUIRE","EVINCE","EXIMBANK","FAMILYTEX","FARCHEM","FAREASTFIN","FAREASTLIF","FASFIN","FEDERALINS","FINEFOODS","FIRSTFIN","FIRSTSBANK","FORTUNE","FUWANGCER","FUWANGFOOD","GBBPOWER","GEMINISEA","GENEXIL","GHAIL","GIB","GLOBALINS","GOLDENHARV","GP","GPHISPAT","GQBALLPEN","GREENDELT","GSPFINANCE","HAKKANIPUL","HAMIDFAB","HEIDELBCEM","HRTEX","HWAWELLTEX","IBNSINA","IBP","ICB","ICBIBANK","IDLC","IFADAUTOS","IFIC","ILFSL","INDEXAGRO","INTECH","INTRACO","IPDC","ISLAMIBANK","ISLAMICFIN","ISLAMIGEN","ISLAMIINS","ISNLTD","IT","ITC","JAMUNABANK","JAMUNAOIL","JANATAINS","JMISMDL","JUTESPINN","KARNAPHULI","KATTALITEX","KDSALTD","KEYACOSMET","KHULNAPOWER","KOHINOOR","KPCL","LAFARGEHOL","LANKABAFIN","LEGACYFOOT","LHBL","LIBRAINFU","LINDEBD","LOVELLO","MAKSONSPIN","MALEKSPIN","MARICO","MATINSPINN","MEGCONMILK","MEGHNACEM","MEGHNAINS","MEGHNALIFE","MERCANBANK","METROSPIN","MICEMENT","MIDASFIN","MIDLANDBNK","MIRACLEIND","MITHUNKNIT","MJLBD","MLDYEING","MONNOAGML","MONNOCERA","MONNOFABR","MONOSPOOL","MOZAFFAR","MPETROLEUM","MTB","NATIONALFE","NATIONALTU","NATLIFEINS","NAVANACNG","NAVANAPHAR","NBFI","NBL","NCCBANK","NEWLINE","NHFIL","NITOLINS","NORTHRNGEN","NORTHRNJUTE","NPOLYMER","NRBBANK","NRBCBANK","NTC","NURANI","NWPGCL","OIMEX","OLYMPIC","ONEBANKPLC","ORIONINFU","ORIONPHARM","PADMABANK","PADMALIFE","PADMAOIL","PAPERPROC","PEOPLESINS","PHARMAID","PHENIXINS","PHOENIXFIN","PIONEERINS","PLFSL","POPULARLIF","POWERGRID","PRAGATIINS","PRAGATILIF","PREMIERBAN","PREMIERCEM","PREMIERLE","PRIMEBANK","PRIMEFIN","PRIMELIFE","PRIMETEX","PROGRESLIF","PROVATIINS","PUBALIBANK","PURABIGEN","QUASEMIND","QUEENSOUTH","RAKCERAMIC","RANFOUNDRY","RANGPURFO","RDFOOD","REGENTTEX","RELIANINS","RENATA","RENWICKJA","RINGSHINE","RINTEX","RNSPIN","ROBI","RSRMSTEEL","RUNNERAUTO","RUPALIBANK","RUPALIINS","RUPALILIFE","SAFKOSPIN","SAIFPOWER","SAIHAMCOT","SAIHAMTEX","SALAMCRST","SALVOCHEM","SAMATALETH","SAMORITA","SANDHANINS","SAVAREFR","SBACBANK","SEAPEARL","SHAHJABANK","SHAHJIBAZ","SHEPHERD","SHYAMPSUG","SIBL","SILCOPHL","SIMTEX","SINGERBD","SINOBANGLA","SONALIANSH","SONALILIFE","SONALIPAPR","SONARGAON","SOUTHBANGL","SOUTHEASTB","SPCL","SQUARETEXT","SQURPHARMA","SSSTEEL","STANCERAM","STANDBANKL","STYLECRAFT","SUMITPOWER","SUNLIFEINS","TAKAFULINS","TALLUSPIN","TILIL","TITASGAS","TOSRIFA","TRUSTBANK","TUNGHAI","UCB","UNILEVERCL","UNIONBANK","UNIONCAP","UNIQUEHRL","UNITEDAIR","UNITEDINS","UPGDCL","USMANIAGL","UTTARABANK","UTTARAFIN","WALTONHIL","WATACHEM","WMSHIPYARD","WSCABLES","WZPDCL","YPL","ZAHEENSPIN","ZAHINTEX","ZEALBANGLA"])].sort();
+
+const $=id=>document.getElementById(id);
+
+function setcap(v){ $('capital').value=v; calc(); }
+function setrisk(v){ $('riskPct').value=v; calc(); }
 
 async function fetchJSON(path){
   try{ const r=await fetch(API+path); if(!r.ok) return null; return await r.json(); }
@@ -206,14 +232,14 @@ async function fetchJSON(path){
 }
 
 function hideCodeSuggest(){
-  const box=document.getElementById('codeSuggest');
+  const box=$('codeSuggest');
   if(box){ box.style.display='none'; box.innerHTML=''; }
 }
 function onCodeInput(){
-  const q=document.getElementById('stockCode').value.trim().toUpperCase();
+  const q=$('stockCode').value.trim().toUpperCase();
   if(!q){ hideCodeSuggest(); return; }
   const matches=DSE_CODES.filter(c=>c.indexOf(q)===0).slice(0,8);
-  const box=document.getElementById('codeSuggest');
+  const box=$('codeSuggest');
   if(!matches.length){ hideCodeSuggest(); return; }
   box.innerHTML=matches.map(c=>`<div class="code-suggest-item" data-code="${c}">${c}</div>`).join('');
   box.style.display='block';
@@ -224,38 +250,65 @@ function onCodeInput(){
 function onCodeKeydown(e){
   if(e.key==='Enter'){
     hideCodeSuggest();
-    const v=document.getElementById('stockCode').value.trim().toUpperCase();
+    const v=$('stockCode').value.trim().toUpperCase();
     if(v) selectCode(v);
   }
 }
 function selectCode(code){
-  document.getElementById('stockCode').value=code;
+  $('stockCode').value=code;
   hideCodeSuggest();
   loadCodeData(code);
 }
 function clearCode(){
-  document.getElementById('stockCode').value='';
-  document.getElementById('forBanner').style.display='none';
+  $('stockCode').value='';
+  $('forBanner').style.display='none';
   hideCodeSuggest();
 }
 document.addEventListener('click',function(e){
   if(e.target.id!=='stockCode') hideCodeSuggest();
 });
 
+// ---------------------------------------------------------------------------
+// Auto-fill from live analysis.
+// Levels are validated before they touch the form. A payload where the target
+// is at or below entry, or the stop at or above entry, is not a buy setup —
+// filling those fields would produce a negative R:R downstream, so we refuse
+// the fill and say why instead.
+// ---------------------------------------------------------------------------
 async function loadCodeData(code){
-  const banner=document.getElementById('forBanner'), lbl=document.getElementById('forCode');
+  const banner=$('forBanner'), lbl=$('forCode');
   banner.style.display='flex';
-  lbl.innerHTML=code+' <span class="fb-loading">— loading live levels…</span>';
+  lbl.innerHTML=code+' <span class="fb-loading">&mdash; loading live levels&hellip;</span>';
+
   let live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
   if(!live) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
-  if(!live || !live.entry){
-    lbl.innerHTML=code+' <span class="fb-loading">— no live levels found, enter manually below</span>';
+
+  const entry=Number(live && live.entry)||0;
+  const target=Number(live && (live.target||live.t1))||0;
+  const sl=Number(live && live.sl)||0;
+
+  if(!entry){
+    lbl.innerHTML=code+' <span class="fb-loading">&mdash; no live levels found, enter manually below</span>';
     return;
   }
+
   lbl.textContent=code;
-  if(live.entry) document.getElementById('entry').value=live.entry;
-  if(live.target||live.t1) document.getElementById('target').value=live.target||live.t1;
-  if(live.sl) document.getElementById('sl').value=live.sl;
+  $('entry').value=entry;
+
+  const targetOk = target>entry;
+  const slOk     = sl>0 && sl<entry;
+
+  $('target').value = targetOk ? target : '';
+  $('sl').value     = slOk ? sl : '';
+
+  if(!targetOk || !slOk){
+    const bits=[];
+    if(!targetOk) bits.push(`a target of &#2547;${target||'—'} against an entry of &#2547;${entry}`);
+    if(!slOk)     bits.push(`a stop of &#2547;${sl||'—'} against an entry of &#2547;${entry}`);
+    showNote(`<b>No active buy setup for ${code}.</b> Live analysis returned ${bits.join(' and ')}, which is not a valid long trade &mdash; so the levels were not filled in. The price may have already run past its target, or this stock may have no buy signal right now. Enter your own levels below, or try another stock.`);
+  }else{
+    hideNote();
+  }
   calc();
 }
 
@@ -265,16 +318,17 @@ async function loadCodeData(code){
   const code=p.get('code');
   const tf=p.get('tf');
   const hasLevels=p.get('entry')&&p.get('target')&&p.get('sl');
-  if(p.get('entry'))document.getElementById('entry').value=p.get('entry');
-  if(p.get('target'))document.getElementById('target').value=p.get('target');
-  if(p.get('sl'))document.getElementById('sl').value=p.get('sl');
-  if(p.get('capital'))document.getElementById('capital').value=p.get('capital');
-  if(tf) document.getElementById('forTf').textContent=' · expected hold '+tf;
+  if(p.get('entry'))$('entry').value=p.get('entry');
+  if(p.get('target'))$('target').value=p.get('target');
+  if(p.get('sl'))$('sl').value=p.get('sl');
+  if(p.get('capital'))$('capital').value=p.get('capital');
+  if(p.get('risk'))$('riskPct').value=p.get('risk');
+  if(tf) $('forTf').textContent=' · expected hold '+tf;
   if(code){
-    document.getElementById('stockCode').value=code;
+    $('stockCode').value=code;
     if(hasLevels){
-      document.getElementById('forBanner').style.display='flex';
-      document.getElementById('forCode').textContent=code;
+      $('forBanner').style.display='flex';
+      $('forCode').textContent=code;
     }else{
       loadCodeData(code);
     }
@@ -282,70 +336,140 @@ async function loadCodeData(code){
   calc();
 })();
 
-function fmt(n){ return '\u09F3'+Math.abs(Math.round(n)).toLocaleString(); }
+// --- formatting ------------------------------------------------------------
+// fmt() is unsigned by design; callers that can receive a negative must use
+// fmtSigned() so the glyph and the tile colour never disagree.
+function fmt(n){ return '৳'+Math.abs(Math.round(n)).toLocaleString(); }
+function fmtSigned(n){ return (n<0?'-':'+')+'৳'+Math.abs(Math.round(n)).toLocaleString(); }
 function fmtPct(n){ return (n>=0?'+':'')+n.toFixed(2)+'%'; }
 
-function calc(){
-  const cap=Number(document.getElementById('capital').value)||0;
-  const entry=Number(document.getElementById('entry').value)||0;
-  const target=Number(document.getElementById('target').value)||0;
-  const sl=Number(document.getElementById('sl').value)||0;
+function showWarn(html){ $('warnText').innerHTML=html; $('warnBanner').style.display='flex'; }
+function hideWarn(){ $('warnBanner').style.display='none'; }
+function showNote(html){ $('noteText').innerHTML=html; $('noteBanner').style.display='flex'; }
+function hideNote(){ $('noteBanner').style.display='none'; }
 
-  // clear if inputs incomplete
-  if(!cap||!entry||!target||!sl){
-    ['r-shares','r-cost','r-profit','r-loss','r-rr','r-pct','r-remaining'].forEach(id=>{
-      const el=document.getElementById(id); if(el)el.innerHTML='&mdash;';
-    });
-    document.getElementById('r-rr-bar').style.width='0%';
-    document.getElementById('kelly-note').style.display='none';
-    document.getElementById('breakeven-card').style.display='none';
-    document.getElementById('warnBanner').style.display='none';
+function blankResults(){
+  ['r-shares','r-cost','r-profit','r-loss','r-rr','r-pct','r-remaining'].forEach(id=>{
+    const el=$(id); if(el)el.innerHTML='&mdash;';
+  });
+  $('r-rr-bar').style.width='0%';
+  $('kelly-note').style.display='none';
+  $('breakeven-card').style.display='none';
+  $('tile-profit').className='res pos';
+}
+
+function calc(){
+  const cap=Number($('capital').value)||0;
+  const riskPct=Number($('riskPct').value)||0;
+  const entry=Number($('entry').value)||0;
+  const target=Number($('target').value)||0;
+  const sl=Number($('sl').value)||0;
+
+  document.querySelectorAll('.qbtn[data-risk]').forEach(b=>{
+    b.classList.toggle('on', Number(b.dataset.risk)===riskPct);
+  });
+
+  // inputs incomplete -> nothing to say
+  if(!cap||!entry||!target||!sl||!riskPct){
+    blankResults(); hideWarn();
     return;
   }
 
-  const shares=Math.floor(cap/entry);
+  // ---- validity gate -----------------------------------------------------
+  // Previously the warning was shown but the numbers were rendered anyway,
+  // so an invalid setup still produced confident-looking output. Now an
+  // invalid setup produces no numbers at all.
+  const badTarget = target<=entry;
+  const badStop   = sl>=entry;
+  if(badTarget||badStop){
+    const parts=[];
+    if(badTarget) parts.push('the target price is at or below the entry price');
+    if(badStop)   parts.push('the stop loss is at or above the entry price');
+    showWarn(`<b>This isn't a valid buy setup</b> &mdash; ${parts.join(', and ')}. Position size, profit and risk:reward can't be calculated from these levels, so they're hidden rather than shown as negative numbers. This usually means the stock has no active buy signal right now. Check the levels, or try a different stock.`);
+    blankResults();
+    return;
+  }
+  hideWarn();
+
+  // ---- position sizing ---------------------------------------------------
+  // Sized from risk, not from total capital. The old version always bought
+  // floor(capital/entry) shares, which meant every trade used ~100% of
+  // capital regardless of how far away the stop sat.
+  const riskPerShare=entry-sl;              // > 0, guaranteed by the gate above
+  const riskBudget=cap*riskPct/100;
+  const maxShares=Math.floor(cap/entry);    // affordability ceiling
+  let shares=Math.floor(riskBudget/riskPerShare);
+  let capped=false;
+
+  if(shares>maxShares){ shares=maxShares; capped=true; }
+
+  if(shares<1){
+    blankResults();
+    showWarn(`<b>Position too small to size.</b> Risking ${riskPct}% of &#2547;${cap.toLocaleString()} gives a budget of ${fmt(riskBudget)}, but a single share risks ${fmt(riskPerShare)} between entry and stop. Increase your capital or risk percentage, or choose a setup with a tighter stop.`);
+    return;
+  }
+
   const cost=shares*entry;
-  const profit=(target-entry)*shares;
-  const loss=(sl-entry)*shares;   // negative
-  const rr=(target-entry)/Math.abs(sl-entry);
+  const profit=(target-entry)*shares;       // > 0
+  const loss=-(riskPerShare*shares);        // < 0
+  const rr=(target-entry)/riskPerShare;     // > 0
   const capPct=(cost/cap)*100;
   const remaining=cap-cost;
+  const actualRiskPct=(riskPerShare*shares/cap)*100;
 
-  const invalidSetup=(target<=entry)||(sl>=entry);
-  document.getElementById('warnBanner').style.display=invalidSetup?'flex':'none';
+  $('r-shares').textContent=shares.toLocaleString();
+  $('r-cost').innerHTML=fmt(cost);
+  $('r-profit').innerHTML=fmtSigned(profit);
+  $('r-loss').innerHTML=fmtSigned(loss);
+  $('r-rr').textContent=rr.toFixed(2)+'×';
+  $('r-pct').textContent=capPct.toFixed(1)+'%';
+  $('r-remaining').textContent='Remaining: ৳'+Math.round(remaining).toLocaleString();
 
-  document.getElementById('r-shares').textContent=shares.toLocaleString();
-  document.getElementById('r-cost').innerHTML=fmt(cost);
-  document.getElementById('r-profit').innerHTML=(profit>=0?'+':'-')+fmt(Math.abs(profit));
-  document.getElementById('r-loss').innerHTML='-'+fmt(Math.abs(loss));
-  document.getElementById('r-rr').textContent=rr.toFixed(2)+'\u00d7';
-  document.getElementById('r-pct').textContent=capPct.toFixed(1)+'%';
-  document.getElementById('r-remaining').textContent='Remaining: \u09F3'+Math.round(remaining).toLocaleString();
+  // colour follows the sign, rather than being fixed in the markup
+  $('tile-profit').className='res '+(profit>=0?'pos':'neg');
 
-  // RR bar — green if >=1.5, gold if >=1.0, red otherwise
-  const rrPct=Math.min(100,rr/3*100);
-  const rrBar=document.getElementById('r-rr-bar');
+  // RR bar — clamped at both ends so a small ratio can't produce a negative width
+  const rrPct=Math.max(0,Math.min(100,rr/3*100));
+  const rrBar=$('r-rr-bar');
   rrBar.style.width=rrPct+'%';
   rrBar.style.background=rr>=1.5?'var(--green)':rr>=1.0?'var(--gold)':'var(--red)';
 
-  // Kelly fraction (simplified, using 50% win rate assumption if no track record)
-  // Kelly = W - (1-W)/R where W=win rate, R=avg win/avg loss ratio
-  const W=0.5; // conservative default
-  const R=rr;
-  const kelly=Math.max(0,Math.min(100,Math.round((W-(1-W)/R)*100)));
-  const kellyNote=document.getElementById('kelly-note');
-  kellyNote.style.display='block';
-  kellyNote.innerHTML=`<b>Kelly fraction:</b> ${kelly}% of capital &mdash; mathematically optimal position size assuming a 50% win rate at this R:R ratio (${rr.toFixed(2)}\u00d7). ${kelly<capPct.toFixed(0)?`You are using <b>${capPct.toFixed(1)}%</b> of capital &mdash; <span style="color:var(--gold)">above the Kelly suggestion</span>. Consider reducing to ${fmt(cap*kelly/100)} (${kelly} shares) to stay within optimal risk.`:`Your position size is within the Kelly guideline.`}`;
+  // ---- Kelly -------------------------------------------------------------
+  // Kelly = W - (1-W)/R.  With R <= 0 the term (1-W)/R goes negative and the
+  // subtraction inflates the result, so the old clamp returned 100% for the
+  // worst possible setups. R <= 0 can no longer reach here, but the guard
+  // stays so the formula is safe wherever it's reused.
+  const W=0.5;                              // conservative default win rate
+  let kellyPct=0;
+  if(rr>0 && isFinite(rr)) kellyPct=Math.max(0,Math.min(100,(W-(1-W)/rr)*100));
+  const halfKelly=kellyPct/2;
 
-  // Breakeven
-  const brokerage=entry*0.006; // ~0.6% round trip estimate
+  const kellyNote=$('kelly-note');
+  kellyNote.style.display='block';
+
+  if(kellyPct<=0){
+    kellyNote.innerHTML=`<b>Kelly fraction: 0%.</b> At a risk:reward of ${rr.toFixed(2)}× and an assumed 50% win rate, this setup has no positive expectancy &mdash; Kelly's answer is to risk nothing at all. You'd need a risk:reward above 1.00× for the maths to justify any position, or a win rate above ${(100/(1+rr)).toFixed(0)}% at this ratio. You are currently risking ${actualRiskPct.toFixed(1)}% of capital.`;
+  }else{
+    const overKelly=actualRiskPct>kellyPct;
+    const suggestedShares=Math.floor((cap*kellyPct/100)/riskPerShare);
+    kellyNote.innerHTML=`<b>Kelly fraction: ${kellyPct.toFixed(1)}% of capital at risk</b> &mdash; the mathematically optimal amount to risk assuming a 50% win rate at this risk:reward (${rr.toFixed(2)}×). Half-Kelly, ${halfKelly.toFixed(1)}%, is the more common practical choice. You are risking <b>${actualRiskPct.toFixed(1)}%</b> (${fmt(riskPerShare*shares)}) &mdash; ${overKelly?`<span style="color:var(--gold)">above full Kelly</span>. Risking ${kellyPct.toFixed(1)}% would mean about ${suggestedShares.toLocaleString()} shares.`:`within the Kelly guideline.`}`;
+  }
+
+  if(capped){
+    kellyNote.innerHTML+=`<br><br><b>Note:</b> your risk budget allowed a larger position, but ${shares.toLocaleString()} shares is all ${fmt(cap)} can buy at ${fmt(entry)}. Actual risk is ${actualRiskPct.toFixed(1)}%, below the ${riskPct}% requested.`;
+  }
+
+  // ---- breakeven & context ----------------------------------------------
+  const brokerage=entry*0.006;              // ~0.6% round trip estimate
   const breakeven=entry+brokerage;
   const upside=((target-entry)/entry)*100;
   const downside=((sl-entry)/entry)*100;
-  document.getElementById('b-breakeven').innerHTML='\u09F3'+breakeven.toFixed(2);
-  document.getElementById('b-upside').textContent=fmtPct(upside);
-  document.getElementById('b-downside').textContent=fmtPct(downside);
-  document.getElementById('breakeven-card').style.display='block';
+  $('b-breakeven').innerHTML='৳'+breakeven.toFixed(2);
+  const up=$('b-upside');
+  up.textContent=fmtPct(upside);
+  up.style.color=upside>=0?'var(--green)':'var(--red)';
+  $('b-downside').textContent=fmtPct(downside);
+  $('breakeven-card').style.display='block';
 }
 </script>
 </body>

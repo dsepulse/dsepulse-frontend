@@ -55,8 +55,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div id="combined-empty" style="display:none;font-size:12px;color:var(--text3);margin-top:10px">No STRONG BUY consensus today.</div>
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 /* Fundamentals feed (Supabase anon, read-only) — P/E, dividend yield, market cap.
    52-week high/low now comes straight from /api/bd/eval, so no lookup needed here. */
 const FUND_URL="https://hpzaluxjzmgedkplimim.supabase.co";

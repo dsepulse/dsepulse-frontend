@@ -136,10 +136,12 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 
 <script>
 (function(){
-  const API="https://dsepulse-backend-production.up.railway.app";
+  const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const FEEDS=[
     {key:"picker",  path:"/api/picks/today",   pick:d=>(d&&d.picks)||[]},
     {key:"wma",     path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[]},
@@ -431,7 +433,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 <script>
 /* ── Master Signal History ─────────────────────────────────────── */
 (async function(){
-  const API="https://dsepulse-backend-production.up.railway.app";
+  const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
   const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
   const RANGE52={};

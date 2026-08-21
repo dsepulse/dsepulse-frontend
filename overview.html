@@ -50,9 +50,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
 async function buildOverview(){
   const el=document.getElementById('dt-overview');if(!el)return;

@@ -74,8 +74,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div id="out"></div>
   <div class="foot">Admin audit &middot; DSE Pulse &middot; not for users</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 <script>
-const API='https://dsepulse-backend-production.up.railway.app';
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 const SB='https://hpzaluxjzmgedkplimim.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU';
 

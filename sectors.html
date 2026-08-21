@@ -72,8 +72,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   </div>
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 function scColor(s){ return s>=60?'var(--green)':s>=45?'var(--gold)':s>=30?'var(--navy2)':'var(--text3)'; }
 function sigStyle(sig){
   if(sig==='HOT')      return 'color:var(--green);background:var(--green-bg)';

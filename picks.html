@@ -117,9 +117,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
 const MOOD_ICON={BULLISH:"ti-trending-up",BEARISH:"ti-trending-down",NEUTRAL:"ti-minus",GREEN:"ti-trending-up",RED:"ti-trending-down"};
 const MOOD_COLOR={BULLISH:"var(--green)",BEARISH:"var(--red)",NEUTRAL:"var(--gold)",GREEN:"var(--green)",RED:"var(--red)"};

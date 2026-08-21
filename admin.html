@@ -133,8 +133,9 @@
   </div>
 </div>
 
+<script src="/env.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 let KEY=sessionStorage.getItem("dse_admin_key")||"";
 let USERS=[];
 const H=()=>({"Content-Type":"application/json","X-Admin-Key":KEY});

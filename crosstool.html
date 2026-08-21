@@ -43,10 +43,12 @@ thead th{position:sticky;top:0;background:var(--cream2);z-index:2}
   <div id="dt-xtool"></div>
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 
 <script>
 (function(){
-  const API = "https://dsepulse-backend-production.up.railway.app";
+  const API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const TOOLS = [
     { key:"picker",   label:"Picker",   path:"/api/picks/today",    pick:d=>(d&&d.picks)||[],          val:r=>"#"+(r.rank||"?") },
     { key:"wma",      label:"WMA",      path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[],     val:r=>sigAbbr(r.signal) },

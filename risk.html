@@ -87,8 +87,9 @@ input[type=number]{width:100%;padding:8px 10px;font-size:13px;border:1px solid v
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
 
+<script src="/env.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 const TOKEN=localStorage.getItem('dse_token');
 const tk=n=>'\u09f3'+Math.round(n).toLocaleString('en-IN');
 const N=v=>Number(v||0);

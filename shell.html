@@ -742,6 +742,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 </div>
 </div>
 
+<script src="/env.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  DSE Pulse — API integration (DB-driven)
@@ -750,7 +751,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 //  back to built-in sample data so the page never looks broken.
 //  When the backend routes go live, real data appears automatically.
 // ═══════════════════════════════════════════════════════════════════
-const API = "https://dsepulse-backend-production.up.railway.app";
+const API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
 async function fetchJSON(path){
   try{
@@ -1145,7 +1146,7 @@ async function buildSectors(){
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const m = (c && c.pricing && c.pricing.monthly) || {};
     const trial = (c && c.pricing && c.pricing.trial_days) || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1170,7 +1171,7 @@ async function buildSectors(){
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const pr = (c && c.pricing) || {};
     const trial = pr.trial_days || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1229,7 +1230,7 @@ async function buildSectors(){
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const pr = (c && c.pricing) || {};
     const trial = pr.trial_days || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1296,7 +1297,7 @@ async function buildSectors(){
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const pr = (c && c.pricing) || {};
     const trial = pr.trial_days || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1370,7 +1371,7 @@ async function buildSectors(){
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function () {
-  const API = "https://dsepulse-backend-production.up.railway.app";
+  const API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const GOOGLE_CLIENT_ID = "442638709081-3n7qagt4q3574dhlkhdkv0ndep273frp.apps.googleusercontent.com";
   const TOKEN_KEY = "dse_token", NAME_KEY = "dse_name";
   const getToken = () => localStorage.getItem(TOKEN_KEY);
@@ -1695,7 +1696,7 @@ async function buildSectors(){
 </style>
 <script>
 (function(){
-  const API="https://dsepulse-backend-production.up.railway.app";
+  const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const TKEY="dse_token";
   const tok=()=>{try{return localStorage.getItem(TKEY);}catch(e){return null;}};
   const $=id=>document.getElementById(id);
@@ -2017,7 +2018,7 @@ function catOf(tabEl){
 
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
-  var API="https://dsepulse-backend-production.up.railway.app";
+  var API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   var tok=null; try{ tok=localStorage.getItem("dse_token"); }catch(e){}
   var planP = tok
     ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})

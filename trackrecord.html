@@ -76,8 +76,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div id="body"><div class="empty">Loading track record&hellip;</div></div>
   <div class="foot" id="note"></div>
 </div>
+<script src="/env.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 /* stock_52w read (Supabase anon, read-only). Track Record shows only the last 15
    trading days, so today's rolling 52-week range is a fair proxy for the range as
    of pick date — the high/low barely shifts over 15 days. Used to show where each

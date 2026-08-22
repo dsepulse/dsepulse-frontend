@@ -59,10 +59,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 <script src="/auth.js"></script>
 <script>
 const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
-/* Fundamentals feed (Supabase anon, read-only) — P/E, dividend yield, market cap.
-   52-week high/low now comes straight from /api/bd/eval, so no lookup needed here. */
-const FUND_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const FUND_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+/* Fundamentals feed — served by the backend, no database key in the browser. */
 
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
@@ -75,7 +72,7 @@ async function fetchEval(code){ if(EVCACHE[code]!==undefined)return EVCACHE[code
 async function fetchFund(code){
   if(FUCACHE[code]!==undefined)return FUCACHE[code];
   try{
-    const r=await fetch(FUND_URL+'/rest/v1/fundamentals?code=eq.'+encodeURIComponent(code)+'&select=*&limit=1',{headers:{apikey:FUND_KEY,Authorization:'Bearer '+FUND_KEY}});
+    const r=await fetch(API+'/api/fundamentals?codes='+encodeURIComponent(code));
     if(!r.ok){ FUCACHE[code]=null; return null; }
     const j=await r.json(); const v=Array.isArray(j)&&j.length?j[0]:null; FUCACHE[code]=v; return v;
   }catch(e){ FUCACHE[code]=null; return null; }

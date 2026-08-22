@@ -72,15 +72,13 @@ input[type=text]{padding:9px 11px;font-size:13px;border:1px solid var(--border2)
 
 <script>
 const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
-const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","WATCH":"var(--gold-bg)","SELL":"var(--red-bg)","AVOID":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","WATCH":"var(--gold)","SELL":"var(--red)","AVOID":"var(--red)"};
 const N=v=>(v===null||v===undefined||v==="")?null:Number(v);
 const fmt=(v,d)=>v===null?"\u2014":Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
 
-async function sbGet(path){
-  try{ const r=await fetch(SB_URL+"/rest/v1/"+path,{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}}); if(!r.ok)return null; return await r.json(); }
+async function apiGet(path){
+  try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }
   catch(e){ return null; }
 }
 async function getAnalyse(code){
@@ -97,7 +95,7 @@ async function compare(){
   if(!codes.length){ out.innerHTML='<div style="font-size:13px;color:var(--text3)">Enter at least one stock code.</div>'; return; }
   out.innerHTML='<div style="font-size:13px;color:var(--text3)">Comparing\u2026</div>';
 
-  const fundArr=await sbGet('fundamentals?code=in.('+encodeURIComponent(codes.join(','))+')&select=*') || [];
+  const fundArr=await apiGet('/api/fundamentals?codes='+encodeURIComponent(codes.join(','))) || [];
   const fundMap={}; fundArr.forEach(f=>{ fundMap[String(f.code).toUpperCase()]=f; });
   const ana=await Promise.all(codes.map(c=>getAnalyse(c)));
 

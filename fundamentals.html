@@ -73,9 +73,11 @@ tbody tr:hover td{background:var(--gold-bg)}
   <div class="foot">Fundamentals from the latest AmarStock upload &middot; not investment advice &middot; DSE Pulse</div>
 </div>
 
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
+
 <script>
-const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
 const COLS=[
   {k:"code",         lbl:"Code",       t:"txt",  on:true,  lock:true},
@@ -115,7 +117,7 @@ function fmt(v,t){
 
 async function load(){
   try{
-    const r=await fetch(SB_URL+"/rest/v1/fundamentals?select=*",{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}});
+    const r=await fetch(API+"/api/fundamentals");
     ALL = r.ok ? await r.json() : [];
   }catch(e){ ALL=[]; }
   if(!ALL.length){ document.getElementById("tbody").innerHTML='<tr><td colspan="20" class="msg">No fundamentals loaded yet. If you just uploaded, give it a moment and refresh.</td></tr>'; return; }

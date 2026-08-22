@@ -1709,14 +1709,11 @@ async function buildSectors(){
   const msFor=c=>(window.__ms&&window.__ms.for)?window.__ms.for(c):null;
 
   /* 52-week high/low for holdings cards (Supabase stock_52w, close-based rolling) */
-  const SB52_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-  const SB52_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
   const RANGE52H={};
   async function loadRanges52(codes){
     if(!codes||!codes.length)return;
     try{
-      const r=await fetch(`${SB52_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${codes.join(',')})`,
-        {headers:{apikey:SB52_KEY,Authorization:'Bearer '+SB52_KEY}});
+      const r=await fetch(API+'/api/stock52?codes='+encodeURIComponent(codes.join(',')));
       if(!r.ok)return;
       (await r.json()||[]).forEach(x=>{ RANGE52H[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });
     }catch(e){}

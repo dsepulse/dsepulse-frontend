@@ -434,8 +434,6 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 /* ── Master Signal History ─────────────────────────────────────── */
 (async function(){
   const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
-  const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-  const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
   const RANGE52={};
 
   async function fj(p){try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;}}
@@ -448,7 +446,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     if(!codes.size)return;
     try{
       const list=[...codes].join(',');
-      const r=await fetch(`${SB_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${list})`,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
+      const r=await fetch(API+'/api/stock52?codes='+encodeURIComponent(list));
       if(!r.ok)return;
       (await r.json()||[]).forEach(x=>{RANGE52[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days};});
     }catch(e){}

@@ -83,8 +83,6 @@ const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-product
    trading days, so today's rolling 52-week range is a fair proxy for the range as
    of pick date — the high/low barely shifts over 15 days. Used to show where each
    pick entered within its 52-week range (breakout vs reversal character). */
-const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
 let DATA=null, CUR=0, RANGE52={};
 function retColor(r){ return r>0?'var(--green)':r<0?'var(--red)':'var(--text2)'; }
 function fmtRet(r){ return r==null?'&mdash;':(r>0?'+':'')+r.toFixed(2)+'%'; }
@@ -96,7 +94,7 @@ async function loadRanges(){
     (DATA.tools||[]).forEach(t=>(t.days||[]).forEach(d=>(d.picks||[]).forEach(p=>{ if(p.code)codes.add(String(p.code).toUpperCase()); })));
     if(!codes.size)return;
     const list=[...codes].join(',');
-    const r=await fetch(`${SB_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${list})`,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
+    const r=await fetch(API+'/api/stock52?codes='+encodeURIComponent(list));
     if(!r.ok)return;
     const rows=await r.json();
     (rows||[]).forEach(x=>{ RANGE52[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });

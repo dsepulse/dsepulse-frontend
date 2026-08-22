@@ -78,14 +78,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 <script src="/auth.js"></script>
 <script>
 const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
-const SB='https://hpzaluxjzmgedkplimim.supabase.co';
-const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU';
 
 const fmtD=s=>{if(!s)return'—';try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return s;}};
 const diff=s=>{if(!s)return 999;try{const a=new Date(s.slice(0,10)+'T00:00:00'),b=new Date();b.setHours(0,0,0,0);return Math.round((b-a)/864e5);}catch(e){return 999;}};
 const todayISO=()=>{const d=new Date();d.setUTCHours(d.getUTCHours()+6);return d.toISOString().slice(0,10);};
 async function fj(p){try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;}}
-async function sbq(t,q){try{const r=await fetch(`${SB}/rest/v1/${t}?${q}`,{headers:{apikey:SK,Authorization:'Bearer '+SK}});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
 
 function sec(t){return `<div class="section-lbl">${t}</div>`;}
 function card(h,body){return `<div class="card"><div class="card-hdr">${h}</div>${body}</div>`;}
@@ -123,7 +120,7 @@ async function run(){
   out.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Checking all tools&hellip;</div>';
   alEl.innerHTML=''; badge.textContent=''; badge.className='badge';
 
-  const [pk,wm,tc,cb,bd,ac,tr,s52,techHist] = await Promise.all([
+  const [pk,wm,tc,cb,bd,ac,tr,fresh] = await Promise.all([
     fj('/api/picks/today'),
     fj('/api/wma/today'),
     fj('/api/tech/today'),
@@ -131,8 +128,7 @@ async function run(){
     fj('/api/bd/all'),
     fj('/api/activity/today'),
     fj('/api/track-record?days=10&top=3'),
-    sbq('stock_52w','select=code,updated_at&order=updated_at.desc&limit=1'),
-    sbq('tech_signals','select=trade_date&order=trade_date.desc&limit=1&offset=0'),
+    fj('/api/freshness?days=7'),
   ]);
 
   // helper: find date from any row — tries multiple field names
@@ -244,7 +240,7 @@ async function run(){
   html+=card(hdr('Combined integrity','cross-checking picker / WMA / tech agreement',cbState),cbRows);
 
   // ── 5. 52-WEEK TABLE ──────────────────────────────────────
-  const s52date=s52&&Array.isArray(s52)?s52[0]?.updated_at?.slice(0,10):null;
+  const s52date=fresh&&fresh.stock52_updated?String(fresh.stock52_updated).slice(0,10):null;
   const s52Fresh=diff(s52date)<=1;
   const s52State=s52Fresh?'ok':'warn';
   if(!s52Fresh){issues++;alerts.push(alertBox('52-week range table (stock_52w) is stale — dse_tech.py may not have uploaded 52-week data today.','amber','python dse_tech.py --manual'));}
@@ -257,13 +253,8 @@ async function run(){
   // fetch distinct dates by checking each of last 7 days individually
   // (bulk fetch doesn't work well since each date has 391 rows)
   const today2=todayISO();
-  const daysToCheck=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);daysToCheck.push(d.toISOString().slice(0,10));}
-  const dateChecks=await Promise.all(daysToCheck.map(d=>
-    fetch(`${SB}/rest/v1/tech_signals?select=trade_date&trade_date=eq.${d}&limit=1`,{headers:{apikey:SK,Authorization:'Bearer '+SK}})
-      .then(r=>r.ok?r.json():null).then(rows=>rows&&rows.length?d:null).catch(()=>null)
-  ));
-  const hist=dateChecks.filter(Boolean);
+  // trade dates now come from the backend in a single call
+  const hist=(fresh&&Array.isArray(fresh.tech_dates))?fresh.tech_dates:[];
   const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const today=todayISO();
   let dots='';let missedDays=0;

@@ -213,6 +213,33 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 .flogo{font-size:17px;font-weight:900;color:var(--ink);margin-bottom:6px}
 .flogo span{color:var(--amber)}
 .loading{color:var(--ink3);font-family:var(--mono);font-size:12px}
+/* ------------------------------------------------------------- modal */
+.modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(3,6,10,.78);
+  backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modalbox{width:min(400px,100%);background:var(--panel);border:1px solid var(--line2);
+  border-radius:13px;padding:26px 26px 22px;position:relative}
+.mclose{position:absolute;right:14px;top:12px;background:none;border:0;
+  color:var(--ink3);font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
+.mclose:hover{color:var(--ink)}
+.mtabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);
+  border-radius:8px;padding:3px;margin-bottom:18px}
+.mtab{flex:1;font:inherit;font-size:12px;font-weight:700;padding:8px;border:0;
+  border-radius:6px;background:transparent;color:var(--ink3);cursor:pointer}
+.mtab.on{background:var(--panel2);color:var(--ink1)}
+.modalbox h3{font-size:20px;font-weight:900;color:var(--ink1);margin:0 0 6px;
+  letter-spacing:-.02em}
+.msub{font-size:13px;color:var(--ink2);margin:0 0 18px}
+.fld{display:block;margin-bottom:12px}
+.fld span{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.fld input{width:100%;font:inherit;font-size:14px;padding:10px 12px;border-radius:7px;
+  background:var(--sunk);border:1px solid var(--line);color:var(--ink)}
+.fld input:focus{outline:0;border-color:var(--ink3)}
+.merr{min-height:17px;margin:2px 0 10px;font-size:12.5px;color:var(--down)}
+.mfoot{margin:14px 0 0;font-size:12.5px;color:var(--ink3);text-align:center}
+.mfoot a{color:var(--amber)}
+
 @media(max-width:820px){
   .split,.refgrid{grid-template-columns:1fr}
   .navlinks{display:none}
@@ -431,6 +458,35 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
   </div>
 </footer>
 
+
+<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+  <div class="modalbox">
+    <button class="mclose" id="amClose" aria-label="Close">&times;</button>
+    <div class="mtabs">
+      <button class="mtab on" data-m="login">Sign in</button>
+      <button class="mtab" data-m="register">Create account</button>
+    </div>
+    <h3 id="amTitle">Sign in</h3>
+    <p class="msub" id="amSub">Your access level decides how much of each day's
+      scan you see.</p>
+    <form id="amForm" autocomplete="on">
+      <label class="fld" id="amNameWrap" style="display:none">
+        <span>Name</span>
+        <input id="amName" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <label class="fld"><span>Email</span>
+        <input id="amEmail" type="email" autocomplete="email" required
+               placeholder="you@example.com"></label>
+      <label class="fld"><span>Password</span>
+        <input id="amPass" type="password" required minlength="6"
+               autocomplete="current-password" placeholder="••••••••"></label>
+      <p class="merr" id="amErr" role="alert"></p>
+      <button class="btn primary" id="amGo" type="submit" style="width:100%">Sign in</button>
+    </form>
+    <p class="mfoot" id="amFoot">New here? <a href="#" id="amSwap">Create a free account</a></p>
+  </div>
+</div>
+
 <script src="/env.js"></script>
 <script src="/auth.js"></script>
 <script>
@@ -548,8 +604,9 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
     $("nPositive").textContent = s.positive;
     $("nVisible").textContent  = vis;
 
+    var bar = s.conviction_min || 80;
     $("heroLine").innerHTML = s.scanned + " stocks analysed. <em>" + total
-      + " setups cleared every check.</em> You can see " + vis + ".";
+      + " scored " + bar + " or better.</em> You can see " + vis + ".";
     $("gapNo").textContent  = vis + " of " + total + " high-conviction setups visible";
     $("gapSub").textContent = "Scan of " + s.date + " · " + pct + "% at your access level";
     $("gapTitle").textContent = missing > 0
@@ -571,15 +628,27 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
       if(LADDER.indexOf(d.dataset.l) === idx) d.classList.add("now");
     });
 
+    /* Entry, target and stop are a paid field — they are simply absent from a
+       free tier's payload. Render what arrived rather than blanks. */
+    function metrics(o){
+      var cell = function(k,v){ return '<div><small>'+k+'</small><b>'+v+'</b></div>'; };
+      if(o.entry != null){
+        return cell("Entry", money(o.entry)) + cell("Target", money(o.target))
+             + cell("Stop", money(o.sl));
+      }
+      return cell("Last", money(o.ltp))
+           + cell("Score", o.score + "/100")
+           + cell("RSI", Number(o.rsi||0).toFixed(1));
+    }
+
     var html = (s.opportunities||[]).map(function(o){
       return '<article class="op"><div class="rk">Ranked · ' + pad2(o.rank) + '</div>'
         + '<div class="sc">' + o.score + '</div>'
         + '<div class="verdict">' + esc(o.signal) + '</div>'
         + '<div class="code">' + esc(o.code) + '</div>'
-        + '<div class="sect">' + esc(o.sector || "—") + '</div>'
-        + '<div class="mets"><div><small>Entry</small><b>' + money(o.entry) + '</b></div>'
-        + '<div><small>Target</small><b>' + money(o.target) + '</b></div>'
-        + '<div><small>Stop</small><b>' + money(o.sl) + '</b></div></div></article>';
+        + '<div class="sect">' + (o.cat ? "Category " + esc(o.cat) + " · " : "")
+        + (o.pct != null ? (o.pct>0?"+":"") + Number(o.pct).toFixed(2) + "%" : "") + '</div>'
+        + '<div class="mets">' + metrics(o) + '</div></article>';
     }).join("");
 
     html += (s.locked||[]).slice(0,3).map(function(l){
@@ -627,12 +696,83 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
       + "shown as missing rather than filled in.";
   }
 
-  function openAuth(){
-    if(window.openAuth) return window.openAuth("register");
-    window.location.href = "/?signup=1";
-  }
-  ["btnSignin","btnStart","planFree","planPremium","planPro"].forEach(function(id){
-    var el = $(id); if(el) el.addEventListener("click", openAuth);
+
+  /* ── sign in / register, without leaving the page ──────────────────────
+     The old landing page lives at "/", and bouncing a visitor there mid-signup
+     hands them a different design halfway through. This keeps them here and
+     re-reads the scan afterwards, so the gap updates in place. */
+  var AM = {
+    box:   $("authModal"),
+    mode:  "login",
+    open:  function(mode){
+      AM.mode = mode || "login";
+      AM.box.classList.add("on");
+      AM.sync();
+      setTimeout(function(){ $("amEmail").focus(); }, 30);
+    },
+    close: function(){ AM.box.classList.remove("on"); $("amErr").textContent = ""; },
+    sync:  function(){
+      var reg = AM.mode === "register";
+      $("amTitle").textContent = reg ? "Create your free account" : "Sign in";
+      $("amSub").textContent = reg
+        ? "Free accounts see more of each day's scan. No card required."
+        : "Your access level decides how much of each day's scan you see.";
+      $("amGo").textContent = reg ? "Create account" : "Sign in";
+      $("amNameWrap").style.display = reg ? "" : "none";
+      $("amName").required = reg;
+      $("amPass").setAttribute("autocomplete", reg ? "new-password" : "current-password");
+      $("amFoot").innerHTML = reg
+        ? 'Already have an account? <a href="#" id="amSwap">Sign in</a>'
+        : 'New here? <a href="#" id="amSwap">Create a free account</a>';
+      $("amSwap").addEventListener("click", function(e){
+        e.preventDefault(); AM.mode = reg ? "login" : "register"; AM.sync(); });
+      [].forEach.call(document.querySelectorAll(".mtab"), function(t){
+        t.classList.toggle("on", t.dataset.m === AM.mode); });
+      $("amErr").textContent = "";
+    }
+  };
+
+  [].forEach.call(document.querySelectorAll(".mtab"), function(t){
+    t.addEventListener("click", function(){ AM.mode = t.dataset.m; AM.sync(); });
+  });
+  $("amClose").addEventListener("click", AM.close);
+  AM.box.addEventListener("click", function(e){ if(e.target === AM.box) AM.close(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && AM.box.classList.contains("on")) AM.close(); });
+
+  $("amForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var reg = AM.mode === "register";
+    var body = {email: $("amEmail").value.trim(), password: $("amPass").value};
+    if(reg) body.name = $("amName").value.trim();
+    $("amGo").disabled = true;
+    $("amGo").textContent = reg ? "Creating…" : "Signing in…";
+    fetch(API + (reg ? "/api/auth/register" : "/api/auth/login"), {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(res){
+      $("amGo").disabled = false; AM.sync();
+      if(!res.ok || !res.j || !res.j.token){
+        $("amErr").textContent = (res.j && res.j.detail)
+          || "That did not work. Check the details and try again.";
+        return;
+      }
+      try{ window.localStorage.setItem("dse_token", res.j.token); }catch(err){}
+      AM.close();
+      /* re-read the scan so the gap, the cards and the chip update in place */
+      get("/api/market/scan").then(renderScan);
+    }).catch(function(){
+      $("amGo").disabled = false; AM.sync();
+      $("amErr").textContent = "Could not reach the server. Try again in a moment.";
+    });
+  });
+
+  $("btnSignin").addEventListener("click", function(){ AM.open("login"); });
+  ["btnStart","planFree","planPremium","planPro"].forEach(function(id){
+    var el = $(id);
+    if(el) el.addEventListener("click", function(){ AM.open("register"); });
   });
 
   get("/api/market/scan").then(renderScan);
@@ -641,9 +781,10 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
   });
   get("/api/track-record?days=90&top=3").then(renderTrack);
   get("/api/dashboard/overview").then(function(o){
-    if(!o || o.dsex == null) return;
-    var ch = Number(o.dsex_change||0);
-    $("mDsex").innerHTML = Number(o.dsex).toLocaleString("en-US",
+    var m = o && (o.market || o);
+    if(!m || m.dsex == null) return;
+    var ch = Number(m.dsex_change||0);
+    $("mDsex").innerHTML = Number(m.dsex).toLocaleString("en-US",
       {minimumFractionDigits:1,maximumFractionDigits:1})
       + ' <span class="' + (ch>=0?"up":"down") + '">' + (ch>=0?"▲":"▼") + " "
       + Math.abs(ch).toFixed(2) + "%</span>";

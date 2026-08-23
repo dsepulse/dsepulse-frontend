@@ -213,6 +213,97 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 .flogo{font-size:17px;font-weight:900;color:var(--ink);margin-bottom:6px}
 .flogo span{color:var(--amber)}
 .loading{color:var(--ink3);font-family:var(--mono);font-size:12px}
+/* -------------------------------------------------------- trust band */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--panel2)}
+.trustin{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:26px;padding:26px 0}
+.tcol .th{font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.pays{display:flex;gap:7px;flex-wrap:wrap}
+.pay{font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  border:1px solid var(--line2);color:var(--ink2);padding:6px 10px;border-radius:5px;
+  background:var(--sunk)}
+.tstat{display:flex;gap:22px;flex-wrap:wrap}
+.tstat div b{display:block;font-family:var(--mono);font-size:18px;color:var(--ink1);
+  font-variant-numeric:tabular-nums;font-weight:500}
+.tstat div small{display:block;font-family:var(--mono);font-size:8px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.tcol p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+
+/* ------------------------------------------------------ full footer */
+.footgrid{display:grid;grid-template-columns:1.35fr .9fr .9fr 1.1fr;gap:26px;
+  padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:20px}
+@media(max-width:820px){.footgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.footgrid{grid-template-columns:1fr}}
+.footgrid h4{font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin:0 0 11px;font-weight:500}
+.footgrid ul{list-style:none;margin:0;padding:0}
+.footgrid li{margin:0 0 7px}
+.footgrid a{font-size:12.5px;color:var(--ink2)}
+.footgrid a:hover{color:var(--ink)}
+.fabout{font-size:12.5px;color:var(--ink2);margin:0 0 12px;line-height:1.6}
+.fcontact{font-size:12.5px;color:var(--ink2);line-height:1.7}
+.fcontact b{color:var(--ink);font-weight:500;display:block;margin-bottom:2px;
+  font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+  font-family:var(--mono)}
+.legal{font-size:11.5px;color:var(--ink3);line-height:1.65;max-width:92ch}
+.legal strong{color:var(--ink2);font-weight:600}
+
+/* ------------------------------------------------------------- lookup */
+.herogrid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start}
+@media(max-width:900px){.herogrid{grid-template-columns:1fr;gap:26px}}
+.look{background:rgba(10,19,27,.92);border:1px solid var(--line2);border-radius:12px;
+  padding:22px 22px 20px;backdrop-filter:blur(8px)}
+.look .lh{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:9px}
+.look h2{font-size:19px;margin:0 0 5px;font-weight:900;letter-spacing:-.02em;
+  color:var(--ink1)}
+.look p.ls{margin:0 0 15px;font-size:13px;color:var(--ink2)}
+.lookrow{display:flex;gap:8px}
+.lookrow input{flex:1;min-width:0;font:inherit;font-size:14px;padding:11px 13px;
+  border-radius:7px;background:var(--sunk);border:1px solid var(--line);
+  color:var(--ink);text-transform:uppercase;font-family:var(--mono)}
+.lookrow input::placeholder{font-family:var(--sans);text-transform:none;
+  color:var(--ink3)}
+.lookrow input:focus{outline:0;border-color:var(--ink3)}
+.lookout{margin-top:15px}
+.lookmsg{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.res{border:1px solid var(--line);border-radius:9px;background:var(--sunk);
+  padding:15px 16px}
+.resrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rescode{font-size:23px;font-weight:900;color:var(--ink1);letter-spacing:-.025em}
+.resv{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;padding:5px 9px;border-radius:4px;border:1px solid}
+.resv.buy{color:var(--up);border-color:var(--up-dim);background:rgba(38,208,124,.09)}
+.resv.watch{color:var(--amber);border-color:var(--amber-dim);
+  background:rgba(255,194,75,.09)}
+.resv.avoid{color:var(--down);border-color:#5C2325;background:rgba(255,90,95,.08)}
+.resscore{margin-left:auto;font-family:var(--mono);font-size:20px;color:var(--ink1);
+  font-variant-numeric:tabular-nums}
+.resscore small{font-size:11px;color:var(--ink3)}
+.resmets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:13px}
+.resmets div{background:var(--panel);border:1px solid var(--line);border-radius:7px;
+  padding:8px 9px}
+.resmets small{display:block;font-family:var(--mono);font-size:8px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.resmets b{display:block;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  margin-top:3px;font-variant-numeric:tabular-nums;font-weight:500}
+.resfoot{margin:12px 0 0;font-size:11.5px;color:var(--ink3)}
+
+/* --------------------------------------------------------- scorecard */
+.scoreband{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--panel)}
+.sbin{display:grid;grid-template-columns:.9fr 1.1fr;gap:30px;padding:34px 0;
+  align-items:center}
+@media(max-width:900px){.sbin{grid-template-columns:1fr;gap:20px}}
+.sbin h2{margin:0 0 8px}
+.sbin p{margin:0;color:var(--ink2);font-size:14px}
+.freepick{border:1px solid var(--amber-dim);border-radius:11px;background:var(--panel2);
+  padding:19px 20px;position:relative}
+.freepick .fh{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:11px}
+
 /* ------------------------------------------------------------- modal */
 .modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(3,6,10,.78);
   backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px}
@@ -254,7 +345,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
     <div class="logo">DSE<span>Pulse</span></div>
     <nav class="navlinks">
       <a href="#scan">Today's scan</a><a href="#ranked">How ranking works</a>
-      <a href="#record">Track record</a><a href="#plans">Plans</a>
+      <a href="#scorecard">Scorecard</a><a href="#plans">Plans</a>
     </nav>
     <div class="navcta">
       <span class="chip" id="accessChip">&mdash;</span>
@@ -268,21 +359,94 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
   <canvas id="tape" aria-hidden="true"></canvas>
   <div class="scrim"></div>
   <div class="wrap heroin">
-    <div class="kick"><i></i><span id="kickText">Reading today's scan…</span></div>
-    <h1 id="heroLine">Every listed stock, analysed after every close.</h1>
-    <p class="lede">DSE Pulse ranks the setups where its checks agree — the
-    picker, the moving averages and the technical score, all pointing the same
-    way. Your access level decides how many of them you can see.</p>
-    <div class="herocta">
-      <button class="btn primary" onclick="document.getElementById('scan').scrollIntoView()">View today's scan</button>
-      <button class="btn" onclick="document.getElementById('record').scrollIntoView()">See the track record</button>
+    <div class="herogrid">
+      <div>
+        <div class="kick"><i></i><span id="kickText">Reading today's scan…</span></div>
+        <h1 id="heroLine">Every listed stock, analysed after every close.</h1>
+        <p class="lede">DSE Pulse scores all 400-odd DSE stocks each evening —
+        WMA 9/34/89, MACD, RSI and an ATR stop — and ranks the ones where the
+        checks agree.</p>
+        <div class="herocta">
+          <button class="btn primary" onclick="document.getElementById('scorecard').scrollIntoView()">See our scorecard</button>
+          <button class="btn" onclick="document.getElementById('scan').scrollIntoView()">Today's scan</button>
+        </div>
+      </div>
+
+      <div class="look">
+        <div class="lh">Try it — no account needed</div>
+        <h2>Check any stock you already own.</h2>
+        <p class="ls">Type a DSE code. You get the same score our engines
+        produced tonight, in full.</p>
+        <form class="lookrow" id="lookForm">
+          <input id="lookInput" maxlength="14" required
+                 placeholder="Stock code — e.g. BEXIMCO" aria-label="Stock code">
+          <button class="btn primary" type="submit" id="lookGo">Check</button>
+        </form>
+        <div class="lookout" id="lookOut">
+          <p class="lookmsg">Free, unlimited, and no email required.</p>
+        </div>
+      </div>
     </div>
-    <div class="strip">
+
+    <div class="strip" style="margin-top:32px">
       <div><small>DSEX</small><b id="mDsex">—</b></div>
       <div><small>Analysed</small><b id="mScanned">—</b></div>
       <div><small>Positive</small><b id="mPositive">—</b></div>
-      <div><small>High-conviction</small><b id="mConv">—</b></div>
+      <div><small>Scored 80+</small><b id="mConv">—</b></div>
       <div><small>Visible to you</small><b id="mVisible">—</b></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="scoreband">
+  <div class="wrap sbin" id="scorecard">
+    <div>
+      <div class="eyebrow"><i></i><b>Our own scorecard</b></div>
+      <h2>We publish the losses too.</h2>
+      <p>Every pick we have ever issued is on the record — the ones that worked,
+      the ones that stopped out, and the twelve sessions our pipeline missed in
+      August, marked as missing rather than filled in.</p>
+      <div class="trrow" id="trrow" style="margin-top:18px">
+        <p class="loading">Loading…</p>
+      </div>
+      <p class="honest" id="trNote"></p>
+      <a href="/trackrecord.html"><button class="btn" style="margin-top:12px">Every pick, resolved and open</button></a>
+    </div>
+    <div class="freepick" id="freepick">
+      <div class="fh">Tonight's strongest setup · free, every day</div>
+      <div id="freepickBody"><p class="loading">Reading today's scan…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="trust">
+  <div class="wrap trustin">
+    <div class="tcol">
+      <div class="th">Payment</div>
+      <div class="pays"><span class="pay">bKash</span><span class="pay">Nagad</span>
+        <span class="pay">Rocket</span><span class="pay">Visa</span>
+        <span class="pay">Mastercard</span></div>
+      <p style="margin-top:10px">Processed by SSLCommerz. We never see or store
+      your card or wallet details.</p>
+    </div>
+    <div class="tcol">
+      <div class="th">Coverage</div>
+      <div class="tstat">
+        <div><b id="tStocks">—</b><small>DSE stocks</small></div>
+        <div><b>6</b><small>Engines</small></div>
+        <div><b id="tHistory">—</b><small>Days of history</small></div>
+      </div>
+    </div>
+    <div class="tcol">
+      <div class="th">Runs</div>
+      <p>Every trading day after the 2:30 PM close. Results are published the
+      same evening, and the run date is stamped on every figure.</p>
+    </div>
+    <div class="tcol">
+      <div class="th">Cancel</div>
+      <p>Monthly, no lock-in. Cancel any time before renewal and you keep access
+      to the end of the period you paid for.</p>
     </div>
   </div>
 </div>
@@ -292,7 +456,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 <section id="scan">
   <div class="sechead">
     <div class="eyebrow"><i></i><b>Today's visibility</b></div>
-    <h2 id="gapTitle">How much of today's scan you can see.</h2>
+    <h2 id="gapTitle">And here is what you are not seeing.</h2>
     <p>Every figure on this page is from today's run. Nothing here is illustrative.</p>
   </div>
   <div class="split">
@@ -350,17 +514,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
   </div>
 </section>
 
-<section id="record">
-  <div class="sechead">
-    <div class="eyebrow"><i></i><b>Track record</b></div>
-    <h2>Published in full, including the parts that do not flatter us.</h2>
-  </div>
-  <div class="card">
-    <div class="trrow" id="trrow"><p class="loading">Loading…</p></div>
-    <p class="honest" id="trNote"></p>
-    <a href="/trackrecord.html"><button class="btn" style="margin-top:14px">Every pick, resolved and open</button></a>
-  </div>
-</section>
+
 
 <section id="plans">
   <div class="sechead">
@@ -451,10 +605,61 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 
 <footer>
   <div class="wrap">
-    <div class="flogo">DSE<span>Pulse</span></div>
-    Bangladesh stock intelligence · dsepulse.com<br>
-    Informational only · not investment advice · past performance does not
-    guarantee future results.
+    <div class="footgrid">
+      <div>
+        <div class="flogo">DSE<span>Pulse</span></div>
+        <p class="fabout">Independent market analysis for the Dhaka Stock
+        Exchange. Six engines score every listed stock after each close. We
+        publish our own track record in full, including the picks that lost.</p>
+        <div class="fcontact">
+          <b>Contact</b>
+          <a href="mailto:support@dsepulse.com">support@dsepulse.com</a><br>
+          <!-- TODO Firoz: replace with the registered address and phone.
+               A visible address and a working number is the single strongest
+               trust signal on a Bangladeshi paid site. -->
+          <span id="fAddr">Dhaka, Bangladesh</span>
+        </div>
+      </div>
+      <div>
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/picks.html">Today's picks</a></li>
+          <li><a href="/mastersignal.html">Master signal</a></li>
+          <li><a href="/smartmoney.html">Smart money</a></li>
+          <li><a href="/combined.html">Combined signal</a></li>
+          <li><a href="/sectors.html">Sector ranking</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/trackrecord.html">Track record</a></li>
+          <li><a href="#plans">Pricing</a></li>
+          <li><a href="#scorecard">How we score</a></li>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Before you subscribe</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Terms of service</a></li>
+          <li><a href="/disclaimer.html">Refund policy</a></li>
+          <li><a href="/disclaimer.html">Privacy policy</a></li>
+          <li><a href="/disclaimer.html">Risk disclosure</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal">
+      <strong>DSE Pulse is not a licensed investment adviser</strong> and is not
+      registered with the Bangladesh Securities and Exchange Commission. Nothing
+      on this site is a recommendation to buy or sell any security. Every score,
+      signal and setup is the output of a mechanical model applied to public
+      market data, published for information only. Trading carries risk of loss,
+      including total loss of capital. Past performance — including the record we
+      publish — does not predict future results. Make your own decisions, and
+      consider taking licensed advice.
+    </p>
+    <p class="legal" style="margin-top:12px">© 2026 DSE Pulse · dsepulse.com</p>
   </div>
 </footer>
 
@@ -601,6 +806,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
     $("mConv").textContent     = total;
     $("mVisible").textContent  = vis;
     $("nScanned").textContent  = s.scanned;
+    if($("tStocks")) $("tStocks").textContent = s.scanned;
     $("nPositive").textContent = s.positive;
     $("nVisible").textContent  = vis;
 
@@ -630,14 +836,16 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 
     /* Entry, target and stop are a paid field — they are simply absent from a
        free tier's payload. Render what arrived rather than blanks. */
-    function metrics(o){
+    function metrics(o, scoreShownElsewhere){
       var cell = function(k,v){ return '<div><small>'+k+'</small><b>'+v+'</b></div>'; };
       if(o.entry != null){
         return cell("Entry", money(o.entry)) + cell("Target", money(o.target))
              + cell("Stop", money(o.sl));
       }
       return cell("Last", money(o.ltp))
-           + cell("Score", o.score + "/100")
+           + (scoreShownElsewhere
+                ? cell("Change", (o.pct>0?"+":"") + Number(o.pct||0).toFixed(2) + "%")
+                : cell("Score", o.score + "/100"))
            + cell("RSI", Number(o.rsi||0).toFixed(1));
     }
 
@@ -662,8 +870,21 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
         + '<span>Target withheld</span></div></article>';
     }).join("");
 
-    ops.innerHTML = html || '<p class="loading">No high-conviction setups in '
+    ops.innerHTML = html || '<p class="loading">No setups cleared the bar in '
       + 'today\'s scan. That happens, and we would rather say so.</p>';
+
+    /* the giveaway: tonight's strongest setup, named, for anyone */
+    var fp = $("freepickBody"), top = (s.opportunities||[])[0];
+    if(fp){
+      fp.innerHTML = top
+        ? '<div class="resrow"><span class="rescode">' + esc(top.code) + '</span>'
+          + '<span class="resv buy">' + esc(top.signal) + '</span>'
+          + '<span class="resscore">' + top.score + '<small>/100</small></span></div>'
+          + '<div class="resmets">' + metrics(top, true) + '</div>'
+          + '<p class="resfoot">Scan of ' + esc(s.date) + '. The strongest setup is '
+          + 'published free every trading day, name and all.</p>'
+        : '<p class="lookmsg">No setup cleared the bar tonight.</p>';
+    }
   }
 
   /* ── track record, stated rather than curated ─────────────────────── */
@@ -696,6 +917,65 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
       + "shown as missing rather than filled in.";
   }
 
+
+
+  /* ── free lookup: the whole engine, on any stock, with no account ──────
+     This is the page's opening move. A stranger has no reason yet to care what
+     is behind the paywall; they do care what our engine says about the stock
+     they already hold. Nothing here is withheld — the score is the score. */
+  var VERDICT_CLASS = function(v){
+    v = String(v||"").toUpperCase();
+    if(v.indexOf("BUY") >= 0) return "buy";
+    if(v.indexOf("AVOID") >= 0 || v.indexOf("SELL") >= 0) return "avoid";
+    return "watch";
+  };
+
+  function renderLookup(d, code){
+    var out = $("lookOut");
+    if(!d || d.status === "unknown_code"){
+      out.innerHTML = '<p class="lookmsg">No listed stock matches “'
+        + esc(code) + '”. Try a code such as BEXIMCO, GP or SQURPHARMA.</p>';
+      return;
+    }
+    if(d.status === "no_data"){
+      out.innerHTML = '<p class="lookmsg">' + esc(code) + ' has no usable price '
+        + 'history yet, so we will not score it. We would rather say that than '
+        + 'guess.</p>';
+      return;
+    }
+    var v = d.verdict || d.signal || "WATCH";
+    var score = d.score != null ? Math.round(d.score) : null;
+    out.innerHTML =
+      '<div class="res">'
+      + '<div class="resrow"><span class="rescode">' + esc(d.code) + '</span>'
+      + '<span class="resv ' + VERDICT_CLASS(v) + '">' + esc(v) + '</span>'
+      + (score != null ? '<span class="resscore">' + score
+          + '<small>/100</small></span>' : '')
+      + '</div>'
+      + '<div class="resmets">'
+      +   '<div><small>Last</small><b>' + money(d.ltp) + '</b></div>'
+      +   '<div><small>RSI</small><b>' + Number(d.rsi||0).toFixed(1) + '</b></div>'
+      +   '<div><small>Agreement</small><b>'
+      +      esc((d.confluence||"—").split(" ")[0]) + '</b></div>'
+      + '</div>'
+      + '<p class="resfoot">' + esc(d.indicators || "") 
+      + (d.data_quality === "synthetic"
+          ? ' · thin price history, treat with care' : '')
+      + '</p></div>';
+  }
+
+  $("lookForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var code = ($("lookInput").value || "").trim().toUpperCase()
+                 .replace(/[^A-Z0-9]/g, "");
+    if(!code) return;
+    $("lookGo").disabled = true; $("lookGo").textContent = "…";
+    $("lookOut").innerHTML = '<p class="lookmsg">Scoring ' + esc(code) + '…</p>';
+    get("/api/analyse/" + encodeURIComponent(code)).then(function(d){
+      $("lookGo").disabled = false; $("lookGo").textContent = "Check";
+      renderLookup(d, code);
+    });
+  });
 
   /* ── sign in / register, without leaving the page ──────────────────────
      The old landing page lives at "/", and bouncing a visitor there mid-signup
@@ -777,7 +1057,10 @@ footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
 
   get("/api/market/scan").then(renderScan);
   get("/api/market/history?days=120").then(function(h){
-    if(h && h.series && h.series.length) drawTape(h.series);
+    if(h && h.series && h.series.length){
+      drawTape(h.series);
+      if($("tHistory")) $("tHistory").textContent = h.series.length;
+    }
   });
   get("/api/track-record?days=90&top=3").then(renderTrack);
   get("/api/dashboard/overview").then(function(o){

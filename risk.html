@@ -88,6 +88,46 @@ input[type=number]{width:100%;padding:8px 10px;font-size:13px;border:1px solid v
 </div>
 
 <script src="/env.js"></script>
+<script>/* DSE Pulse env guard — must stay INLINE. An external file would share the
+   very failure this exists to catch. Runs only if env.js did not. */
+window.DSEEnv = window.DSEEnv || (function () {
+  var h = ""; try { h = String(location.hostname || "").toLowerCase(); } catch (e) {}
+  //  Identical rule to env.js: an unrecognised hostname is PRODUCTION, never dev.
+  //  NOTE: env.js currently tests h.indexOf(".netlify.app") !== -1, a SUBSTRING
+  //  match, so a hostile hostname like "dev--x.netlify.app.attacker.net"
+  //  satisfies it. Impact is limited — it aims a rogue copy at DEVELOPMENT, never
+  //  at production — but the check is wrong. This uses a suffix test, and env.js
+  //  should be corrected the same way.
+  var dev = (h === "localhost" || h === "127.0.0.1" || h === "" ||
+             h.indexOf("dev.") === 0 ||
+             (h.indexOf("--") !== -1 && /\.netlify\.app$/.test(h)));
+  var api = dev ? "https://dsepulse-backend-development.up.railway.app"
+                : "https://dsepulse-backend-production.up.railway.app";
+  try { console.warn("[DSE Pulse] env.js did not load — resolved " +
+        (dev ? "development" : "production") + " inline"); } catch (e) {}
+  //  A failed env.js used to be silent, which is how a dev page could quietly
+  //  start talking to production. Now it is visible on the page itself.
+  try {
+    var paint = function () {
+      if (!document.body || document.getElementById("dse-env-fallback")) return;
+      var b = document.createElement("div");
+      b.id = "dse-env-fallback";
+      b.textContent = dev ? "DEV · env.js failed" : "env.js failed";
+      b.style.cssText = "position:fixed;left:0;bottom:0;z-index:2147483647;" +
+        "background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;" +
+        "padding:5px 8px;border-top-right-radius:4px;letter-spacing:.06em;" +
+        "pointer-events:none";
+      document.body.appendChild(b);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", paint);
+    } else { paint(); }
+  } catch (e) {}
+  return { name: dev ? "development" : "production", apiBase: api,
+           apiHost: api.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+           isDev: dev, fallback: true };
+})();</script>
+<script src="/auth.js"></script>
 <script>
 const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 const TOKEN=localStorage.getItem('dse_token');

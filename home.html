@@ -401,6 +401,13 @@ tr.lk .sc{color:var(--ink2)}
   text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
 .tiers li span{font:700 18px/1 var(--mono);font-variant-numeric:tabular-nums}
 .tiers li i{font-style:normal;font:500 11px/1 var(--sans);color:var(--ink3)}
+.promise{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:9px}
+.promise li{position:relative;padding-left:24px;font-size:13.5px;
+  color:var(--ink2);line-height:1.55}
+.promise li::before{content:"";position:absolute;left:2px;top:5px;width:12px;
+  height:7px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);
+  transform:rotate(-45deg)}
+.promise li b{color:var(--ink);font-weight:600}
 .fine2{margin:15px 0 0!important;font-size:12.5px;color:var(--ink3)}
 .jr{padding:26px;background:var(--cream);border-top:1px solid var(--bd);
   display:grid;gap:12px;align-content:start}
@@ -770,7 +777,7 @@ footer .disc{max-width:76ch;line-height:1.65}
       <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
       <div><b>5</b><span>tools, run in sequence from 4:35 PM</span></div>
       <div><b>1</b><span>pick published in full every day, free</span></div>
-      <div><b>7</b><span>days of Pro, no card needed</span></div>
+      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
     </div>
     <p class="anote">Rule-based arithmetic over past price and volume. It is
     wrong regularly — the track record is published in full, good days and bad,
@@ -846,7 +853,15 @@ footer .disc{max-width:76ch;line-height:1.65}
           <li><b>Premium</b><span>৳499<i>/month</i></span></li>
           <li><b>Pro</b><span>৳999<i>/month</i></span></li>
         </ul>
-        <p class="fine2">Quarterly saves 7%, annual saves 17%. Cancel any time.</p>
+        <ul class="promise">
+          <li><b>Cancel anytime.</b> One click, no email, no notice period —
+          and you keep the plan you paid for until the end of that period.</li>
+          <li><b>No card for the trial.</b> Seven days of Pro, nothing stored,
+          nothing charged when it ends.</li>
+          <li><b>Nothing renews behind your back.</b> Every payment is a single
+          payment you make on purpose; no card is kept on file.</li>
+        </ul>
+        <p class="fine2">Quarterly saves 7%, annual saves 17%.</p>
       </div>
       <form class="jr" id="reg" autocomplete="on" novalidate>
         <label>Name<input id="r-name" name="name" autocomplete="name"
@@ -926,7 +941,8 @@ footer .disc{max-width:76ch;line-height:1.65}
     </div>
     <p class="mfine">Trial finished, or a subscription lapsed?
       <a href="/shell.html">Sign in and renew</a> — Premium ৳499/month,
-      Pro ৳999/month, 7% off quarterly and 17% off annual.</p>
+      Pro ৳999/month, 7% off quarterly and 17% off annual.
+      <b>Cancel anytime</b>, and keep the period you paid for.</p>
   </div>
 </div>
 

@@ -611,6 +611,76 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   letter-spacing:.02em}
 .src b{font-weight:600;color:var(--ink2)}
 
+
+/* ── checkout ──────────────────────────────────────────────────────── */
+/*  Prices are NEVER written into this stylesheet or the markup. They come from
+    /api/config, which is the same row server_price() bills from, so what is
+    advertised and what is charged cannot drift apart. */
+.periods{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 14px}
+.periods button{font:600 12.5px/1 var(--sans);padding:9px 13px;border-radius:20px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink2);
+  cursor:pointer;display:flex;align-items:center;gap:7px}
+.periods button:hover{border-color:var(--gold-bd)}
+.periods button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+.periods button em{font-style:normal;font:600 9.5px/1 var(--sans);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--green);background:var(--green-bg);
+  border-radius:3px;padding:3px 5px}
+.periods button[aria-pressed="true"] em{background:rgba(255,255,255,.16);color:#7BE3A8}
+
+.tiers{list-style:none;margin:0;padding:0;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tiers li{border:1px solid var(--bd);border-radius:11px;padding:14px 15px;
+  background:var(--cream);display:flex;flex-direction:column;gap:10px}
+.tiers li.tload{grid-column:1/-1;background:none;border:0;padding:0;
+  color:var(--ink3);font-size:13.5px}
+.tiers li b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3)}
+.tiers .amt{font:700 21px/1 var(--mono);font-variant-numeric:tabular-nums}
+.tiers .per{font:500 11px/1.35 var(--sans);color:var(--ink3);margin-top:5px}
+.tiers .buy{margin-top:auto;font:600 13px/1 var(--sans);padding:11px 12px;
+  border-radius:8px;border:1.5px solid var(--navy);background:var(--paper);
+  color:var(--navy);cursor:pointer;width:100%}
+.tiers .buy:hover{background:var(--navy);color:#fff}
+.tiers .buy.gold{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.tiers .buy.gold:hover{background:var(--gold-d);color:#fff}
+.tiers .buy:disabled{opacity:.6;cursor:default}
+.tiers li.cur{border-color:var(--green);box-shadow:0 0 0 2px rgba(19,122,77,.14)}
+.tiers .now{font:600 9px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green)}
+
+/* the signed-in panel that replaces the registration form */
+.acct{display:grid;gap:11px}
+.acct h3{font:700 19px/1.25 var(--serif);margin:0}
+.acct .row2{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;
+  color:var(--ink2);padding:9px 0;border-bottom:1px solid var(--bd)}
+.acct .row2 b{color:var(--ink);font-weight:600;font-family:var(--mono);
+  font-variant-numeric:tabular-nums}
+.acct .act{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.acct .act button,.acct .act a{font:600 13px/1 var(--sans);padding:11px 15px;
+  border-radius:8px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer;text-decoration:none}
+.acct .act button:hover,.acct .act a:hover{border-color:var(--ink3);color:var(--ink)}
+.acct .act button.danger:hover{border-color:var(--red);color:var(--red)}
+.acct .amsg{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.acct .amsg.ok{color:var(--green)}
+.acct .amsg.err{color:var(--red)}
+.acct .cx{background:var(--gold-bg);border:1px solid var(--gold-bd);
+  border-radius:9px;padding:11px 13px;font-size:12.5px;color:var(--ink2);
+  line-height:1.55}
+.acct .cx b{color:var(--ink)}
+
+/* the banner the customer comes back to */
+.pbanner{border-radius:11px;padding:14px 16px;margin-bottom:16px;font-size:14px;
+  line-height:1.55;border:1px solid var(--bd);background:var(--paper)}
+.pbanner b{display:block;font-weight:600;margin-bottom:3px;color:var(--ink)}
+.pbanner.ok{background:var(--green-bg);border-color:var(--green-bd)}
+.pbanner.ok b{color:var(--green)}
+.pbanner.bad{background:var(--red-bg);border-color:var(--red-bd)}
+.pbanner.bad b{color:var(--red)}
+.pbanner.wait{background:var(--gold-bg);border-color:var(--gold-bd)}
+.pbanner.wait b{color:var(--gold-d)}
+
 /* ── what the engines found ────────────────────────────────────────────── */
 .tools-sec{padding:8px 0 56px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
@@ -769,8 +839,8 @@ footer .disc{max-width:76ch;line-height:1.65}
       <div class="q">
         <span class="qk">What does it cost?</span>
         <p><b>Nothing to start.</b> Any ticker you name is free, forever. The
-        engines' shortlists are ৳499 a month, ৳999 for Pro, and the first seven
-        days are free without a card.</p>
+        engines' shortlists are <span id="c-cost">priced below</span>, and the
+        trial is free without a card.</p>
       </div>
     </div>
     <div class="astrip">
@@ -842,42 +912,49 @@ footer .disc{max-width:76ch;line-height:1.65}
 
 <div class="wrap">
   <section class="join" id="join">
+    <div id="paybanner"></div>
+
     <div class="joinbox">
       <div class="jl">
         <h2>Create your free account</h2>
         <p>Free gets you the market view and a scored verdict on any ticker you
-        name. The seven-day trial opens every engine, every name and every level
-        — no card needed.</p>
-        <ul class="tiers">
-          <li><b>Free</b><span>৳0</span></li>
-          <li><b>Premium</b><span>৳499<i>/month</i></span></li>
-          <li><b>Pro</b><span>৳999<i>/month</i></span></li>
+        name. The trial opens every engine, every name and every level — no card
+        needed.</p>
+
+        <div class="periods" id="periods"></div>
+        <ul class="tiers" id="tiers">
+          <li class="tload">Loading today’s prices…</li>
         </ul>
+
         <ul class="promise">
           <li><b>Cancel anytime.</b> One click, no email, no notice period —
           and you keep the plan you paid for until the end of that period.</li>
-          <li><b>No card for the trial.</b> Seven days of Pro, nothing stored,
-          nothing charged when it ends.</li>
+          <li><b>No card for the trial.</b> Nothing stored, nothing charged
+          when it ends.</li>
           <li><b>Nothing renews behind your back.</b> Every payment is a single
           payment you make on purpose; no card is kept on file.</li>
         </ul>
-        <p class="fine2">Quarterly saves 7%, annual saves 17%.</p>
+        <p class="fine2" id="pricenote"></p>
       </div>
-      <form class="jr" id="reg" autocomplete="on" novalidate>
-        <label>Name<input id="r-name" name="name" autocomplete="name"
-          placeholder="Your name" maxlength="80"></label>
-        <label>Email<input id="r-email" name="email" type="email"
-          autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
-        <label>Phone <span class="opt">optional</span><input id="r-phone"
-          name="phone" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20"></label>
-        <label>Password<input id="r-pass" name="password" type="password"
-          autocomplete="new-password" placeholder="At least 8 characters"
-          maxlength="72"></label>
-        <button type="submit" id="r-go">Get started free</button>
-        <p class="jmsg" id="r-msg"></p>
-        <p class="jalt">Already have an account?
-          <a href="/shell.html">Sign in</a></p>
-      </form>
+
+      <div class="jr">
+        <div id="account"></div>
+        <form id="reg" autocomplete="on" novalidate>
+          <label>Name<input id="r-name" name="name" autocomplete="name"
+            placeholder="Your name" maxlength="80"></label>
+          <label>Email<input id="r-email" name="email" type="email"
+            autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
+          <label>Phone <span class="opt">optional</span><input id="r-phone"
+            name="phone" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20"></label>
+          <label>Password<input id="r-pass" name="password" type="password"
+            autocomplete="new-password" placeholder="At least 8 characters"
+            maxlength="72"></label>
+          <button type="submit" id="r-go">Get started free</button>
+          <p class="jmsg" id="r-msg"></p>
+          <p class="jalt">Already have an account?
+            <a href="/shell.html">Sign in</a></p>
+        </form>
+      </div>
     </div>
   </section>
 </div>
@@ -940,8 +1017,7 @@ footer .disc{max-width:76ch;line-height:1.65}
       <a class="mbtn" href="/shell.html" id="auth-in">I already have an account</a>
     </div>
     <p class="mfine">Trial finished, or a subscription lapsed?
-      <a href="/shell.html">Sign in and renew</a> — Premium ৳499/month,
-      Pro ৳999/month, 7% off quarterly and 17% off annual.
+      <a href="/shell.html">Sign in and renew</a><span id="m-price"></span>
       <b>Cancel anytime</b>, and keep the period you paid for.</p>
   </div>
 </div>
@@ -1531,6 +1607,262 @@ footer .disc{max-width:76ch;line-height:1.65}
     });
   } catch (x) {}
 
+
+  /* ── checkout ───────────────────────────────────────────────────────── */
+  //  Every price on this page is read from /api/config, which is the row
+  //  server_price() bills from. Writing a price into the markup is how a site
+  //  ends up advertising 499 and charging 2,499 — which is exactly what the
+  //  dev database was set up to do before this was built.
+  var PRICING = null, PERIOD = "monthly", SUB = null;
+  var PERIOD_LABEL = { monthly: "Monthly", quarterly: "Quarterly", annual: "Annual" };
+  var PERIOD_NOTE  = { monthly: "billed monthly", quarterly: "for three months",
+                       annual: "for twelve months" };
+
+  function token() {
+    try { return window.localStorage.getItem("dse_token") || ""; }
+    catch (e) { return ""; }
+  }
+  function signedIn() { return !!token(); }
+
+  function authJSON(path, method, body) {
+    var opt = { method: method || "GET",
+                headers: { "Content-Type": "application/json" } };
+    var t = token();
+    if (t) opt.headers["Authorization"] = "Bearer " + t;
+    if (body) opt.body = JSON.stringify(body);
+    return fetch(API + path, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          var e = new Error(d && d.detail ? d.detail : "http " + r.status);
+          e.status = r.status; throw e;
+        }
+        return d;
+      });
+    });
+  }
+
+  //  ── the banner the customer returns to ─────────────────────────────
+  (function () {
+    var q = "";
+    try { q = String(window.location.search || ""); } catch (e) {}
+    var m = /[?&]payment=([a-z]+)/.exec(q);
+    if (!m) return;
+    var kind = m[1];
+    var b = el("paybanner");
+    if (kind === "success") {
+      b.className = "pbanner ok";
+      b.innerHTML = "<b>Payment received</b>Your subscription is active. If the " +
+        "plan below still shows the old one, give it a moment and reload — the " +
+        "gateway confirms in the background.";
+    } else if (kind === "pending") {
+      b.className = "pbanner wait";
+      b.innerHTML = "<b>Payment not confirmed yet</b>The gateway has taken the " +
+        "payment but has not confirmed it to us. Nothing is lost — it activates " +
+        "automatically once confirmed. If it has not within an hour, contact us.";
+    } else {
+      b.className = "pbanner bad";
+      b.innerHTML = "<b>Payment did not go through</b>Nothing was charged. You " +
+        "can try again below, or use a different method.";
+    }
+  })();
+
+  //  ── prices, from the server ────────────────────────────────────────
+  function paint_prices() {
+    if (!PRICING) return;
+    var per = el("periods");
+    per.innerHTML = ["monthly", "quarterly", "annual"].filter(function (k) {
+      return PRICING[k];
+    }).map(function (k) {
+      var lab = PRICING[k] && PRICING[k].label;
+      return '<button type="button" data-p="' + k + '" aria-pressed="' +
+        (k === PERIOD ? "true" : "false") + '">' + PERIOD_LABEL[k] +
+        (lab ? "<em>" + esc(lab) + "</em>" : "") + "</button>";
+    }).join("");
+    Array.prototype.forEach.call(per.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () {
+        PERIOD = b.dataset.p; paint_prices();
+      });
+    });
+
+    var row = PRICING[PERIOD] || {};
+    var mine = SUB && SUB.plan;
+    el("tiers").innerHTML = ["free", "premium", "pro"].map(function (plan) {
+      var amt = Number(row[plan] || 0);
+      var cur = mine === plan;
+      var label = plan === "free" ? "Get started free"
+                : (signedIn() ? "Choose " + plan.charAt(0).toUpperCase() + plan.slice(1)
+                              : "Start with " + plan.charAt(0).toUpperCase() + plan.slice(1));
+      return '<li class="' + (cur ? "cur" : "") + '"><b>' + plan + "</b>" +
+        (cur ? '<span class="now">your plan</span>' : "") +
+        '<span class="amt">' + (amt > 0 ? bdt(amt) : "৳0") + "</span>" +
+        '<span class="per">' + (amt > 0 ? esc(PERIOD_NOTE[PERIOD]) : "free, forever") +
+        "</span>" +
+        (cur ? "" :
+          '<button type="button" class="buy ' + (plan === "pro" ? "gold" : "") +
+          '" data-plan="' + plan + '">' + esc(label) + "</button>") +
+        "</li>";
+    }).join("");
+
+    Array.prototype.forEach.call(el("tiers").querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () { choose(b.dataset.plan, b); });
+    });
+
+    //  Every other place on the page that quotes a price reads it from the
+    //  same object, so there is exactly one source of truth for what things
+    //  cost — the row the server bills from.
+    var mm = (PRICING.monthly || {});
+    var cost = el("c-cost");
+    if (cost && mm.premium) {
+      cost.textContent = bdt(mm.premium) + " a month for Premium and " +
+        bdt(mm.pro) + " for Pro";
+    }
+    var mp = el("m-price");
+    if (mp && mm.premium) {
+      mp.textContent = " — Premium " + bdt(mm.premium) + "/month, Pro " +
+        bdt(mm.pro) + "/month" +
+        ((PRICING.quarterly && PRICING.quarterly.label)
+          ? ", " + PRICING.quarterly.label.toLowerCase() + " on quarterly" : "") +
+        ((PRICING.annual && PRICING.annual.label)
+          ? " and " + PRICING.annual.label.toLowerCase() + " on annual" : "") + ". ";
+    }
+
+    var t = PRICING.trial_days;
+    el("pricenote").textContent =
+      (t ? t + " days of Pro free to start, no card needed. " : "") +
+      "Prices in Bangladeshi taka, charged once per period.";
+  }
+
+  //  ── choosing a plan ────────────────────────────────────────────────
+  //  Signed out, the honest order is account first: /api/payment/init is
+  //  authenticated, so there is no way to pay as a stranger and no point
+  //  pretending otherwise. The intent is remembered and resumed after
+  //  registration, so the visitor does not have to find the button again.
+  var INTENT = null;
+
+  function choose(plan, btn) {
+    if (plan === "free" || !signedIn()) {
+      if (plan !== "free") INTENT = { plan: plan, period: PERIOD };
+      el("r-msg").className = "jmsg";
+      el("r-msg").textContent = plan === "free" ? "" :
+        "Create your account first — then we'll take you straight to payment.";
+      try { el("r-name").focus(); } catch (e) {}
+      return;
+    }
+    startPayment(plan, PERIOD, btn);
+  }
+
+  function startPayment(plan, period, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = "Opening payment…"; }
+    authJSON("/api/payment/init", "POST", { plan: plan, period: period })
+      .then(function (d) {
+        if (!d || !d.gateway_url) throw new Error("No payment page was returned");
+        //  Hand over to SSLCommerz. Nothing about the amount is decided here —
+        //  the server priced it and the gateway is told by the server.
+        window.location.href = d.gateway_url;
+      })
+      .catch(function (e) {
+        if (btn) { btn.disabled = false; paint_prices(); }
+        var b = el("paybanner");
+        b.className = "pbanner bad";
+        b.innerHTML = "<b>Could not start the payment</b>" +
+          esc(e && e.message ? e.message : "Please try again shortly.");
+        try { b.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (x) {}
+      });
+  }
+
+  //  ── the signed-in panel: what you have, and how to cancel it ───────
+  function paint_account() {
+    var host = el("account");
+    if (!signedIn()) { host.innerHTML = ""; return; }
+    var s = SUB;
+    if (!s) { host.innerHTML = ""; return; }
+
+    var sub = s.subscription;
+    var rows = '<div class="row2"><span>Plan</span><b>' +
+      esc(String(s.effective_plan || s.plan || "free").toUpperCase()) + "</b></div>";
+    if (sub) {
+      rows += '<div class="row2"><span>Renews on</span><b>' +
+        esc(String(sub.access_until || sub.expires_at || "").slice(0, 10)) + "</b></div>" +
+        '<div class="row2"><span>Days left</span><b>' +
+        (sub.days_left == null ? "—" : sub.days_left) + "</b></div>";
+    }
+
+    var act = "";
+    if (sub && sub.cancelled) {
+      act = '<div class="cx"><b>Cancelled.</b> This will not renew. You keep ' +
+        esc(String(sub.plan || "").toUpperCase()) + " access until <b>" +
+        esc(String(sub.access_until || "").slice(0, 10)) + "</b>.</div>" +
+        '<div class="act"><button type="button" id="a-resume">Turn renewal back on</button>' +
+        '<a href="/shell.html">Open dashboard</a></div>';
+    } else if (sub) {
+      act = '<div class="act"><button type="button" class="danger" id="a-cancel">' +
+        "Cancel subscription</button>" +
+        '<a href="/shell.html">Open dashboard</a></div>';
+    } else {
+      act = '<div class="act"><a href="/shell.html">Open dashboard</a></div>';
+    }
+
+    host.innerHTML = '<div class="acct"><h3>Your subscription</h3>' + rows + act +
+      '<p class="amsg" id="a-msg"></p></div>';
+
+    var c = document.getElementById("a-cancel");
+    if (c) c.addEventListener("click", function () { cancelSub(c); });
+    var r = document.getElementById("a-resume");
+    if (r) r.addEventListener("click", function () { resumeSub(r); });
+  }
+
+  function cancelSub(btn) {
+    var msg = document.getElementById("a-msg");
+    btn.disabled = true;
+    msg.className = "amsg"; msg.textContent = "Cancelling…";
+    authJSON("/api/subscription/cancel", "POST", {})
+      .then(function (d) {
+        msg.className = "amsg ok";
+        msg.textContent = d.detail || "Cancelled.";
+        return loadSubscription();
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        msg.className = "amsg err";
+        msg.textContent = (e && e.message) || "Could not cancel — please try again.";
+      });
+  }
+
+  function resumeSub(btn) {
+    var msg = document.getElementById("a-msg");
+    btn.disabled = true;
+    msg.className = "amsg"; msg.textContent = "Turning renewal back on…";
+    authJSON("/api/subscription/resume", "POST", {})
+      .then(function (d) {
+        msg.className = "amsg ok";
+        msg.textContent = d.detail || "Renewal is back on.";
+        return loadSubscription();
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        msg.className = "amsg err";
+        msg.textContent = (e && e.message) || "Could not turn renewal back on.";
+      });
+  }
+
+  function loadSubscription() {
+    if (!signedIn()) { SUB = null; paint_account(); paint_prices(); return; }
+    return authJSON("/api/subscription").then(function (d) {
+      SUB = d; paint_account(); paint_prices();
+    }).catch(function () { SUB = null; paint_account(); });
+  }
+
+  getJSON("/api/config").then(function (c) {
+    PRICING = (c && c.pricing) || null;
+    if (!PRICING) throw new Error("no pricing");
+    paint_prices();
+  }).catch(function () {
+    el("tiers").innerHTML =
+      '<li class="tload">Prices could not be loaded. Please reload — we will ' +
+      "not show a price we cannot confirm.</li>";
+  });
+  loadSubscription();
+
   /* ── registration ───────────────────────────────────────────────────── */
   //  The same endpoint /shell.html uses, so there is one account system and
   //  one password path — this is a second door into the same room, not a
@@ -1579,6 +1911,14 @@ footer .disc{max-width:76ch;line-height:1.65}
         .then(function (d) {
           if (d && d.token) {
             try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
+          }
+          if (INTENT) {
+            //  they clicked a paid plan before they had an account; take them
+            //  to payment rather than making them find the button again
+            msg.className = "jmsg ok";
+            msg.textContent = "Account created — opening payment…";
+            startPayment(INTENT.plan, INTENT.period, el("r-go"));
+            return;
           }
           msg.className = "jmsg ok";
           msg.textContent = "Account created — opening your dashboard…";

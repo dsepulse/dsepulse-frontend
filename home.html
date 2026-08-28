@@ -573,6 +573,33 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   .bx .note2{font-size:10.5px;padding-top:7px}
 }
 
+
+/* ── the band stays put ────────────────────────────────────────────── */
+/*  It sits OUTSIDE .screen so its containing block is the document, not the
+    one-viewport grid — a sticky element can only stick inside its own
+    container, and inside .screen it would scroll away after 100svh.
+    Anchor targets get scroll-margin so a heading never lands underneath it. */
+:root{ --bandh:46px }
+.band{position:sticky;top:0;z-index:120;
+  box-shadow:0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(13,31,60,.10)}
+#top,#about,#how,#join,#tools{scroll-margin-top:calc(var(--bandh) + 12px)}
+.screen{min-height:auto}
+@media (min-width:720px) and (min-height:640px){
+  .screen{height:auto;min-height:calc(100svh - var(--bandh))}
+}
+.band .wrap{padding-top:9px;padding-bottom:9px}
+
+/* ── every box the same four bands, so rows line up across the grid ── */
+/*  A flex column with gaps let each box size its own parts, so the ladders in
+    one box sat higher than the ladders in the next. A fixed four-row grid —
+    header, name, body, footer — pins them to the same lines. */
+.bx{display:grid;grid-template-rows:auto auto 1fr auto;gap:11px;align-content:stretch}
+.ladder,.ev2{align-content:start}
+.ev2 div{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline}
+.src{width:100%;margin-top:6px;font:500 10px/1.4 var(--sans);color:var(--ink3);
+  letter-spacing:.02em}
+.src b{font-weight:600;color:var(--ink2)}
+
 /* ── what the engines found ────────────────────────────────────────────── */
 .tools-sec{padding:8px 0 56px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
@@ -652,8 +679,7 @@ footer .disc{max-width:76ch;line-height:1.65}
 }
 </style>
 
-<div class="screen">
-  <div class="band">
+<div class="band" id="top">
     <div class="wrap">
       <span class="brand"><i></i>DSE&nbsp;Pulse</span>
       <span class="stat"><span class="l">DSEX</span><span class="v" id="b-dsex">—</span></span>
@@ -661,13 +687,15 @@ footer .disc{max-width:76ch;line-height:1.65}
       <span class="stat"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
       <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
       <nav class="bnav">
-        <a href="#about">About</a><a href="#how">How it works</a><a href="#join">Pricing</a>
+        <a href="#top">Home</a><a href="#tools">Tools</a><a href="#about">About</a><a
+        href="#how">How it works</a><a href="#join">Pricing</a>
       </nav>
       <a class="signin" href="/shell.html">Sign in</a>
       <a class="sign" href="#join" id="b-signup">Sign up</a>
     </div>
-  </div>
+</div>
 
+<div class="screen">
   <div class="wrap top">
     <h1>Six engines. Six trades. One of them is yours to check.</h1>
     <p class="lede1">DSE Pulse scores every share on the Dhaka exchange after the
@@ -745,7 +773,7 @@ footer .disc{max-width:76ch;line-height:1.65}
 </section>
 
 <div class="wrap">
-  <section class="tools-sec">
+  <section class="tools-sec" id="tools">
     <div class="hd">
       <h2>What the six engines found today</h2>
       <span class="note" id="tl-note"></span>
@@ -1054,6 +1082,14 @@ footer .disc{max-width:76ch;line-height:1.65}
         lrow("Stop", L.sl, "−" + num(sp, 1) + "%", "s2", false) +
         "</div>";
       foot = bmoney(gp, sp, free ? fp.rr : L.rr);
+      //  Tech Analysis and WMA Analysis store no ladder of their own; theirs
+      //  is the one another engine published for the same stock. Say so, in
+      //  the box, rather than letting it read as their own work.
+      var from = !free && r ? (r.evidence || []).filter(function (e) {
+        return e[0] === "Levels from"; })[0] : null;
+      if (from) {
+        foot += '<div class="src">levels from <b>' + esc(from[1]) + "</b></div>";
+      }
     } else if (L && L.target_pct != null) {
       //  the server is running with TEASER_LEVELS_OPEN=false: shape only
       body = '<div class="ladder">' +

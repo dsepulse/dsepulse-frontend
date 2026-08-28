@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     DSE Pulse — home                                              2026-08-28
+     ----------------------------------------------------------------------------
+     WHAT CHANGED, AND WHY
+
+     The previous version led with a rank and a score. That is what the engines
+     produce, but it is not what a Dhaka retail investor is asking. They ask:
+     where do I buy, where do I sell, where do I get out, and how much is that
+     worth on my money.
+
+     So this page leads with the PLAN — entry, target, stop — and the arithmetic
+     of that plan on a capital figure the visitor picks. The score and the board
+     rank are still there, demoted to supporting evidence.
+
+     THE COMMERCIAL SPLIT
+       Free   : full levels on a ticker the visitor NAMES. One stock, personal.
+       Paid   : the levels on the ranked board — the 24 stocks they did not name.
+       i.e. you pay for knowing WHICH ticker to search, not for the arithmetic.
+     This is enforced server-side, not in CSS: /api/market/scan omits entry,
+     target and sl entirely unless levels_included is true.
+
+     WHAT THIS PAGE MUST NEVER DO
+       - Claim a win rate, an accuracy or a return. The 15-day record cannot
+         carry one (four of five tools negative over the window).
+       - Present the target as a forecast. It is where the plan takes profit.
+         Every money figure on this page is conditional and says so.
+       - Show a ladder assembled from two different sources. build_card resolves
+         entry/t1/sl from ONE source and reports which via levels_source; the
+         extended targets l2/l3 only agree with that ladder when the source is
+         "derived", so they are shown only then.
+
+     ONE HEADLINE, ONE CAVEAT
+       /api/analyse reports the technical ENGINE's score — the same number the
+       board ranks on. The confluence reading stays a CAVEAT beneath, never a
+       competing verdict tag. "STRONG BUY" and "AVOID" must never appear as two
+       equal-weight answers to the same question.
+   ========================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DSE Pulse — entry, target, stop</title>
+<meta name="description" content="Type any Dhaka Stock Exchange ticker and get the entry, the target, the stop — and what your capital does at those levels. Free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+
+<script src="/env.js"></script>
+<script>/* DSE Pulse env guard — must stay INLINE. An external file would share the
+   very failure this exists to catch. Runs only if env.js did not. */
+window.DSEEnv = window.DSEEnv || (function () {
+  var h = ""; try { h = String(location.hostname || "").toLowerCase(); } catch (e) {}
+  var dev = (h === "localhost" || h === "127.0.0.1" || h === "" ||
+             h.indexOf("dev.") === 0 ||
+             (h.indexOf("--") !== -1 && /\.netlify\.app$/.test(h)));
+  var api = dev ? "https://dsepulse-backend-development.up.railway.app"
+                : "https://dsepulse-backend-production.up.railway.app";
+  try { console.warn("[DSE Pulse] env.js did not load — resolved " +
+        (dev ? "development" : "production") + " inline"); } catch (e) {}
+  try {
+    var paint = function () {
+      if (!document.body || document.getElementById("dse-env-fallback")) return;
+      var b = document.createElement("div");
+      b.id = "dse-env-fallback";
+      b.textContent = dev ? "DEV · env.js failed" : "env.js failed";
+      b.style.cssText = "position:fixed;left:0;bottom:0;z-index:2147483647;" +
+        "background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;" +
+        "padding:5px 8px;border-top-right-radius:4px;letter-spacing:.06em;" +
+        "pointer-events:none";
+      document.body.appendChild(b);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", paint);
+    } else { paint(); }
+  } catch (e) {}
+  return { name: dev ? "development" : "production", apiBase: api,
+           apiHost: api.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+           isDev: dev, fallback: true };
+})();</script>
+<script src="/auth.js"></script>
+
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --red:#B3261E;   --red-bg:#FBEAE8;   --red-bd:#EFC9C4;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--cream);color:var(--ink);font:400 16px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+/* ── live band ─────────────────────────────────────────────────────────── */
+.band{background:var(--navy);color:#fff}
+.band .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 26px;
+  padding-top:11px;padding-bottom:11px}
+.band .brand{font:700 15px/1 var(--sans);letter-spacing:.02em;margin-right:auto;
+  display:flex;align-items:center;gap:8px}
+.band .brand i{width:7px;height:7px;border-radius:50%;background:var(--gold);
+  display:inline-block}
+.stat{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+.stat .l{font:500 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.5)}
+.stat .v{font:600 14px/1 var(--mono);font-variant-numeric:tabular-nums}
+.stat .v.up{color:#5FD08A}.stat .v.dn{color:#F1948A}
+.band a.sign{font:600 12px/1 var(--sans);color:var(--navy);background:var(--gold);
+  padding:8px 13px;border-radius:6px;text-decoration:none;white-space:nowrap}
+
+/* ── hero ──────────────────────────────────────────────────────────────── */
+.hero{padding:52px 0 26px;text-align:center}
+.kicker{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold-d);margin-bottom:16px}
+h1{font:700 clamp(28px,5vw,47px)/1.12 var(--serif);margin:0 0 14px;
+  letter-spacing:-.015em;text-wrap:balance}
+.hero p.sub{max-width:56ch;margin:0 auto;color:var(--ink2);font-size:17px}
+form.ask{display:flex;gap:9px;max-width:520px;margin:28px auto 0;flex-wrap:wrap}
+form.ask input{flex:1 1 240px;min-width:0;font:600 17px/1 var(--mono);
+  letter-spacing:.06em;text-transform:uppercase;padding:16px 18px;border-radius:9px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink)}
+form.ask input::placeholder{font-weight:400;letter-spacing:.03em;color:var(--ink3)}
+form.ask input:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(212,160,23,.16)}
+form.ask button{font:600 16px/1 var(--sans);padding:16px 26px;border-radius:9px;
+  border:0;background:var(--navy);color:#fff;cursor:pointer;font-family:inherit}
+form.ask button:hover{background:var(--navy2)}
+form.ask button:disabled{opacity:.55;cursor:default}
+.eg{margin:13px 0 0;font-size:13px;color:var(--ink3)}
+.eg button{background:none;border:0;color:var(--gold-d);font:600 13px/1 var(--mono);
+  cursor:pointer;padding:2px 4px;font-family:var(--mono)}
+.eg button:hover{text-decoration:underline}
+
+/* ── capital chips ─────────────────────────────────────────────────────── */
+.cap{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;
+  margin:20px 0 0}
+.cap .lbl{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.03em}
+.cap button{font:600 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;
+  padding:9px 13px;border-radius:20px;border:1.5px solid var(--bd);
+  background:var(--paper);color:var(--ink2);cursor:pointer}
+.cap button:hover{border-color:var(--gold-bd)}
+.cap button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);
+  color:#fff}
+
+/* ── verdict card ──────────────────────────────────────────────────────── */
+#out{max-width:660px;margin:24px auto 0}
+.card{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden;text-align:left;box-shadow:0 2px 14px rgba(13,31,60,.06)}
+.card .top{padding:19px 22px 15px;display:flex;gap:16px;align-items:flex-start;
+  flex-wrap:wrap}
+.card .who{flex:1 1 auto;min-width:0}
+.card .code{font:700 24px/1.1 var(--sans);letter-spacing:.01em}
+.card .meta{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.card .px{text-align:right;font-variant-numeric:tabular-nums}
+.card .px .n{font:600 20px/1.1 var(--mono)}
+.card .px .c{font:500 12.5px/1 var(--mono);margin-top:5px}
+.up{color:var(--green)}.dn{color:var(--red)}
+
+/* the plan — three levels, in the order they are used */
+.plan{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--bd)}
+.lv{padding:15px 16px;border-right:1px solid var(--bd);text-align:center}
+.lv:last-child{border-right:0}
+.lv .k{font:600 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3)}
+.lv .p{font:700 20px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:7px}
+.lv .d{font:500 11.5px/1 var(--mono);margin-top:6px;color:var(--ink3)}
+.lv.t .p{color:var(--green)} .lv.s .p{color:var(--red)}
+.lv.t{background:linear-gradient(180deg,rgba(228,243,234,.55),rgba(228,243,234,0))}
+.lv.s{background:linear-gradient(180deg,rgba(251,234,232,.55),rgba(251,234,232,0))}
+
+/* the money */
+.money{border-top:1px solid var(--bd);background:var(--navy);color:#fff;
+  padding:18px 22px}
+.money .hl{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.money .big{font:700 clamp(26px,5.6vw,34px)/1 var(--mono);
+  font-variant-numeric:tabular-nums;color:#7BE3A8;letter-spacing:-.01em}
+.money .cond{font-size:13.5px;color:rgba(255,255,255,.72);flex:1 1 180px;min-width:0}
+.money .cond b{color:#fff;font-weight:600}
+.money .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:12px;margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)}
+.money .g .k{font:500 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.5)}
+.money .g .v{font:600 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;
+  margin-top:6px}
+.money .g .v.risk{color:#F5A9A2}
+.money .fine{margin-top:13px;font-size:11.5px;line-height:1.6;
+  color:rgba(255,255,255,.55)}
+.money .fine b{color:rgba(255,255,255,.82);font-weight:600}
+
+.trig{border-top:1px solid var(--bd);padding:11px 22px;font-size:13px;
+  color:var(--ink2);line-height:1.55}
+.trig b{font-weight:600}
+.trig.live{background:var(--green-bg)} .trig.live b{color:var(--green)}
+.trig.wait{background:var(--gold-bg)} .trig.wait b{color:var(--gold-d)}
+
+.nosetup{border-top:1px solid var(--bd);padding:16px 22px;background:var(--gold-bg);
+  font-size:14px;color:var(--ink2)}
+.nosetup b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+
+.vd{padding:14px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  border-top:1px solid var(--bd)}
+.vd .score{font:700 24px/1 var(--mono);font-variant-numeric:tabular-nums;
+  padding:9px 15px;border-radius:8px;white-space:nowrap}
+.vd .score.buy{background:var(--green-bg);color:var(--green)}
+.vd .score.watch{background:var(--gold-bg);color:var(--gold-d)}
+.vd .score.avoid{background:var(--red-bg);color:var(--red)}
+.vd .score small{display:block;font:500 9px/1 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;opacity:.7;margin-top:5px;text-align:center}
+.vd .say{flex:1 1 200px;min-width:0;font-size:14.5px;color:var(--ink2)}
+.vd .say b{color:var(--ink);font-weight:600}
+.caveat{padding:12px 22px;background:var(--cream);border-top:1px solid var(--bd);
+  font-size:13px;color:var(--ink2);display:flex;gap:9px;align-items:flex-start}
+.caveat .dot{width:6px;height:6px;border-radius:50%;background:var(--ink3);
+  flex:0 0 auto;margin-top:6px}
+.caveat b{color:var(--ink);font-weight:600}
+.bars{padding:15px 22px 6px;display:grid;gap:11px;border-top:1px solid var(--bd)}
+.bar{display:grid;grid-template-columns:104px 1fr 42px;gap:11px;align-items:center;
+  font-size:12.5px}
+.bar .bn{color:var(--ink2)}
+.bar .bt{height:7px;border-radius:4px;background:#EDEAE0;overflow:hidden}
+.bar .bf{height:100%;border-radius:4px}
+.bar .bv{text-align:right;font:500 12px/1 var(--mono);color:var(--ink3);
+  font-variant-numeric:tabular-nums}
+.rankline{padding:0 22px 16px;font-size:13.5px;color:var(--ink2)}
+.err{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:20px 22px;text-align:left;color:var(--ink2);font-size:14.5px}
+.err b{color:var(--ink);display:block;margin-bottom:5px;font-size:15px}
+.load{text-align:center;color:var(--ink3);font-size:14px;padding:22px}
+
+/* ── the board ─────────────────────────────────────────────────────────── */
+.board-sec{padding:44px 0 56px}
+.hd{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.hd h2{font:700 clamp(21px,3vw,29px)/1.2 var(--serif);margin:0}
+.hd .note{font-size:13.5px;color:var(--ink3);margin-left:auto}
+.lede{color:var(--ink2);font-size:15px;margin:0 0 18px;max-width:66ch}
+.board{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:660px}
+th{font:600 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);text-align:left;padding:12px 15px;background:var(--cream);
+  border-bottom:1px solid var(--bd);white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:11px 15px;border-bottom:1px solid var(--bd);font-size:14px}
+tr:last-child td{border-bottom:0}
+.rk{font:600 12px/1 var(--mono);color:var(--ink3);width:40px}
+.cd{font:600 14.5px/1 var(--sans)}
+.sc{font:600 14.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+.nm{font:400 13px/1 var(--mono);color:var(--ink2);font-variant-numeric:tabular-nums}
+tr.lk td{color:var(--ink3)}
+tr.lk .cd{font-family:var(--mono);letter-spacing:.24em;font-weight:500;
+  color:var(--ink3);user-select:none}
+tr.lk .sc{color:var(--ink2)}
+.pl{font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.pl i{font-style:normal;color:var(--ink3);padding:0 3px}
+.pl s{display:block;text-decoration:none;color:var(--ink3);font-size:11.5px}
+.lock{display:inline-flex;align-items:center;gap:7px;font:600 10px/1 var(--sans);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+  background:repeating-linear-gradient(135deg,#F1EDE1 0 6px,#E8E3D4 6px 12px);
+  border:1px solid var(--bd);border-radius:5px;padding:7px 10px;white-space:nowrap}
+.lock b{width:9px;height:7px;border-radius:1.5px;background:var(--ink3);
+  position:relative;flex:0 0 auto}
+.lock b::before{content:"";position:absolute;left:1.5px;top:-4px;width:6px;height:5px;
+  border:1.5px solid var(--ink3);border-bottom:0;border-radius:3px 3px 0 0}
+.cta{padding:20px 22px;background:var(--cream);border-top:1px solid var(--bd);
+  display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+.cta .m{flex:1 1 250px;min-width:0}
+.cta .m b{display:block;font:600 16px/1.35 var(--sans);margin-bottom:3px}
+.cta .m span{font-size:13.5px;color:var(--ink2)}
+.cta a{background:var(--gold);color:var(--navy);text-decoration:none;
+  font:600 14.5px/1 var(--sans);padding:13px 22px;border-radius:8px;white-space:nowrap}
+.cta a:hover{background:var(--gold-d);color:#fff}
+
+/* ── the first screen: exactly one viewport, no scroll ───────────── */
+/*  A grid whose middle row takes the remaining height, so the six boxes fill
+    whatever is left after the band, the search and the footer line — on a
+    1366x768 laptop and on a 27-inch monitor alike. Below 720px wide or 640px
+    tall six boxes cannot fit one screen honestly, so the constraint is dropped
+    and the page flows rather than squashing the numbers to nothing. */
+.screen{display:grid;grid-template-rows:auto auto 1fr auto;gap:0}
+@media (min-width:720px) and (min-height:640px){ .screen{height:100svh} }
+.top{padding:18px 20px 12px;text-align:center}
+.top h1{font:700 clamp(21px,2.9vw,34px)/1.15 var(--serif);margin:0 0 13px;
+  letter-spacing:-.015em;text-wrap:balance}
+.top form.ask{margin:0 auto;max-width:500px}
+.top form.ask input{padding:12px 15px;font-size:15px}
+.top form.ask button{padding:12px 20px;font-size:15px}
+.top .cap{margin:11px 0 0}
+.top .cap button{padding:7px 11px;font-size:12.5px}
+.gridwrap{min-height:0;padding-bottom:10px}
+.boxes{display:grid;gap:11px;height:100%;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+@media (min-width:900px){ .boxes{grid-template-columns:repeat(3,1fr)} }
+.screenfoot{display:flex;gap:14px;align-items:center;justify-content:center;
+  flex-wrap:wrap;padding:0 20px 16px;font-size:13px;color:var(--ink2);
+  text-align:center}
+.screenfoot span{max-width:56ch}
+.screenfoot a{background:var(--gold);color:var(--navy);text-decoration:none;
+  font:600 13.5px/1 var(--sans);padding:11px 18px;border-radius:8px;
+  white-space:nowrap}
+.screenfoot a:hover{background:var(--gold-d);color:#fff}
+
+/* ── one box: one engine, one stock ────────────────────────── */
+.bx{background:var(--paper);border:1px solid var(--bd);border-radius:11px;
+  padding:12px 13px;display:flex;flex-direction:column;gap:9px;min-height:0;
+  overflow:hidden}
+.bx .bh{display:flex;align-items:center;gap:7px}
+.bx .bh .t{font:600 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);flex:1 1 auto;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.bx .bh .tr{font:600 8.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--gold-d);background:var(--gold-bg);border:1px solid var(--gold-bd);
+  padding:3px 5px;border-radius:3px;white-space:nowrap}
+.bx .bh .tr.pro{color:#5B21B6;background:#EDE9FE;border-color:#D6CCFA}
+.bx .nm{display:flex;align-items:center;gap:9px}
+.bx .nm .bl{font:700 17px/1.15 var(--sans);letter-spacing:.05em;color:var(--ink2);
+  filter:blur(4px);user-select:none;flex:1 1 auto;min-width:0}
+.bx .nm .rl{font:700 17px/1.15 var(--sans);letter-spacing:.01em;flex:1 1 auto;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx .nm .sc3{font:700 12px/1 var(--mono);font-variant-numeric:tabular-nums;
+  background:var(--navy);color:#fff;padding:5px 7px;border-radius:4px}
+.ladder{display:grid;gap:5px;flex:1 1 auto;min-height:0;align-content:center}
+.lr{display:grid;grid-template-columns:50px 1fr auto;gap:8px;align-items:center}
+.lr .k2{font:600 8.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3)}
+.lr .p2{font:600 13px/1 var(--mono);font-variant-numeric:tabular-nums}
+.lr .d2{font:500 11px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--ink3)}
+.lr.t2 .p2,.lr.t2 .d2{color:var(--green)}
+.lr.s2 .p2,.lr.s2 .d2{color:var(--red)}
+.mask{display:inline-block;width:52px;height:11px;border-radius:3px;
+  vertical-align:-1px;
+  background:repeating-linear-gradient(135deg,#E7E2D3 0 4px,#D9D3C1 4px 8px)}
+.bfoot{border-top:1px solid var(--bd);padding-top:8px;display:flex;gap:9px;
+  align-items:baseline;flex-wrap:wrap;font:500 11.5px/1.35 var(--mono);
+  font-variant-numeric:tabular-nums;color:var(--ink3)}
+.bfoot b{font-weight:600;color:var(--green)}
+.bfoot i{font-style:normal;font-weight:600;color:var(--red)}
+.bfoot s{text-decoration:none;margin-left:auto;color:var(--ink2)}
+.bx .note2{font-size:11.5px;color:var(--ink3);line-height:1.45;
+  border-top:1px solid var(--bd);padding-top:8px}
+.ev2{display:grid;gap:6px;flex:1 1 auto;min-height:0;align-content:center}
+.ev2 div{display:flex;justify-content:space-between;gap:8px;font-size:12px;
+  color:var(--ink2)}
+.ev2 div b{font:600 12.5px/1 var(--mono);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.bx.free{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,160,23,.14)}
+.bx.free .bh .tr{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.bx.free .nm .rl{color:var(--navy)}
+
+
+/* ── the plan panel: the answer lands where the boxes were ─────────── */
+/*  The result must not send the visitor to the bottom of the page. It takes
+    the same grid row the six boxes occupy and scrolls INSIDE that row, so the
+    first screen stays one screen whether you have searched or not. */
+.gridwrap{position:relative}
+.panel{display:none;height:100%;min-height:0;flex-direction:column;gap:9px}
+.panel.on{display:flex}
+.boxes.off{display:none}
+.panel #out{flex:1 1 auto;min-height:0;overflow-y:auto;max-width:none;margin:0;
+  -webkit-overflow-scrolling:touch}
+.panel .card{max-width:660px;margin:0 auto}
+.back{align-self:flex-start;font:600 12.5px/1 var(--sans);padding:8px 12px;
+  border-radius:7px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer;flex:0 0 auto}
+.back:hover{border-color:var(--gold-bd);color:var(--ink)}
+
+/* ── how it works: the real five-tool sequence ─────────────────────── */
+.steps{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.steps li{background:var(--cream);border:1px solid var(--bd);border-radius:11px;
+  padding:15px 16px}
+.steps .n{font:600 10px/1 var(--mono);color:var(--gold-d);letter-spacing:.12em}
+.steps .tm{font:600 10px/1 var(--mono);color:var(--ink3);letter-spacing:.06em;
+  margin-left:9px}
+.steps h3{font:600 15.5px/1.3 var(--sans);margin:9px 0 6px}
+.steps p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/* ── join ──────────────────────────────────────────────────────────── */
+.join{padding:44px 0 10px}
+.joinbox{display:grid;gap:0;grid-template-columns:1fr;background:var(--paper);
+  border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+@media (min-width:820px){ .joinbox{grid-template-columns:1.05fr .95fr} }
+.jl{padding:26px 26px 24px}
+.jl h2{font:700 clamp(21px,2.6vw,28px)/1.2 var(--serif);margin:0 0 9px}
+.jl p{margin:0 0 16px;color:var(--ink2);font-size:14.5px;max-width:46ch}
+.tiers{list-style:none;margin:0;padding:0;display:flex;gap:9px;flex-wrap:wrap}
+.tiers li{border:1px solid var(--bd);border-radius:9px;padding:11px 14px;
+  background:var(--cream);min-width:104px}
+.tiers li b{display:block;font:600 10px/1 var(--sans);letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.tiers li span{font:700 18px/1 var(--mono);font-variant-numeric:tabular-nums}
+.tiers li i{font-style:normal;font:500 11px/1 var(--sans);color:var(--ink3)}
+.fine2{margin:15px 0 0!important;font-size:12.5px;color:var(--ink3)}
+.jr{padding:26px;background:var(--cream);border-top:1px solid var(--bd);
+  display:grid;gap:12px;align-content:start}
+@media (min-width:820px){ .jr{border-top:0;border-left:1px solid var(--bd)} }
+.jr label{display:grid;gap:6px;font:600 10px/1 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3)}
+.jr .opt{font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink3);
+  opacity:.8}
+.jr input{font:400 15px/1 var(--sans);padding:12px 13px;border-radius:8px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink)}
+.jr input:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(212,160,23,.16)}
+.jr button{font:600 15px/1 var(--sans);padding:14px 20px;border-radius:8px;
+  border:0;background:var(--navy);color:#fff;cursor:pointer;margin-top:3px}
+.jr button:hover{background:var(--navy2)}
+.jr button:disabled{opacity:.55;cursor:default}
+.jmsg{margin:0;font-size:13px;min-height:1px;color:var(--red)}
+.jmsg.ok{color:var(--green)}
+.jalt{margin:0;font-size:13px;color:var(--ink3)}
+.jalt a{color:var(--gold-d);font-weight:600}
+
+/* ── footer ────────────────────────────────────────────────────────── */
+.frow{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  margin-bottom:22px}
+.fcol{display:flex;flex-direction:column;gap:7px}
+.fcol b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:3px}
+.fcol span{color:var(--ink2)}
+.fcol a{color:var(--ink2);text-decoration:none}
+.fcol a:hover{text-decoration:underline}
+.social{display:flex;gap:9px;margin-top:6px}
+.social a{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--sans);
+  border:1px solid var(--bd);border-radius:7px;padding:8px 11px;color:var(--ink2);
+  text-decoration:none;background:var(--paper)}
+.social a:hover{border-color:var(--gold-bd);color:var(--ink);text-decoration:none}
+.social svg{width:13px;height:13px;fill:currentColor}
+.copy{margin:14px 0 0;font-size:12.5px;color:var(--ink3)}
+footer .disc a{color:var(--ink2);text-decoration:underline}
+
+
+/* ── roomier boxes ─────────────────────────────────────────────────── */
+/*  The numbers are the point now that entry, target and stop are open, so the
+    box gives them room: a wider screen container, a bigger gap, more padding
+    and a larger figure size. Six boxes still fit one viewport. */
+.screen .wrap{max-width:1180px}
+.boxes{gap:14px}
+.bx{padding:17px 18px;gap:12px;border-radius:13px}
+.bx .nm .bl,.bx .nm .rl{font-size:19px}
+.lr{grid-template-columns:56px 1fr auto;gap:10px}
+.lr .p2{font-size:16px}
+.lr .d2{font-size:12px}
+.ladder{gap:9px}
+.bfoot{padding-top:11px;gap:11px;font-size:12.5px}
+.ev2{gap:9px}
+.ev2 div{font-size:13px}
+.ev2 div b{font-size:13.5px}
+
+/* the blurred name is the lock: it is what the visitor clicks */
+.lockname{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;
+  background:none;border:0;padding:0;cursor:pointer;text-align:left;font:inherit}
+.lockname .bl{pointer-events:none}
+.lockname:hover .bl{filter:blur(3px)}
+.lkchip{display:inline-flex;align-items:center;gap:5px;font:600 9px/1 var(--sans);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--gold-d);
+  background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:4px;
+  padding:5px 7px;white-space:nowrap;flex:0 0 auto}
+.lkchip b{width:8px;height:6px;border-radius:1.5px;background:var(--gold-d);
+  position:relative;flex:0 0 auto}
+.lkchip b::before{content:"";position:absolute;left:1.3px;top:-3.5px;width:5.4px;
+  height:4.5px;border:1.4px solid var(--gold-d);border-bottom:0;
+  border-radius:2.6px 2.6px 0 0}
+.lockname:hover .lkchip{background:var(--gold);color:var(--navy);
+  border-color:var(--gold)}
+.lockname:hover .lkchip b,.lockname:hover .lkchip b::before{background:var(--navy);
+  border-color:var(--navy)}
+
+/* ── band nav and the two auth buttons ─────────────────────────────── */
+.bnav{display:flex;gap:16px;align-items:center}
+.bnav a{font:600 12px/1 var(--sans);color:rgba(255,255,255,.72);
+  text-decoration:none;white-space:nowrap}
+.bnav a:hover{color:#fff;text-decoration:underline}
+.band a.signin{font:600 12px/1 var(--sans);color:#fff;border:1px solid
+  rgba(255,255,255,.32);padding:8px 13px;border-radius:6px;text-decoration:none;
+  white-space:nowrap}
+.band a.signin:hover{border-color:#fff}
+
+/* ── about ─────────────────────────────────────────────────────────── */
+.about{padding:44px 0 8px}
+.acols{display:grid;gap:22px;margin-top:20px;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.acols h3{font:600 16px/1.35 var(--sans);margin:0 0 8px}
+.acols p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.62}
+
+/* ── the auth modal ────────────────────────────────────────────────── */
+.modal{display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(13,31,60,.55);padding:20px;
+  align-items:center;justify-content:center}
+.modal.on{display:flex}
+.mbox{background:var(--paper);border-radius:15px;max-width:470px;width:100%;
+  padding:28px 26px 24px;position:relative;
+  box-shadow:0 18px 50px rgba(13,31,60,.32)}
+.mbox h3{font:700 clamp(19px,2.4vw,24px)/1.25 var(--serif);margin:0 0 10px;
+  padding-right:26px}
+.mbox p{margin:0 0 18px;font-size:14.5px;color:var(--ink2);line-height:1.6}
+.mrow{display:grid;gap:9px;grid-template-columns:1fr}
+@media (min-width:440px){ .mrow{grid-template-columns:1fr 1fr} }
+.mbtn{display:block;text-align:center;text-decoration:none;border-radius:9px;
+  padding:14px 16px;font:600 14.5px/1 var(--sans);border:1.5px solid var(--bd);
+  color:var(--ink2);background:var(--paper)}
+.mbtn:hover{border-color:var(--gold-bd);color:var(--ink)}
+.mbtn.primary{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.mbtn.primary:hover{background:var(--gold-d);color:#fff}
+.mfine{margin:16px 0 0!important;font-size:12.5px;color:var(--ink3);
+  line-height:1.6}
+.mfine a{color:var(--gold-d);font-weight:600}
+.mx{position:absolute;top:12px;right:13px;width:30px;height:30px;border-radius:7px;
+  border:0;background:none;color:var(--ink3);font:400 22px/1 var(--sans);
+  cursor:pointer}
+.mx:hover{background:var(--cream);color:var(--ink)}
+
+/* ── what the engines found ────────────────────────────────────────────── */
+.tools-sec{padding:8px 0 56px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.tabs button{font:600 13.5px/1 var(--sans);padding:11px 15px;border-radius:8px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink2);
+  cursor:pointer;display:flex;align-items:baseline;gap:8px}
+.tabs button:hover{border-color:var(--gold-bd)}
+.tabs button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+.tabs button em{font:500 11px/1 var(--mono);font-style:normal;opacity:.62}
+.toolbox{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden}
+.tool-hd{padding:17px 22px;border-bottom:1px solid var(--bd);
+  display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.tool-hd .s{flex:1 1 260px;min-width:0;font-size:14.5px;color:var(--ink2)}
+.tool-hd .c{font:600 12px/1 var(--mono);color:var(--ink3);white-space:nowrap}
+.tool-hd .tier{font:600 9px/1 var(--sans);letter-spacing:.11em;
+  text-transform:uppercase;padding:5px 8px;border-radius:4px;
+  background:var(--gold-bg);color:var(--gold-d);border:1px solid var(--gold-bd)}
+.tool-hd .tier.pro{background:#EDE9FE;color:#5B21B6;border-color:#D6CCFA}
+
+.trow{display:grid;grid-template-columns:minmax(190px,1fr) minmax(0,2.1fr);
+  gap:16px;padding:15px 22px;border-bottom:1px solid var(--bd);align-items:center}
+.trow:last-child{border-bottom:0}
+.tid{display:flex;align-items:center;gap:11px;min-width:0}
+.tid .rk2{font:700 12px/1 var(--mono);color:var(--ink3);width:22px;flex:0 0 auto}
+.blurname{font:700 16px/1.25 var(--sans);letter-spacing:.06em;color:var(--ink2);
+  filter:blur(4.5px);user-select:none;white-space:nowrap}
+.tid .sub{font:500 10.5px/1 var(--sans);letter-spacing:.05em;color:var(--ink3);
+  text-transform:uppercase;margin-top:5px}
+.tid .col{min-width:0}
+.chip{font:600 10px/1 var(--sans);letter-spacing:.06em;padding:5px 7px;
+  border-radius:4px;background:var(--cream);color:var(--ink2);
+  border:1px solid var(--bd);white-space:nowrap}
+.chip.sc2{background:var(--navy);color:#fff;border-color:var(--navy);
+  font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.tnums{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:12px}
+.tn .k{font:600 9px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3)}
+.tn .v{font:600 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;margin-top:5px}
+.tn .v.gain{color:var(--green)} .tn .v.loss{color:var(--red)}
+.tn .v small{display:block;font:500 10.5px/1 var(--sans);color:var(--ink3);
+  margin-top:4px;letter-spacing:0}
+.evid{display:flex;gap:8px;flex-wrap:wrap}
+.evid span{font:500 12px/1 var(--sans);padding:7px 9px;border-radius:5px;
+  background:var(--cream);border:1px solid var(--bd);color:var(--ink2)}
+.evid span b{font-weight:600;color:var(--ink)}
+.nolevels{padding:13px 22px;background:var(--gold-bg);font-size:13px;
+  color:var(--ink2);border-bottom:1px solid var(--bd)}
+.nolevels b{color:var(--ink);font-weight:600}
+@media (max-width:640px){
+  .trow{grid-template-columns:1fr;gap:12px}
+}
+
+/* ── how it works ──────────────────────────────────────────────────────── */
+.how{background:var(--paper);border-top:1px solid var(--bd);
+  border-bottom:1px solid var(--bd);padding:46px 0}
+.three{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  margin-top:22px}
+.three h3{font:600 15.5px/1.35 var(--sans);margin:0 0 7px}
+.three p{margin:0;font-size:14px;color:var(--ink2)}
+.three .n{font:600 11px/1 var(--mono);color:var(--gold-d);letter-spacing:.1em;
+  display:block;margin-bottom:9px}
+
+footer{padding:34px 0 46px;font-size:13px;color:var(--ink3)}
+footer .row{display:flex;gap:8px 22px;flex-wrap:wrap;margin-bottom:14px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .disc{max-width:76ch;line-height:1.65}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media (max-width:560px){
+  .hero{padding:36px 0 20px}
+  .bar{grid-template-columns:88px 1fr 38px}
+  .lv{padding:13px 9px}
+  .lv .p{font-size:17px}
+}
+</style>
+
+<div class="screen">
+  <div class="band">
+    <div class="wrap">
+      <span class="brand"><i></i>DSE&nbsp;Pulse</span>
+      <span class="stat"><span class="l">DSEX</span><span class="v" id="b-dsex">—</span></span>
+      <span class="stat"><span class="l">Scanned</span><span class="v" id="b-scan">—</span></span>
+      <span class="stat"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
+      <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
+      <nav class="bnav">
+        <a href="#about">About</a><a href="#how">How it works</a><a href="#join">Pricing</a>
+      </nav>
+      <a class="signin" href="/shell.html">Sign in</a>
+      <a class="sign" href="#join" id="b-signup">Sign up</a>
+    </div>
+  </div>
+
+  <div class="wrap top">
+    <h1>Six engines. Six trades. One of them is yours to check.</h1>
+    <form class="ask" id="ask" autocomplete="off">
+      <input id="code" name="code" placeholder="Or type your own ticker — e.g. BATBC"
+             maxlength="20" aria-label="Stock ticker" spellcheck="false">
+      <button type="submit" id="go">Show me the plan</button>
+    </form>
+    <p class="eg">Try
+      <button type="button" data-c="BATBC">BATBC</button> ·
+      <button type="button" data-c="GP">GP</button> ·
+      <button type="button" data-c="SQURPHARMA">SQURPHARMA</button> ·
+      <button type="button" data-c="BRACBANK">BRACBANK</button>
+    </p>
+    <div class="cap" id="cap">
+      <span class="lbl">Working with</span>
+      <button type="button" data-v="10000" aria-pressed="false">৳10,000</button>
+      <button type="button" data-v="50000" aria-pressed="true">৳50,000</button>
+      <button type="button" data-v="100000" aria-pressed="false">৳1,00,000</button>
+      <button type="button" data-v="500000" aria-pressed="false">৳5,00,000</button>
+    </div>
+  </div>
+
+  <div class="wrap gridwrap">
+    <div class="boxes" id="boxes">
+      <div class="load">Loading today’s engine output…</div>
+    </div>
+    <div class="panel" id="panel">
+      <button type="button" class="back" id="back">← Back to today’s engines</button>
+      <div id="out"></div>
+    </div>
+  </div>
+
+  <div class="wrap screenfoot">
+    <span id="sf-note">Every box is a real stock that cleared a real filter this
+    evening. One is shown in full so you can check it anywhere.</span>
+    <a href="/shell.html">Start free — 7 days of Pro</a>
+  </div>
+</div>
+
+<section class="about" id="about">
+  <div class="wrap">
+    <div class="hd"><h2>What DSE Pulse is</h2></div>
+    <div class="acols">
+      <div>
+        <h3>An opinion, not another data portal</h3>
+        <p>Every other Dhaka Stock Exchange site will hand you a price, a chart
+        and an indicator, and leave the conclusion to you. DSE Pulse runs its own
+        engines over the whole exchange after the close and commits to an answer:
+        a score, a buy zone, a target and a stop. That commitment is the product.</p>
+      </div>
+      <div>
+        <h3>Built for the retail investor, not the desk</h3>
+        <p>You do not need to read a candlestick chart to use it. Type a ticker
+        and you get the plan in plain numbers — where to buy, where to take
+        profit, where to get out, and what each of those is worth on the money
+        you actually have.</p>
+      </div>
+      <div>
+        <h3>Honest about what it cannot do</h3>
+        <p>The engines are rule-based arithmetic over past price and volume. They
+        are wrong regularly. We publish the track record in full rather than the
+        good days only, and no figure on this site is a prediction that a price
+        will reach any level.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="tools-sec">
+    <div class="hd">
+      <h2>What the six engines found today</h2>
+      <span class="note" id="tl-note"></span>
+    </div>
+    <p class="lede">Not a count of what you're missing — the actual rows, with
+    the numbers that decide a trade, priced on your capital. Only the name is
+    withheld, and it is withheld on the server: it is not in this page at all.</p>
+
+    <div class="tabs" id="tl-tabs"></div>
+    <div class="toolbox">
+      <div class="tool-hd" id="tl-hd"></div>
+      <div id="tl-rows"><div class="load">Loading today's engine output…</div></div>
+      <div class="cta" id="tl-cta">
+        <div class="m"><b>The names are the product</b>
+        <span>Every row above is a real stock that cleared a real filter this
+        evening. A subscription is the name, so you can act on it.</span></div>
+        <a href="/shell.html">Start free — 7 days of Pro</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="hd"><h2>How the numbers are produced</h2></div>
+    <p class="lede">Every trading day after the close, five tools run in sequence
+    — each adding a layer of confirmation before a stock reaches the final
+    list. Smart Money runs alongside them on volume and block trades.</p>
+    <ol class="steps">
+      <li><span class="n">01</span><span class="tm">4:35 PM</span>
+        <h3>Daily Picker</h3>
+        <p>Momentum scan — ranks every listed stock by price action, volume
+        surge, category, PE and spread. Score out of 45.</p></li>
+      <li><span class="n">02</span><span class="tm">5:00 PM</span>
+        <h3>WMA Analysis</h3>
+        <p>WMA 9/34/89 crossover signals from 150 days of history. Trend
+        confirmation, with fresh-cross alerts.</p></li>
+      <li><span class="n">03</span><span class="tm">5:15 PM</span>
+        <h3>Tech Analysis</h3>
+        <p>Full score out of 100 combining WMA, MACD 12/26/9, RSI 14, volume
+        surge and Bollinger Bands.</p></li>
+      <li><span class="n">04</span><span class="tm">5:30 PM</span>
+        <h3>Combined Signal</h3>
+        <p>Triple confirmation — only stocks where Picker ≥ 30,
+        WMA = STRONG BUY and Tech ≥ 70 all agree.</p></li>
+      <li><span class="n">05</span><span class="tm">5:30 PM</span>
+        <h3>BD Signal</h3>
+        <p>BD-optimised score out of 100 — DSEX mood, ATR stop loss, sector
+        bonus, consecutive up days and a circuit check.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="join" id="join">
+    <div class="joinbox">
+      <div class="jl">
+        <h2>Create your free account</h2>
+        <p>Free gets you the market view and a scored verdict on any ticker you
+        name. The seven-day trial opens every engine, every name and every level
+        — no card needed.</p>
+        <ul class="tiers">
+          <li><b>Free</b><span>৳0</span></li>
+          <li><b>Premium</b><span>৳499<i>/month</i></span></li>
+          <li><b>Pro</b><span>৳999<i>/month</i></span></li>
+        </ul>
+        <p class="fine2">Quarterly saves 7%, annual saves 17%. Cancel any time.</p>
+      </div>
+      <form class="jr" id="reg" autocomplete="on" novalidate>
+        <label>Name<input id="r-name" name="name" autocomplete="name"
+          placeholder="Your name" maxlength="80"></label>
+        <label>Email<input id="r-email" name="email" type="email"
+          autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
+        <label>Phone <span class="opt">optional</span><input id="r-phone"
+          name="phone" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20"></label>
+        <label>Password<input id="r-pass" name="password" type="password"
+          autocomplete="new-password" placeholder="At least 8 characters"
+          maxlength="72"></label>
+        <button type="submit" id="r-go">Get started free</button>
+        <p class="jmsg" id="r-msg"></p>
+        <p class="jalt">Already have an account?
+          <a href="/shell.html">Sign in</a></p>
+      </form>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <footer>
+    <div class="frow">
+      <div class="fcol">
+        <b>DSE Pulse</b>
+        <span>Bangladesh Stock Intelligence · dsepulse.com</span>
+        <div class="social" id="social"></div>
+      </div>
+      <div class="fcol">
+        <b>Product</b>
+        <a href="/shell.html">Dashboard</a>
+        <a href="/trackrecord.html">Track record</a>
+        <a href="/calculator.html">Position calculator</a>
+        <a href="/screener.html">Screener</a>
+      </div>
+      <div class="fcol">
+        <b>Legal</b>
+        <a href="/disclaimer.html">Full disclaimer</a>
+        <a href="/disclaimer.html#risk">Risk warning</a>
+        <a href="/shell.html">Account</a>
+      </div>
+    </div>
+    <p class="disc"><b>Disclaimer.</b> DSE Pulse provides algorithm-generated
+    market data, technical signals, scores and analytics for informational and
+    educational purposes only. DSE Pulse and its operators are not registered or
+    licensed investment advisers, brokers, dealers or portfolio managers, and are
+    not registered with the Bangladesh Securities and Exchange Commission. All
+    signals, conviction scores and labels (including “Buy”, “Strong
+    Buy”, “Watch” and “Avoid”), entry prices, targets and
+    stop-loss levels are automated, rule-based calculations — not
+    recommendations, offers or solicitations. Any taka figure shown on this page
+    is a conditional calculation of what a position would come to at those
+    levels; it is not a forecast of gains, not a promise that any level will be
+    reached, and excludes brokerage commission, taxes and slippage. Trading and
+    investing in shares carries a high level of risk, including the possible loss
+    of all invested capital. Market data is obtained from third-party and publicly
+    available sources and may be delayed, incomplete or inaccurate. Past
+    performance and back-tested results are not indicative of future results. You
+    are solely responsible for your own investment decisions and should consult a
+    licensed adviser. Read the <a href="/disclaimer.html">full disclaimer</a>.</p>
+    <p class="copy">© 2026 DSE Pulse · Governed by the laws of
+    Bangladesh</p>
+  </footer>
+</div>
+
+<div class="modal" id="auth" role="dialog" aria-modal="true"
+     aria-labelledby="auth-t">
+  <div class="mbox">
+    <button type="button" class="mx" id="auth-x" aria-label="Close">×</button>
+    <h3 id="auth-t">The name is the locked part</h3>
+    <p>Entry, target and stop are open on every box above. Which stock they
+    belong to is what an account opens — along with every other row each engine
+    produced today.</p>
+    <div class="mrow">
+      <a class="mbtn primary" href="#join" id="auth-new">Create a free account</a>
+      <a class="mbtn" href="/shell.html" id="auth-in">I already have an account</a>
+    </div>
+    <p class="mfine">Trial finished, or a subscription lapsed?
+      <a href="/shell.html">Sign in and renew</a> — Premium ৳499/month,
+      Pro ৳999/month, 7% off quarterly and 17% off annual.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var API = (window.DSEEnv && window.DSEEnv.apiBase) ||
+            "https://dsepulse-backend-production.up.railway.app";
+
+  function el(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function num(v, d) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(d === undefined ? 2 : d) : "—";
+  }
+  //  Bangladeshi digit grouping: 1,00,000 — not 100,000. Getting this wrong is
+  //  the fastest way to look like a foreign product to a Dhaka investor.
+  function bdt(v) {
+    var n = Math.round(Number(v) || 0), sign = n < 0 ? "−" : "";
+    var s = String(Math.abs(n)), out = s;
+    if (s.length > 3) {
+      out = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + s.slice(-3);
+    }
+    return sign + "৳" + out;
+  }
+  //  DSE circuit breakers cap most daily moves near 10%. Anything beyond 30% is
+  //  a data fault, never news — the dev seed produced GP at +247% while
+  //  production had it at +0.16%. Showing that number would cost more trust than
+  //  omitting it, and this threshold cannot suppress a real DSE move.
+  function pctOK(v) {
+    var n = Number(v);
+    return isFinite(n) && Math.abs(n) <= 30;
+  }
+  function getJSON(path) {
+    return fetch(API + path).then(function (r) {
+      if (!r.ok) { var e = new Error("http " + r.status); e.status = r.status; throw e; }
+      return r.json();
+    });
+  }
+
+  /* ── the live band ──────────────────────────────────────────────────── */
+  getJSON("/api/dashboard/overview").then(function (o) {
+    var m = (o && o.market) || {};
+    if (m.dsex != null) {
+      el("b-dsex").textContent = Number(m.dsex).toFixed(1);
+      var c = Number(m.dsex_change);
+      if (isFinite(c)) {
+        el("b-dsex").className = "v " + (c > 0 ? "up" : c < 0 ? "dn" : "");
+        el("b-dsex").textContent += (c > 0 ? "  +" : "  ") + c.toFixed(2) + "%";
+      }
+    }
+    if (m.date) {
+      try {
+        el("b-date").textContent = new Date(m.date + "T00:00:00")
+          .toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+      } catch (e) { el("b-date").textContent = m.date; }
+    }
+  }).catch(function () {});
+
+  /* ── the day's scan ────────────────────────────────────────────────── */
+  //  The ranked 25-row board is gone from this page: a stranger cannot act on
+  //  a list of numbered rows, and it pushed the things they CAN act on down.
+  //  The scan is still fetched, because the live band counts come from it and
+  //  the plan card says where a searched stock sits in it.
+  var BOARD = null;
+  getJSON("/api/market/scan").then(function (s) {
+    BOARD = s;
+    el("b-scan").textContent = s.scanned != null ? s.scanned : "—";
+    el("b-pos").textContent  = s.positive != null ? s.positive : "—";
+  }).catch(function () {});
+
+  /* ── capital ────────────────────────────────────────────────────────── */
+  var CAP = 50000, LAST = null;
+  Array.prototype.forEach.call(el("cap").querySelectorAll("button"), function (b) {
+    b.addEventListener("click", function () {
+      CAP = Number(b.dataset.v) || 50000;
+      Array.prototype.forEach.call(el("cap").querySelectorAll("button"), function (o) {
+        o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      });
+      if (LAST) render(LAST);          // re-price the plan already on screen
+      paintTool();                     // and re-price every engine row too
+      paintBoxes();                    // and every box on the first screen
+    });
+  });
+
+  /* ── the first screen: one box per engine, one stock in each ────────── */
+  //  Five boxes hide the name AND the price, because a price is a name: DSE
+  //  closes are public, so "entry ৳68.20" is one lookup away from the ticker.
+  //  What is shown instead is the SHAPE of the trade — how far the entry sits
+  //  from the close, how far the target and stop sit from the entry, and what
+  //  that comes to on the visitor's capital.
+  //
+  //  The sixth box is open on purpose. Nothing else here can be checked by a
+  //  stranger, and an unverifiable claim converts nobody; one complete pick a
+  //  day, rotating between the engines, can be taken to any other DSE site and
+  //  confirmed.
+  function pctTxt(v) {
+    var n = Number(v);
+    if (!isFinite(n)) return "";
+    return (n > 0 ? "+" : n < 0 ? "−" : "") + num(Math.abs(n), 1) + "%";
+  }
+
+  function lrow(k, price, delta, cls, masked) {
+    return '<div class="lr ' + cls + '"><span class="k2">' + k + "</span>" +
+      '<span class="p2">' +
+      (masked ? '<span class="mask" aria-label="locked"></span>' : "৳" + num(price)) +
+      "</span>" + '<span class="d2">' + delta + "</span></div>";
+  }
+
+  function bmoney(tp, sp, rr) {
+    return '<div class="bfoot"><b>+' + bdt(CAP * Number(tp) / 100) + "</b>" +
+      "<i>−" + bdt(CAP * Number(sp) / 100) + "</i>" +
+      '<s>R/R ' + num(rr, 1) + "</s></div>";
+  }
+
+  function boxHTML(tool, fp) {
+    var free = !!(fp && fp.tool === tool.key);
+    var r = (tool.rows || [])[0];
+    if (!r && !free) {
+      return '<div class="bx"><div class="bh"><span class="t">' + esc(tool.name) +
+        '</span></div><div class="note2">Nothing cleared this filter today.' +
+        "</div></div>";
+    }
+    var score = free ? fp.score : (r && r.score);
+    var head = '<div class="bh"><span class="t">' + esc(tool.name) + "</span>" +
+      '<span class="tr ' + (tool.tier === "pro" ? "pro" : "") + '">' +
+      (free ? "open today" : esc(tool.tier)) + "</span></div>";
+
+    //  The blurred name IS the lock — it is the only thing still withheld, so
+    //  it is what a visitor clicks when they want it.
+    var name = '<div class="nm">' +
+      (free
+        ? '<span class="rl">' + esc(fp.code) + "</span>"
+        : '<button type="button" class="lockname" data-lock="1" ' +
+          'aria-label="Stock name locked — sign in or create an account">' +
+          '<span class="bl">████████</span>' +
+          '<span class="lkchip"><b></b>Name</span></button>') +
+      (score != null ? '<span class="sc3">' + num(score, 0) + "</span>" : "") +
+      "</div>";
+
+    var body, foot;
+    var L = free ? fp : (r ? r.levels : null);
+    if (L && (free || (L.entry != null && L.target != null && L.sl != null))) {
+      var gp = free ? fp.target_pct : L.target_pct;
+      var sp = free ? fp.stop_pct   : L.stop_pct;
+      var ef = free
+        ? (Number(fp.entry) - Number(fp.ltp)) / Number(fp.ltp) * 100
+        : L.entry_from_last;
+      body = '<div class="ladder">' +
+        (L.ltp != null ? lrow("Now", L.ltp, "", "", false) : "") +
+        lrow("Entry", L.entry, pctTxt(ef), "", false) +
+        lrow("Target", L.target, "+" + num(gp, 1) + "%", "t2", false) +
+        lrow("Stop", L.sl, "−" + num(sp, 1) + "%", "s2", false) +
+        "</div>";
+      foot = bmoney(gp, sp, free ? fp.rr : L.rr);
+    } else if (L && L.target_pct != null) {
+      //  the server is running with TEASER_LEVELS_OPEN=false: shape only
+      body = '<div class="ladder">' +
+        lrow("Now", 0, "", "", true) +
+        lrow("Entry", 0, pctTxt(L.entry_from_last), "", true) +
+        lrow("Target", 0, "+" + num(L.target_pct, 1) + "%", "t2", true) +
+        lrow("Stop", 0, "−" + num(L.stop_pct, 1) + "%", "s2", true) +
+        "</div>";
+      foot = bmoney(L.target_pct, L.stop_pct, L.rr);
+    } else {
+      body = '<div class="ev2">' + (r.evidence || []).slice(0, 4).map(function (e) {
+        return "<div><span>" + esc(e[0]) + "</span><b>" + esc(e[1]) + "</b></div>";
+      }).join("") + "</div>";
+      foot = '<div class="note2">Scores and ranks only — this engine does not ' +
+             "publish an entry, a target or a stop.</div>";
+    }
+    return '<div class="bx' + (free ? " free" : "") + '">' +
+           head + name + body + foot + "</div>";
+  }
+
+  function paintBoxes() {
+    if (!TEASER) return;
+    var fp = TEASER.free_pick;
+    el("boxes").innerHTML =
+      (TEASER.tools || []).map(function (t) { return boxHTML(t, fp); }).join("");
+    if (fp) {
+      el("sf-note").innerHTML =
+        "Entry, target and stop are open on every box. Only the <b>name</b> is " +
+        "held back — except today's, <b>" + esc(fp.code) + "</b> from " +
+        esc(fp.tool_name) + ", which you can check on any DSE site.";
+    }
+  }
+
+  /* ── what the six engines found ─────────────────────────────────────── */
+  //  The server sends no ticker and no price — only how far the entry sits
+  //  from the last trade and how far the target and stop sit from the entry.
+  //  Taka is worked out here, because
+  //      profit = shares x (target - entry) = capital x (target - entry)/entry
+  //  needs no price at all. Nothing on this page could name these stocks.
+  var TEASER = null, TOOL = null;
+
+  function currentTool() {
+    if (!TEASER) return null;
+    var ts = TEASER.tools || [];
+    for (var i = 0; i < ts.length; i++) if (ts[i].key === TOOL) return ts[i];
+    return ts[0] || null;
+  }
+
+  function tn(k, v, sub, cls) {
+    return '<div class="tn"><div class="k">' + esc(k) + "</div>" +
+           '<div class="v ' + cls + '">' + v +
+           (sub ? "<small>" + sub + "</small>" : "") + "</div></div>";
+  }
+
+  function toolRow(r) {
+    var id = '<div class="tid"><span class="rk2">' + r.rank + "</span>" +
+      '<span class="col"><span class="blurname" aria-label="Stock name withheld">' +
+      "████████</span>" +
+      '<span class="sub">name locked</span></span>' +
+      (r.score != null ? '<span class="chip sc2">' + num(r.score, 0) + "</span>" : "") +
+      (r.cat ? '<span class="chip">Cat ' + esc(r.cat) + "</span>" : "") +
+      (r.signal ? '<span class="chip">' + esc(r.signal) + "</span>" : "") +
+      "</div>";
+
+    var right;
+    var L = r.levels;
+    if (L) {
+      var gain = CAP * Number(L.target_pct) / 100;
+      var loss = CAP * Number(L.stop_pct) / 100;
+      var ef = L.entry_from_last;
+      right = '<div class="tnums">' +
+        tn("Entry", ef == null ? "—"
+             : (ef > 0 ? "+" : ef < 0 ? "−" : "") + num(Math.abs(ef), 1) + "%",
+           "from the last trade", "") +
+        tn("Target", "+" + num(L.target_pct, 1) + "%",
+           "+" + bdt(gain) + " on " + bdt(CAP), "gain") +
+        tn("Stop", "−" + num(L.stop_pct, 1) + "%",
+           "−" + bdt(loss) + " if it hits", "loss") +
+        tn("Reward vs risk", num(L.rr, 1) + " : 1", "", "") +
+        "</div>";
+    } else {
+      right = '<div class="evid">' + (r.evidence || []).map(function (e) {
+        return "<span>" + esc(e[0]) + " <b>" + esc(e[1]) + "</b></span>";
+      }).join("") + "</div>";
+    }
+    return '<div class="trow">' + id + right + "</div>";
+  }
+
+  function paintTool() {
+    var t = currentTool();
+    if (!t) return;
+    TOOL = t.key;
+    Array.prototype.forEach.call(el("tl-tabs").querySelectorAll("button"),
+      function (b) {
+        b.setAttribute("aria-pressed", b.dataset.k === t.key ? "true" : "false");
+      });
+
+    el("tl-hd").innerHTML =
+      '<span class="s">' + esc(t.sells) + "</span>" +
+      '<span class="c">' + t.total + " on this list today · showing " + t.shown +
+      "</span>" +
+      '<span class="tier ' + (t.tier === "pro" ? "pro" : "") + '">' +
+      esc(t.tier) + "</span>";
+
+    var html = "";
+    if (!t.has_levels) {
+      html += '<div class="nolevels"><b>' + esc(t.name) +
+        " does not publish an entry, a target or a stop.</b> It scores and ranks, " +
+        "and we will not invent levels on its behalf. What it does hold is below — " +
+        "the levels come from Today's Picks, Combined Signal and BD Signal.</div>";
+    }
+    html += (t.rows || []).map(toolRow).join("");
+    el("tl-rows").innerHTML = html ||
+      '<div class="load">' + esc(t.name) + " produced nothing today.</div>";
+  }
+
+  getJSON("/api/teaser/tools").then(function (t) {
+    TEASER = t;
+    var ts = t.tools || [];
+    if (!ts.length) throw new Error("no tools");
+    TOOL = ts[0].key;
+
+    var tabs = el("tl-tabs");
+    tabs.innerHTML = "";
+    ts.forEach(function (tool) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.k = tool.key;
+      b.innerHTML = esc(tool.name) + "<em>" + tool.total + "</em>";
+      b.setAttribute("aria-pressed", tool.key === TOOL ? "true" : "false");
+      b.addEventListener("click", function () { TOOL = tool.key; paintTool(); });
+      tabs.appendChild(b);
+    });
+
+    var rows = ts.reduce(function (n, x) { return n + (Number(x.total) || 0); }, 0);
+    el("tl-note").textContent = ts.length + " engines · " + rows +
+      " scored rows behind the wall";
+    paintTool();
+    paintBoxes();
+  }).catch(function () {
+    var msg = '<div class="load">Today’s engine output could not be loaded. ' +
+      "Please try again shortly.</div>";
+    el("tl-rows").innerHTML = msg;
+    el("boxes").innerHTML = msg;
+  });
+
+  /* ── the verdict ────────────────────────────────────────────────────── */
+  //  Colour keys off the ENGINE's score, which is the same field the ranked
+  //  board displays. The confluence reading never gets a tag of its own.
+  function bandOf(score) {
+    var n = Number(score);
+    if (!isFinite(n)) return "watch";
+    return n >= 70 ? "buy" : n >= 50 ? "watch" : "avoid";
+  }
+  var CONFLUENCE_SAY = {
+    4: "all four broader indicators agree — uncommon",
+    3: "three of four broader indicators agree",
+    2: "the broader indicators are evenly split",
+    1: "only one broader indicator agrees",
+    0: "none of the broader indicators agree today"
+  };
+
+  function rankOf(code) {
+    if (!BOARD) return null;
+    var all = (BOARD.opportunities || []).concat(BOARD.locked || []);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].code && String(all[i].code).toUpperCase() === code) {
+        return { rank: all[i].rank, total: all.length };
+      }
+    }
+    return { rank: null, total: all.length };
+  }
+
+  //  build_card resolves entry / t1 / sl from ONE source and names it in
+  //  levels_source. The extended targets l2 and l3 come from score_stock's own
+  //  ladder, so they only belong beside these three when the source is
+  //  "derived" — otherwise they are a different ladder and are not shown.
+  function moneyBlock(d) {
+    var entry = Number(d.entry), t1 = Number(d.t1), sl = Number(d.sl);
+    if (!(d.setup_valid && entry > 0 && t1 > entry && sl > 0 && sl < entry)) {
+      return '<div class="nosetup"><b>No tradeable setup today</b>' +
+        "We only publish an entry, a target and a stop when they hold together — " +
+        "the stop below the entry, the entry below the target. For " + esc(d.code) +
+        " today they do not, so there is no plan to price. That is an answer too." +
+        "</div>";
+    }
+    var shares = Math.floor(CAP / entry);
+    if (shares < 1) {
+      return '<div class="nosetup"><b>' + esc(d.code) + " costs more than that</b>" +
+        "One share is ৳" + num(entry) + ", so " + bdt(CAP) +
+        " does not buy a single one at the entry. Pick a larger figure above to " +
+        "price this plan." + "</div>";
+    }
+    var cost  = shares * entry;
+    var gain  = (t1 - entry) * shares;
+    var risk  = (entry - sl) * shares;
+    var gainP = (t1 - entry) / entry * 100;
+    var riskP = (entry - sl) / entry * 100;
+    var rr    = isFinite(Number(d.rr)) && Number(d.rr) > 0
+                  ? Number(d.rr) : (t1 - entry) / (entry - sl);
+
+    var extra = "";
+    if (d.levels_source === "derived" && Number(d.l2) > t1 && Number(d.l3) > Number(d.l2)) {
+      extra = '<div class="g"><div class="k">If it runs on</div><div class="v">' +
+        bdt((Number(d.l3) - entry) * shares) + "</div></div>";
+    }
+
+    return '<div class="money">' +
+      '<div class="hl"><span class="big">+' + bdt(gain) + "</span>" +
+      '<span class="cond">if ' + esc(d.code) + " reaches <b>৳" + num(t1) +
+      "</b> from an entry at <b>৳" + num(entry) + "</b> — " + num(gainP, 1) +
+      "% — on " + bdt(cost) + " of stock. Typical window <b>" +
+      esc(d.tf || "1–3 days") + "</b>.</span></div>" +
+      '<div class="grid">' +
+        '<div class="g"><div class="k">Shares</div><div class="v">' +
+          shares.toLocaleString("en-IN") + "</div></div>" +
+        '<div class="g"><div class="k">You put in</div><div class="v">' +
+          bdt(cost) + "</div></div>" +
+        '<div class="g"><div class="k">If the stop hits</div>' +
+          '<div class="v risk">' + bdt(-risk) + " <span style=\"opacity:.7\">(" +
+          num(riskP, 1) + "%)</span></div></div>" +
+        '<div class="g"><div class="k">Reward vs risk</div><div class="v">' +
+          num(rr, 1) + " : 1</div></div>" + extra +
+      "</div>" +
+      '<div class="fine"><b>This is arithmetic, not a forecast.</b> ৳' + num(t1) +
+      " is where this plan takes profit and ৳" + num(sl) +
+      " is where it accepts it was wrong; neither is a prediction that the price " +
+      "will get there. Figures are before brokerage commission, taxes and " +
+      "slippage, and assume the whole position fills at ৳" + num(entry) + "." +
+      "</div></div>";
+  }
+
+  //  `buy_zone` comes from score_stock's own ladder while `entry` may come from
+  //  the picks ladder — on BATBC today they read ৳244.39-৳246.83 and ৳249.45.
+  //  Printing them together would put two different ladders in one strip. Show
+  //  the zone only when its upper bound IS the entry.
+  function zoneFor(d, entry) {
+    var bz = d.buy_zone ? String(d.buy_zone) : "";
+    if (!bz) return "";
+    var parts = bz.replace(/৳/g, "").split("-");
+    var top = parts.length === 2 ? Number(parts[1]) : NaN;
+    return (isFinite(top) && Math.abs(top - entry) < 0.011) ? bz : "";
+  }
+
+  function planStrip(d) {
+    var entry = Number(d.entry), t1 = Number(d.t1), sl = Number(d.sl);
+    if (!(d.setup_valid && entry > 0 && t1 > entry && sl > 0 && sl < entry)) return "";
+    var bz = zoneFor(d, entry);
+    return '<div class="plan">' +
+      '<div class="lv e"><div class="k">Entry</div><div class="p">৳' + num(entry) +
+        '</div><div class="d">' + (bz ? esc(bz) : "buy at or below") + "</div></div>" +
+      '<div class="lv t"><div class="k">Target</div><div class="p">৳' + num(t1) +
+        '</div><div class="d">+' + num((t1 - entry) / entry * 100, 1) + "%</div></div>" +
+      '<div class="lv s"><div class="k">Stop loss</div><div class="p">৳' + num(sl) +
+        '</div><div class="d">−' + num((entry - sl) / entry * 100, 1) + "%</div></div>" +
+      "</div>";
+  }
+
+  //  An entry below the market is not a trade you can take this morning.
+  //  RELIANCINS today: entry ৳113.01, last traded ৳115.80. Pricing that as if
+  //  it were live would be the single fastest way to lose a subscriber.
+  function triggerLine(d) {
+    var entry = Number(d.entry), ltp = Number(d.ltp);
+    if (!(d.setup_valid && entry > 0 && ltp > 0)) return "";
+    var gap = (ltp - entry) / entry * 100;
+    if (gap > 0.5) {
+      return '<div class="trig wait"><b>Not live yet.</b> ' + esc(d.code) +
+        " last traded at ৳" + num(ltp) + ", which is " + num(gap, 1) +
+        "% above the entry. The figures below assume you get filled at ৳" +
+        num(entry) + " — that needs a pullback, and it may never come.</div>";
+    }
+    return '<div class="trig live"><b>Live at today’s price.</b> ৳' + num(ltp) +
+      " is at or below the ৳" + num(entry) + " entry.</div>";
+  }
+
+  function render(d) {
+    LAST = d;
+    var pc = Number(d.pct != null ? d.pct : d.chg);
+    var band = bandOf(d.score);
+    var bars = (d.bars || []).map(function (b) {
+      var got = Number(b[1]), max = Number(b[2]) || 1;
+      return '<div class="bar"><span class="bn">' + esc(b[0]) + "</span>" +
+             '<span class="bt"><span class="bf" style="width:' +
+             Math.max(2, Math.round(got / max * 100)) + "%;background:" +
+             esc(b[3] || "#0D1F3C") + '"></span></span>' +
+             '<span class="bv">' + got + "/" + max + "</span></div>";
+    }).join("");
+
+    var r = rankOf(String(d.code || "").toUpperCase());
+    var headline;
+    if (r && r.rank) {
+      headline = "<b>Ranked " + r.rank + " of " + r.total + "</b> on today's board" +
+                 (r.rank > 1 ? " — " + (r.rank - 1) + " scored higher." : ".");
+    } else if (r) {
+      headline = "<b>Not on today's ranked board.</b> " + r.total +
+                 " stocks scored above it.";
+    } else {
+      headline = "";
+    }
+
+    //  The confluence is a caveat, never a second verdict.
+    var bull = parseInt(String(d.confluence || "").charAt(0), 10);
+    var fromEngine = d.score_source === "tech_engine";
+    var caveat = "";
+    if (isFinite(bull) || !fromEngine) {
+      caveat = '<div class="caveat"><span class="dot"></span><span>' +
+        (fromEngine
+          ? "The score above is the technical engine's. "
+          : "<b>The technical engine has not scored this stock today</b>, so the " +
+            "number above is our fallback estimate from price and volume alone. ") +
+        (isFinite(bull)
+          ? "Separately, <b>" + esc(d.confluence || "") + "</b> — " +
+            (CONFLUENCE_SAY[bull] || "") + ". Two readings of the same stock; " +
+            "they will not always point the same way."
+          : "") + "</span></div>";
+    }
+
+    el("out").innerHTML =
+      '<div class="card"><div class="top">' +
+        '<div class="who"><div class="code">' + esc(d.code) + "</div>" +
+        '<div class="meta">' + esc(d.sector && d.sector !== "—" ? d.sector + " · " : "") +
+        "Category " + esc(d.cat || "—") + " · as of " + esc(d.as_of || "today") +
+        "</div></div>" +
+        '<div class="px"><div class="n">৳' + num(d.ltp) + "</div>" +
+        '<div class="c ' + (pctOK(pc) ? (pc > 0 ? "up" : pc < 0 ? "dn" : "") : "") + '">' +
+        (pctOK(pc) ? (pc > 0 ? "+" : "") + num(pc, 2) + "%" : "—") + "</div></div>" +
+      "</div>" +
+      planStrip(d) +
+      triggerLine(d) +
+      moneyBlock(d) +
+      '<div class="vd"><span class="score ' + band + '">' +
+        Math.round(Number(d.score) || 0) + "<small>score</small></span>" +
+        '<span class="say">' + headline + "</span></div>" +
+      (bars ? '<div class="bars">' + bars + "</div>" : "") +
+      caveat + "</div>";
+  }
+
+  //  The answer replaces the six boxes in the same grid row. Sending the
+  //  visitor to the bottom of the page to read it undoes the one-screen point.
+  function showPanel(on) {
+    el("panel").className = on ? "panel on" : "panel";
+    el("boxes").className = on ? "boxes off" : "boxes";
+  }
+
+  function ask(code) {
+    code = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!code) return;
+    el("code").value = code;
+    el("go").disabled = true;
+    LAST = null;
+    showPanel(true);
+    el("out").innerHTML = '<div class="load">Working out the plan for ' +
+      esc(code) + "…</div>";
+    getJSON("/api/analyse/" + encodeURIComponent(code))
+      .then(function (d) {
+        if (!d || d.status === "error" || !d.code) throw new Error("no data");
+        render(d);
+      })
+      .catch(function (e) {
+        el("out").innerHTML =
+          '<div class="err"><b>' + esc(code) + " — nothing to show</b>" +
+          (e && e.status === 403
+            ? "This lookup is temporarily unavailable. Please try again shortly."
+            : "We have no analysis for that ticker today. Check the spelling, or " +
+              "try one of the examples above — it may not have traded, or it may " +
+              "not be a DSE code.") + "</div>";
+      })
+      .then(function () { el("go").disabled = false; });
+  }
+
+  el("ask").addEventListener("submit", function (e) {
+    e.preventDefault(); ask(el("code").value);
+  });
+  el("back").addEventListener("click", function () {
+    showPanel(false); LAST = null; el("out").innerHTML = ""; el("code").value = "";
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".eg button"), function (b) {
+    b.addEventListener("click", function () { ask(b.dataset.c); });
+  });
+
+
+  /* ── the lock opens the door, it does not just say "locked" ─────────── */
+  //  Every locked thing on this page leads to the same two choices: sign in if
+  //  you have an account, create one if you do not. A lapsed trial or a lapsed
+  //  subscription is the same door — signing in is where renewing happens, so
+  //  the modal says so rather than sending them somewhere else.
+  function openAuth() {
+    el("auth").className = "modal on";
+  }
+  function closeAuth() {
+    el("auth").className = "modal";
+  }
+  el("boxes").addEventListener("click", function (e) {
+    var t = e && e.target;
+    var hit = t && t.closest ? t.closest("[data-lock]") : null;
+    if (!hit) return;
+    if (e.preventDefault) e.preventDefault();
+    openAuth();
+  });
+  el("auth-x").addEventListener("click", closeAuth);
+  el("auth").addEventListener("click", function (e) {
+    //  a click on the backdrop, not inside the box, closes it
+    if (e && e.target && e.target.id === "auth") closeAuth();
+  });
+  el("auth-new").addEventListener("click", function () {
+    closeAuth();
+    try { el("r-name").focus(); } catch (x) {}
+  });
+  try {
+    document.addEventListener("keydown", function (e) {
+      if (e && (e.key === "Escape" || e.keyCode === 27)) closeAuth();
+    });
+  } catch (x) {}
+
+  /* ── registration ───────────────────────────────────────────────────── */
+  //  The same endpoint /shell.html uses, so there is one account system and
+  //  one password path — this is a second door into the same room, not a
+  //  second room. On success the token is stored under the key auth.js reads
+  //  ("dse_token") and the visitor lands in the dashboard already signed in.
+  function postJSON(path, body) {
+    return fetch(API + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          var e = new Error(d && d.detail ? d.detail : "http " + r.status);
+          e.status = r.status; throw e;
+        }
+        return d;
+      });
+    });
+  }
+
+  var regEl = el("reg");
+  if (regEl && regEl.addEventListener) {
+    regEl.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var msg = el("r-msg");
+      var name = String(el("r-name").value || "").trim();
+      var mail = String(el("r-email").value || "").trim().toLowerCase();
+      var pass = String(el("r-pass").value || "");
+      var phone = String(el("r-phone").value || "").trim();
+
+      msg.className = "jmsg";
+      if (!name) { msg.textContent = "Please enter your name."; return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+        msg.textContent = "That email address does not look right."; return;
+      }
+      if (pass.length < 8) {
+        msg.textContent = "Please choose a password of at least 8 characters.";
+        return;
+      }
+
+      el("r-go").disabled = true;
+      msg.textContent = "Creating your account…";
+      postJSON("/api/auth/register",
+               { name: name, email: mail, password: pass, phone: phone })
+        .then(function (d) {
+          if (d && d.token) {
+            try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
+          }
+          msg.className = "jmsg ok";
+          msg.textContent = "Account created — opening your dashboard…";
+          try { window.location.href = "/shell.html"; } catch (x) {}
+        })
+        .catch(function (err) {
+          msg.className = "jmsg";
+          msg.textContent = (err && err.message)
+            ? String(err.message)
+            : "Could not create the account. Please try again shortly.";
+          el("r-go").disabled = false;
+        });
+    });
+  }
+
+  /* ── social links ───────────────────────────────────────────────────── */
+  //  Paste the two page URLs here and they appear in the footer. A link is
+  //  rendered only when its URL is set, so an empty value shows nothing rather
+  //  than a dead link.
+  //  The LinkedIn link is the PUBLIC company page. The administrator console
+  //  URL for the same page resolves only for a page admin, so putting it here
+  //  would show every other visitor a permission error.
+  var SOCIAL = {
+    facebook: "https://www.facebook.com/dsepulse",
+    linkedin: "https://www.linkedin.com/company/146100974/"
+  };
+  (function () {
+    var host = el("social");
+    if (!host) return;
+    var ICON = {
+      facebook: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>',
+      linkedin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.75-1.95C20.4 8.75 21 11 21 14v7h-4v-6.2c0-1.5 0-3.4-2.1-3.4s-2.4 1.6-2.4 3.3V21H9z"/></svg>'
+    };
+    var LABEL = { facebook: "Facebook", linkedin: "LinkedIn" };
+    var out = "";
+    ["facebook", "linkedin"].forEach(function (k) {
+      var url = String(SOCIAL[k] || "").trim();
+      if (!/^https:\/\//.test(url)) return;
+      out += '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+             ICON[k] + LABEL[k] + "</a>";
+    });
+    host.innerHTML = out;
+  })();
+
+})();
+</script>

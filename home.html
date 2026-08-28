@@ -517,6 +517,62 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   cursor:pointer}
 .mx:hover{background:var(--cream);color:var(--ink)}
 
+
+/* ── the one-line answer to "what is this" ─────────────────────────── */
+.lede1{max-width:62ch;margin:0 auto 14px;color:var(--ink2);font-size:15px;
+  line-height:1.55}
+.lede1 b{color:var(--ink);font-weight:600}
+
+/* ── what / why / cost, read in one glance ─────────────────────────── */
+.qa{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.q{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:19px 20px}
+.qk{display:inline-block;font:600 10px/1 var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold-d);background:var(--gold-bg);
+  border:1px solid var(--gold-bd);border-radius:4px;padding:6px 8px;
+  margin-bottom:12px}
+.q p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.62}
+.q p b{color:var(--ink);font-weight:600}
+.astrip{display:grid;gap:12px;margin-top:16px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.astrip div{background:var(--navy);color:#fff;border-radius:11px;padding:15px 16px}
+.astrip b{display:block;font:700 26px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--gold);margin-bottom:7px}
+.astrip span{font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.45;
+  display:block}
+.anote{margin:16px 0 0;font-size:12.5px;color:var(--ink3);max-width:82ch;
+  line-height:1.6}
+
+/* ── social: the real marks, at their own colours ──────────────────── */
+.social a{padding:9px 12px;gap:8px;font-size:12.5px}
+.social svg{width:17px;height:17px}
+.social a.facebook svg{fill:#1877F2}
+.social a.linkedin svg{fill:#0A66C2}
+.social a:hover{background:var(--cream)}
+
+/* ── phones: two boxes a row, so the grid still reads as a grid ────── */
+@media (min-width:400px) and (max-width:719px){
+  .boxes{grid-template-columns:repeat(2,1fr);gap:9px}
+  .bx{padding:12px 12px;gap:9px;border-radius:11px}
+  .bx .bh .t{font-size:8.5px;letter-spacing:.08em}
+  .bx .bh .tr{font-size:7.5px;padding:3px 4px}
+  .bx .nm{gap:6px}
+  .bx .nm .bl,.bx .nm .rl{font-size:15px}
+  .bx .nm .sc3{font-size:10.5px;padding:4px 5px}
+  .lkchip{font-size:0;gap:0;padding:5px 6px}
+  .ladder{gap:7px}
+  .lr{grid-template-columns:38px 1fr auto;gap:6px}
+  .lr .k2{font-size:7.5px;letter-spacing:.06em}
+  .lr .p2{font-size:12.5px}
+  .lr .d2{font-size:9.5px}
+  .bfoot{gap:6px;padding-top:8px;font-size:10.5px}
+  .bfoot s{margin-left:0;width:100%}
+  .ev2{gap:7px}
+  .ev2 div{font-size:11px}
+  .ev2 div b{font-size:11.5px}
+  .bx .note2{font-size:10.5px;padding-top:7px}
+}
+
 /* ── what the engines found ────────────────────────────────────────────── */
 .tools-sec{padding:8px 0 56px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
@@ -614,6 +670,9 @@ footer .disc{max-width:76ch;line-height:1.65}
 
   <div class="wrap top">
     <h1>Six engines. Six trades. One of them is yours to check.</h1>
+    <p class="lede1">DSE Pulse scores every share on the Dhaka exchange after the
+    close and commits to an answer — <b>where to buy, where to take profit,
+    where to get out</b>. Free on any ticker you name.</p>
     <form class="ask" id="ask" autocomplete="off">
       <input id="code" name="code" placeholder="Or type your own ticker — e.g. BATBC"
              maxlength="20" aria-label="Stock ticker" spellcheck="false">
@@ -653,30 +712,35 @@ footer .disc{max-width:76ch;line-height:1.65}
 
 <section class="about" id="about">
   <div class="wrap">
-    <div class="hd"><h2>What DSE Pulse is</h2></div>
-    <div class="acols">
-      <div>
-        <h3>An opinion, not another data portal</h3>
-        <p>Every other Dhaka Stock Exchange site will hand you a price, a chart
-        and an indicator, and leave the conclusion to you. DSE Pulse runs its own
-        engines over the whole exchange after the close and commits to an answer:
-        a score, a buy zone, a target and a stop. That commitment is the product.</p>
+    <div class="qa">
+      <div class="q">
+        <span class="qk">What is it?</span>
+        <p><b>A verdict on every Dhaka-listed share, refreshed every trading
+        evening.</b> Six engines run in sequence after the close and produce a
+        score, a buy zone, a target and a stop for the stocks that clear them.</p>
       </div>
-      <div>
-        <h3>Built for the retail investor, not the desk</h3>
-        <p>You do not need to read a candlestick chart to use it. Type a ticker
-        and you get the plan in plain numbers — where to buy, where to take
-        profit, where to get out, and what each of those is worth on the money
-        you actually have.</p>
+      <div class="q">
+        <span class="qk">Why use it?</span>
+        <p><b>Every other DSE site gives you data and leaves the decision to
+        you.</b> This one commits to an answer, shows the arithmetic behind it,
+        and prices it on the money you actually have.</p>
       </div>
-      <div>
-        <h3>Honest about what it cannot do</h3>
-        <p>The engines are rule-based arithmetic over past price and volume. They
-        are wrong regularly. We publish the track record in full rather than the
-        good days only, and no figure on this site is a prediction that a price
-        will reach any level.</p>
+      <div class="q">
+        <span class="qk">What does it cost?</span>
+        <p><b>Nothing to start.</b> Any ticker you name is free, forever. The
+        engines' shortlists are ৳499 a month, ৳999 for Pro, and the first seven
+        days are free without a card.</p>
       </div>
     </div>
+    <div class="astrip">
+      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
+      <div><b>5</b><span>tools, run in sequence from 4:35 PM</span></div>
+      <div><b>1</b><span>pick published in full every day, free</span></div>
+      <div><b>7</b><span>days of Pro, no card needed</span></div>
+    </div>
+    <p class="anote">Rule-based arithmetic over past price and volume. It is
+    wrong regularly — the track record is published in full, good days and bad,
+    and nothing here predicts that a price will reach any level.</p>
   </div>
 </section>
 
@@ -902,6 +966,8 @@ footer .disc{max-width:76ch;line-height:1.65}
     BOARD = s;
     el("b-scan").textContent = s.scanned != null ? s.scanned : "—";
     el("b-pos").textContent  = s.positive != null ? s.positive : "—";
+    //  the About strip quotes the same live number, never a hard-coded one
+    el("a-scan").textContent = s.scanned != null ? s.scanned : "—";
   }).catch(function () {});
 
   /* ── capital ────────────────────────────────────────────────────────── */
@@ -1488,8 +1554,9 @@ footer .disc{max-width:76ch;line-height:1.65}
     ["facebook", "linkedin"].forEach(function (k) {
       var url = String(SOCIAL[k] || "").trim();
       if (!/^https:\/\//.test(url)) return;
-      out += '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
-             ICON[k] + LABEL[k] + "</a>";
+      out += '<a class="' + k + '" href="' + esc(url) + '" target="_blank" ' +
+             'rel="noopener noreferrer" aria-label="DSE Pulse on ' + LABEL[k] +
+             '">' + ICON[k] + LABEL[k] + "</a>";
     });
     host.innerHTML = out;
   })();

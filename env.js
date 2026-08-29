@@ -174,9 +174,22 @@
       var go = card.querySelector("#dse-pg-go");
       go.href = href;
       go.onclick = function () {
-        //  Inside the dashboard the tool runs in an iframe, so navigating this
-        //  document would leave the customer looking at a pricing page in a
-        //  little box. Send the TOP window instead.
+        //  Best case: we are a tool running inside the dashboard, and the
+        //  dashboard has a plan pane that can take a payment without the
+        //  customer leaving the screen they are already on. Sending them out
+        //  to the marketing page to buy something is how you lose them.
+        try {
+          if (window.top && window.top !== window &&
+              typeof window.top.openAccountPlan === "function") {
+            window.top.openAccountPlan();
+            if (w.parentNode) w.parentNode.removeChild(w);
+            shown = false;
+            return false;
+          }
+        } catch (e) {}
+        //  Otherwise: this tool was opened on its own, or the shell is an
+        //  older build. Navigate the TOP window, so a page opened in an iframe
+        //  does not leave the customer looking at pricing in a little box.
         try {
           if (window.top && window.top !== window) {
             window.top.location.href =

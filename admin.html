@@ -108,6 +108,29 @@
   </div>
 
   <div class="card">
+    <h2>Referral rewards</h2>
+    <div id="rMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:12px">Invited customers get a discount on
+      their first subscription. Referrers earn one reward per friend who completes a
+      verified payment — rewards add up, but only to the maximum below on any single
+      purchase. Saved values apply to the very next checkout; no deploy is needed.</div>
+    <div class="grid2">
+      <div class="fld"><label>Programme</label>
+        <select id="rEnabled"><option value="1">On</option><option value="0">Off</option></select></div>
+      <div class="fld"><label>Invited customer gets (%)</label><input id="rInv" type="number" step="1"></div>
+      <div class="fld"><label>Reward per referral (%)</label><input id="rUnit" type="number" step="1"></div>
+      <div class="fld"><label>Maximum on one purchase (%)</label><input id="rMax" type="number" step="1"></div>
+      <div class="fld"><label>Reward valid for (days)</label><input id="rDays" type="number" step="1"></div>
+      <div class="fld"><label>Checkout hold (minutes)</label><input id="rHold" type="number" step="1"></div>
+      <div class="fld"><label>Lifetime cap per person (0 = unlimited)</label><input id="rCap" type="number" step="1"></div>
+    </div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveReferral()">Save referral rewards</button>
+    <div class="sub" id="rTerms" style="margin-top:10px"></div>
+    <div class="sub" style="margin-top:8px">Rewards already earned keep the percentage
+      they were earned at — changing a rate here only affects rewards earned from now on.</div>
+  </div>
+
+  <div class="card">
     <h2>Tool visibility</h2>
     <div id="tMsg" class="msg"></div>
     <div id="tools"><div class="sub">Loading…</div></div>
@@ -156,7 +179,7 @@ async function unlock(){
   }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
 }
 function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
-function boot(){loadStats();loadUsers();loadPricing();loadTools()}
+function boot(){loadStats();loadUsers();loadPricing();loadReferral();loadTools()}
 
 async function loadStats(){
   try{
@@ -246,6 +269,40 @@ async function savePricing(){
     if(!r.ok)throw new Error("HTTP "+r.status);
     $("pMsg").textContent="Pricing saved. Hard-refresh the public site to see new prices.";
   }catch(e){$("pMsg").textContent="Failed: "+e.message}
+}
+
+//  Referral rewards. Same shape as savePricing: read the panel, POST one row,
+//  the checkout picks it up on the next call. The BOUNDS ARE ON THE SERVER —
+//  a number field is a suggestion, and a mistyped 100 in the maximum would
+//  quietly make every subscription free.
+async function loadReferral(){
+  try{
+    const r=await fetch(`${API}/api/admin/referral`,{headers:H()});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json(), c=d.referral||{};
+    $("rEnabled").value=c.enabled?"1":"0";
+    $("rInv").value=c.referred_pct; $("rUnit").value=c.unit_pct;
+    $("rMax").value=c.max_discount_pct; $("rDays").value=c.reward_valid_days;
+    $("rHold").value=c.reservation_minutes; $("rCap").value=c.max_rewards_per_user;
+    $("rTerms").textContent="Customers currently see: "+(d.terms_preview||"");
+  }catch(e){ $("rMsg").textContent="Could not load referral settings: "+e.message; }
+}
+
+async function saveReferral(){
+  $("rMsg").textContent="Saving…";
+  const body={enabled:$("rEnabled").value==="1",
+    referred_pct:+$("rInv").value, unit_pct:+$("rUnit").value,
+    max_discount_pct:+$("rMax").value, reward_valid_days:+$("rDays").value,
+    reservation_minutes:+$("rHold").value, max_rewards_per_user:+$("rCap").value};
+  try{
+    const r=await fetch(`${API}/api/admin/referral`,{method:"POST",headers:H(),body:JSON.stringify(body)});
+    const d=await r.json().catch(()=>({}));
+    //  A refusal is the server protecting the revenue, so it is shown in full
+    //  rather than reduced to "failed".
+    if(!r.ok) throw new Error(d.detail||("HTTP "+r.status));
+    $("rMsg").textContent="Saved. The next checkout uses these numbers.";
+    $("rTerms").textContent="Customers now see: "+(d.terms_preview||"");
+  }catch(e){ $("rMsg").textContent="Not saved — "+e.message; }
 }
 
 const TOOLS=[

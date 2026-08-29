@@ -1785,7 +1785,7 @@ async function buildSectors(){
   }
 
   function gateSignin(){ return '<div class="hd-gate"><div class="hd-gate-t">Sign in to track your holdings</div><div class="hd-gate-s">Your portfolio is private to your account \u2014 only you can see it. Sign in to add the stocks you own and follow their live signals.</div><button class="hd-gate-btn" onclick="window.openAuth&&window.openAuth(\'login\')">Sign in</button></div>'; }
-  function gateTrial(msg){ return '<div class="hd-gate"><div class="hd-gate-t">Your free trial has ended</div><div class="hd-gate-s">'+esc(msg||"Upgrade to keep using Holdings.")+'</div><button class="hd-gate-btn" onclick="window.navTo?navTo(\'pricing-section\'):0">View plans</button></div>'; }
+  function gateTrial(msg){ return '<div class="hd-gate"><div class="hd-gate-t">Your free trial has ended</div><div class="hd-gate-s">'+esc(msg||"Upgrade to keep using Holdings.")+'</div><button class="hd-gate-btn" onclick="window.openAccountPlan&&window.openAccountPlan()">See plans</button></div>'; }
 
   // Recommendation for a stock you ALREADY hold. Fuses the six engines + conviction
   // with your trade levels. If the engines reject a name you hold, it says exit/reduce
@@ -2177,6 +2177,22 @@ function openFirstVisibleTool(){
     border:1.5px solid var(--border);background:var(--white);color:var(--text2)}
   .ac-btn:hover{border-color:var(--navy)}
   .ac-btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+  .ac-per{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 16px}
+  .ac-per .ac-pb{font:600 12.5px/1 var(--sans,system-ui);padding:10px 14px;
+    border-radius:8px;border:1.5px solid var(--border);background:var(--white);
+    color:var(--text2);cursor:pointer;display:flex;gap:7px;align-items:baseline}
+  .ac-per .ac-pb em{font:600 10px/1 var(--mono,ui-monospace);font-style:normal;
+    color:var(--green,#0E6B45)}
+  .ac-per .ac-pb.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .ac-per .ac-pb.on em{color:#C9A227}
+  .ac-plans{display:grid;gap:10px;grid-template-columns:1fr}
+  @media(min-width:560px){.ac-plans{grid-template-columns:1fr 1fr}}
+  .ac-plan{border:1px solid var(--border);border-radius:10px;padding:16px 17px;
+    background:var(--white);display:grid;gap:9px;align-content:start}
+  .ac-plan b{font:600 10px/1 var(--mono,ui-monospace);letter-spacing:.13em;
+    color:var(--text3)}
+  .ac-plan i{font:700 23px/1 var(--mono,ui-monospace);font-style:normal;
+    color:var(--navy);font-variant-numeric:tabular-nums}
   .ac-share{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .ac-share .ac-btn{text-decoration:none;display:inline-block}
   .ac-fine{margin:14px 0 0;font-size:12px;line-height:1.55;color:var(--text3);
@@ -2211,56 +2227,113 @@ function openFirstVisibleTool(){
   //  Cancelling does NOT end access. It stops the renewal and leaves the
   //  period already paid for intact — which is what "cancel anytime" has to
   //  mean if the promise on the pricing page is to be true.
+
+  /*  One way in to the plan pane, so every "see plans" in the product lands
+      somewhere that can actually take a payment. Before this, the holdings
+      gate sent an expired trial to the landing page's pricing section, whose
+      three buttons do nothing but reopen the dashboard.  */
+  window.openAccountPlan = function () {
+    try {
+      if (window.showView) window.showView("dashboard");
+      var rail = document.querySelector('.cat-btn[data-cat="account"]');
+      if (rail) rail.click();
+      var tab = document.querySelector('.cat-panel[data-cat="account"] .tab');
+      if (tab) tab.click();
+    } catch (e) {}
+  };
+
   window.buildPlanPane = async function () {
     var host = document.getElementById("plan-root");
     if (!host) return;
     if (!tok()) { host.innerHTML = gate("Your plan and billing are private to your account."); return; }
     host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your plan…</p></div></div>';
 
-    var r = await get("/api/subscription");
+    var r  = await get("/api/subscription");
     if (!r.ok || !r.data) {
       host.innerHTML = '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
                        '<p>Could not load your plan just now. Please try again shortly.</p></div></div>';
       return;
     }
-    var d = r.data, sub = d.subscription || null;
-    var plan = String(d.effective_plan || d.plan || "free");
+    //  Prices come from the server, never from this page. /api/config is the
+    //  same row the admin Pricing card writes.
+    var cf  = await get("/api/config");
+    var rf  = await get("/api/referral");
+    var d   = r.data, sub = d.subscription || null;
+    var raw = String(d.plan || "free");
+    var eff = String(d.effective_plan || raw);
     var cancelled = !!(sub && (sub.cancelled || sub.cancelled_at));
     var until = sub && sub.expires_at ? String(sub.expires_at).slice(0, 10) : null;
 
-    var body =
+    //  A trial is Pro access on a free plan. Showing "PRO" here and "you are on
+    //  the free plan" underneath — which is what this pane used to do — is a
+    //  contradiction the customer has to resolve for us.
+    var onTrial = (raw === "free" && eff !== "free" && !sub);
+    var label   = onTrial ? "FREE TRIAL" : eff.toUpperCase();
+
+    var head =
       '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
       '<span class="ac-k">Current</span><div class="ac-row">' +
-        '<div><b>' + esc(plan.toUpperCase()) + '</b><span>plan</span></div>' +
+        '<div><b>' + esc(label) + '</b><span>' +
+          (onTrial ? "full access while it lasts" : "plan") + '</span></div>' +
         (sub && sub.days_left != null
            ? '<div><b>' + esc(sub.days_left) + '</b><span>days remaining</span></div>' : '') +
         (until ? '<div><b>' + esc(until) + '</b><span>' +
                  (cancelled ? 'access ends' : 'renews') + '</span></div>' : '') +
       '</div>';
 
-    if (plan === "free" || !sub) {
-      body += '<p>You are on the free plan. Upgrade to unlock the full engine output.</p>' +
-              '<button class="ac-btn primary" onclick="window.navTo?navTo(\'pricing-section\'):0">' +
-              'See plans</button>';
+    if (onTrial) {
+      head += '<p>Your trial gives you everything. When it ends you keep the free ' +
+              'tools — choose a plan below to keep the rest.</p>';
+    } else if (!sub) {
+      head += '<p>You are on the free plan. Choose a plan below to unlock the ' +
+              'full engine output.</p>';
     } else if (cancelled) {
-      body += '<div class="ac-have"><b>Your subscription will not renew.</b> You keep ' +
+      head += '<div class="ac-have"><b>Your subscription will not renew.</b> You keep ' +
               'everything you have paid for until ' + esc(until || "the end of the period") +
               '. You can turn renewal back on before then.</div>' +
               '<button class="ac-btn primary" id="ac-resume">Resume my subscription</button>' +
               '<p class="ac-note" id="ac-msg"></p>';
     } else {
-      body += '<p>Cancel anytime. Cancelling stops the renewal — it does not cut ' +
+      head += '<p>Cancel anytime. Cancelling stops the renewal — it does not cut ' +
               'your access short. You keep the plan until ' + esc(until || "it expires") + '.</p>' +
               '<button class="ac-btn" id="ac-cancel">Cancel renewal</button>' +
               '<p class="ac-note" id="ac-msg"></p>';
     }
-    host.innerHTML = body + '</div></div>';
+    head += "</div>";
 
+    /* ── buy / renew, without leaving the dashboard ────────────────────────
+       This used to send people to the landing page's pricing section, which
+       has no payment button on it at all — its three buttons just reopen the
+       dashboard. So a trial user on day six had no way to pay from the one
+       screen they actually use. They are here; the checkout should be too. */
+    var PR = (cf.ok && cf.data && cf.data.pricing) || null;
+    if (PR) {
+      var periods = [["monthly", "Monthly"], ["quarterly", "Quarterly"],
+                     ["annual", "Annual"]].filter(function (p) { return PR[p[0]]; });
+      var ent = (rf.ok && rf.data && rf.data.usable_pct) || 0;
+
+      head +=
+        '<div class="ac-card"><h3>' + (sub ? "Renew or change plan" : "Choose a plan") + "</h3>" +
+        (ent ? '<div class="ac-have"><b>' + esc(ent) + '% off is waiting.</b> It is ' +
+               'applied by the server when you check out — the exact amount is shown ' +
+               'on the payment page.</div>' : "") +
+        '<div class="ac-per" id="ac-per">' +
+          periods.map(function (p, i) {
+            var lab = (PR[p[0]] && PR[p[0]].label) || "";
+            return '<button type="button" class="ac-pb' + (i === 0 ? " on" : "") +
+                   '" data-p="' + p[0] + '">' + p[1] +
+                   (lab ? '<em>' + esc(lab) + "</em>" : "") + "</button>";
+          }).join("") +
+        "</div><div class='ac-plans' id='ac-plans'></div>" +
+        '<p class="ac-note" id="ac-buymsg"></p></div>';
+    }
+    host.innerHTML = head + "</div>";
+
+    /* ── cancel / resume ──────────────────────────────────────────────── */
     var cancel = document.getElementById("ac-cancel");
     var resume = document.getElementById("ac-resume");
     var msg    = document.getElementById("ac-msg");
     if (cancel) cancel.onclick = async function () {
-      //  Asked once, in plain words, before anything is sent.
       if (!window.confirm("Stop your subscription from renewing? You keep access " +
                           "until " + (until || "the end of the period") + ".")) return;
       cancel.disabled = true; msg.className = "ac-note"; msg.textContent = "Cancelling…";
@@ -2276,6 +2349,62 @@ function openFirstVisibleTool(){
       else { resume.disabled = false; msg.textContent =
              (res.data && res.data.detail) || "Could not resume just now."; }
     };
+
+    /* ── the plan cards ───────────────────────────────────────────────── */
+    if (!PR) return;
+    var period = (document.querySelector("#ac-per .ac-pb.on") || {}).dataset
+                 ? document.querySelector("#ac-per .ac-pb.on").dataset.p : "monthly";
+
+    function taka(n) {
+      //  Formatting only. The FIGURE is the server's — this page never works
+      //  out a discount, a saving or a total.
+      return "৳" + Number(n).toLocaleString("en-US");
+    }
+    function drawPlans() {
+      var box = document.getElementById("ac-plans");
+      if (!box) return;
+      var row = PR[period] || {};
+      box.innerHTML = ["premium", "pro"].filter(function (p) { return row[p]; })
+        .map(function (p) {
+          var mine = (eff === p && sub && !cancelled);
+          return '<div class="ac-plan"><b>' + p.toUpperCase() + "</b>" +
+            "<i>" + taka(row[p]) + "</i>" +
+            '<button class="ac-btn primary" data-plan="' + p + '">' +
+            (mine ? "Extend " + p.charAt(0).toUpperCase() + p.slice(1)
+                  : "Choose " + p.charAt(0).toUpperCase() + p.slice(1)) + "</button></div>";
+        }).join("");
+      [].slice.call(box.querySelectorAll("button[data-plan]")).forEach(function (b) {
+        b.onclick = function () { startPayment(b.dataset.plan, period, b); };
+      });
+    }
+    [].slice.call(document.querySelectorAll("#ac-per .ac-pb")).forEach(function (b) {
+      b.onclick = function () {
+        [].slice.call(document.querySelectorAll("#ac-per .ac-pb"))
+          .forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        period = b.dataset.p;
+        drawPlans();
+      };
+    });
+    drawPlans();
+
+    async function startPayment(plan, per, btn) {
+      var m = document.getElementById("ac-buymsg");
+      btn.disabled = true; btn.textContent = "Opening payment…";
+      m.className = "ac-note"; m.textContent = "";
+      var res = await get("/api/payment/init",
+                          { method: "POST", body: JSON.stringify({ plan: plan, period: per }) });
+      if (res.ok && res.data && res.data.gateway_url) {
+        //  Hand over to SSLCommerz. Nothing about the amount is decided here —
+        //  the server priced it and the gateway is told by the server.
+        window.location.href = res.data.gateway_url;
+        return;
+      }
+      btn.disabled = false;
+      drawPlans();
+      m.textContent = (res.data && res.data.detail) ||
+                      "Could not start the payment. Please try again shortly.";
+    }
   };
 
   /* ── Referral Center ─────────────────────────────────────────────────── */

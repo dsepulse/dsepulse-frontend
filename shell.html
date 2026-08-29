@@ -701,6 +701,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="cat-btn" data-cat="tech" onclick="selectCat('tech')"><i class="ti ti-chart-line" aria-hidden="true"></i>Technical Analysis</div>
       <div class="cat-btn" data-cat="portfolio" onclick="selectCat('portfolio')"><i class="ti ti-briefcase" aria-hidden="true"></i>Portfolio</div>
       <div class="cat-btn" data-cat="tools" onclick="selectCat('tools')"><i class="ti ti-tool" aria-hidden="true"></i>Tools</div>
+      <div class="cat-btn" data-cat="account" onclick="selectCat('account')"><i class="ti ti-user" aria-hidden="true"></i>Account</div>
     </div>
     <div class="dash-main">
     <div class="tabs">
@@ -730,12 +731,18 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
         <div class="tab" onclick="openTool('/calculator.html',this)">Calculator</div>
       </div>
+      <div class="cat-panel" data-cat="account" style="display:none">
+        <div class="tab" onclick="switchDashTab('plan',this)">My plan</div>
+        <div class="tab" onclick="switchDashTab('refer',this)">Refer a friend</div>
+      </div>
     </div>
     <div class="dash-content">
       <iframe id="tool-frame" style="display:none"></iframe>
     <div id="dt-holdings" style="display:none">
       <div id="hold-root"><!-- My Holdings renders here (live, per-user) --></div>
     </div>
+    <div id="dt-plan"  style="display:none"><div id="plan-root"></div></div>
+    <div id="dt-refer" style="display:none"><div id="refer-root"></div></div>
     </div>
     </div>
   </div>
@@ -981,10 +988,11 @@ function showView(v){
 
 function switchDashTab(t,el){
   var __f=document.getElementById('tool-frame'); if(__f)__f.style.display='none';
-  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings','plan','refer'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors};
+  const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors,
+             plan:window.buildPlanPane,refer:window.buildReferPane};
   if(fns[t]){try{fns[t]();}catch(e){}}
 }
 function openTool(url,el){
@@ -2127,6 +2135,259 @@ function openFirstVisibleTool(){
     if(m){ openTool(m[1], tabs[i]); return; }
   }
 }
+</script>
+<!-- ══ ACCOUNT: the plan, and the Referral Center ═══════════════════════════
+     Two panes behind the Account rail item. Both are signed-in only, which is
+     the point: the landing page sells to strangers and carries none of this.
+
+     Every figure here is READ from the server. The page never works out what a
+     discount is worth, never adds up what a referral earned, and never decides
+     whether one applies — a client that calculates money is a client that can
+     be argued with. It renders what /api/referral and /api/subscription say.
+-->
+<style>
+  .ac{max-width:760px;font-family:var(--sans,inherit)}
+  .ac-card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+    padding:22px 24px;margin-bottom:14px}
+  .ac-card h3{margin:0 0 4px;font-family:var(--serif);font-size:19px;color:var(--navy)}
+  .ac-card p{margin:0 0 16px;font-size:13.5px;color:var(--text2);line-height:1.6;max-width:56ch}
+  .ac-k{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--text3);display:block;margin-bottom:9px}
+  .ac-row{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:baseline;margin-bottom:16px}
+  .ac-row div{min-width:0}
+  .ac-row b{display:block;font:700 20px/1 var(--mono);font-variant-numeric:tabular-nums;
+    color:var(--navy);margin-bottom:5px}
+  .ac-row span{font-size:11.5px;color:var(--text3)}
+  .ac-link{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
+  .ac-link input{flex:1 1 auto;min-width:0;font:600 12.5px/1 var(--mono);padding:12px;
+    border-radius:8px;border:1.5px solid var(--border);background:var(--white);color:var(--text)}
+  .ac-link button{font:600 13px/1 var(--sans);padding:12px 16px;border-radius:8px;border:0;
+    background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap}
+  .ac-note{margin:0;font-size:12.5px;color:var(--text3);min-height:1px}
+  .ac-note.ok{color:var(--green)}
+  .ac-have{background:var(--green-bg,#ECFDF5);border:1px solid var(--green-border,#A7F3D0);
+    border-radius:9px;padding:13px 15px;font-size:13.5px;line-height:1.55;margin-bottom:14px}
+  .ac-have b{color:var(--green)}
+  .ac-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .ac-steps li{display:flex;gap:10px;align-items:flex-start;font-size:13px;
+    color:var(--text2);line-height:1.55}
+  .ac-steps li b{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--navy);
+    color:#fff;font:600 10px/20px var(--mono);text-align:center}
+  .ac-btn{font:600 13px/1 var(--sans);padding:11px 16px;border-radius:8px;cursor:pointer;
+    border:1.5px solid var(--border);background:var(--white);color:var(--text2)}
+  .ac-btn:hover{border-color:var(--navy)}
+  .ac-btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+  .ac-share{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .ac-share .ac-btn{text-decoration:none;display:inline-block}
+  .ac-fine{margin:14px 0 0;font-size:12px;line-height:1.55;color:var(--text3);
+    padding-top:12px;border-top:1px solid var(--border)}
+</style>
+<script>
+(function () {
+  var API = (window.DSEEnv ? window.DSEEnv.apiBase
+             : "https://dsepulse-backend-production.up.railway.app");
+  function tok(){ try { return localStorage.getItem("dse_token") || ""; } catch(e){ return ""; } }
+  function esc(v){ return String(v == null ? "" : v)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+  async function get(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ "Content-Type": "application/json",
+                                   "Authorization": "Bearer " + tok() }, opts.headers || {});
+    var r, j = null;
+    try { r = await fetch(API + path, opts); } catch (e) { return { ok:false, data:null }; }
+    try { j = await r.json(); } catch (e) {}
+    return { ok: r.ok, status: r.status, data: j };
+  }
+
+  function gate(what) {
+    return '<div class="ac"><div class="ac-card"><h3>Sign in</h3>' +
+           '<p>' + esc(what) + '</p>' +
+           '<button class="ac-btn primary" onclick="window.openAuth&&window.openAuth(\'login\')">' +
+           'Sign in</button></div></div>';
+  }
+
+  /* ── My plan ─────────────────────────────────────────────────────────── */
+  //  Cancelling does NOT end access. It stops the renewal and leaves the
+  //  period already paid for intact — which is what "cancel anytime" has to
+  //  mean if the promise on the pricing page is to be true.
+  window.buildPlanPane = async function () {
+    var host = document.getElementById("plan-root");
+    if (!host) return;
+    if (!tok()) { host.innerHTML = gate("Your plan and billing are private to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your plan…</p></div></div>';
+
+    var r = await get("/api/subscription");
+    if (!r.ok || !r.data) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
+                       '<p>Could not load your plan just now. Please try again shortly.</p></div></div>';
+      return;
+    }
+    var d = r.data, sub = d.subscription || null;
+    var plan = String(d.effective_plan || d.plan || "free");
+    var cancelled = !!(sub && (sub.cancelled || sub.cancelled_at));
+    var until = sub && sub.expires_at ? String(sub.expires_at).slice(0, 10) : null;
+
+    var body =
+      '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
+      '<span class="ac-k">Current</span><div class="ac-row">' +
+        '<div><b>' + esc(plan.toUpperCase()) + '</b><span>plan</span></div>' +
+        (sub && sub.days_left != null
+           ? '<div><b>' + esc(sub.days_left) + '</b><span>days remaining</span></div>' : '') +
+        (until ? '<div><b>' + esc(until) + '</b><span>' +
+                 (cancelled ? 'access ends' : 'renews') + '</span></div>' : '') +
+      '</div>';
+
+    if (plan === "free" || !sub) {
+      body += '<p>You are on the free plan. Upgrade to unlock the full engine output.</p>' +
+              '<button class="ac-btn primary" onclick="window.navTo?navTo(\'pricing-section\'):0">' +
+              'See plans</button>';
+    } else if (cancelled) {
+      body += '<div class="ac-have"><b>Your subscription will not renew.</b> You keep ' +
+              'everything you have paid for until ' + esc(until || "the end of the period") +
+              '. You can turn renewal back on before then.</div>' +
+              '<button class="ac-btn primary" id="ac-resume">Resume my subscription</button>' +
+              '<p class="ac-note" id="ac-msg"></p>';
+    } else {
+      body += '<p>Cancel anytime. Cancelling stops the renewal — it does not cut ' +
+              'your access short. You keep the plan until ' + esc(until || "it expires") + '.</p>' +
+              '<button class="ac-btn" id="ac-cancel">Cancel renewal</button>' +
+              '<p class="ac-note" id="ac-msg"></p>';
+    }
+    host.innerHTML = body + '</div></div>';
+
+    var cancel = document.getElementById("ac-cancel");
+    var resume = document.getElementById("ac-resume");
+    var msg    = document.getElementById("ac-msg");
+    if (cancel) cancel.onclick = async function () {
+      //  Asked once, in plain words, before anything is sent.
+      if (!window.confirm("Stop your subscription from renewing? You keep access " +
+                          "until " + (until || "the end of the period") + ".")) return;
+      cancel.disabled = true; msg.className = "ac-note"; msg.textContent = "Cancelling…";
+      var res = await get("/api/subscription/cancel", { method: "POST", body: "{}" });
+      if (res.ok) { window.buildPlanPane(); }
+      else { cancel.disabled = false; msg.textContent =
+             (res.data && res.data.detail) || "Could not cancel just now."; }
+    };
+    if (resume) resume.onclick = async function () {
+      resume.disabled = true; msg.className = "ac-note"; msg.textContent = "Resuming…";
+      var res = await get("/api/subscription/resume", { method: "POST", body: "{}" });
+      if (res.ok) { window.buildPlanPane(); }
+      else { resume.disabled = false; msg.textContent =
+             (res.data && res.data.detail) || "Could not resume just now."; }
+    };
+  };
+
+  /* ── Referral Center ─────────────────────────────────────────────────── */
+  //  The counts are deliberately "invited" and "paid", not "earned so far".
+  //  A referral only becomes money when the friend's payment clears, and a
+  //  screen that showed a running total for invitations would be promising
+  //  something the server has not agreed to.
+  window.buildReferPane = async function () {
+    var host = document.getElementById("refer-root");
+    if (!host) return;
+    if (!tok()) { host.innerHTML = gate("Your referral link belongs to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your link…</p></div></div>';
+
+    var r = await get("/api/referral");
+    var d = r.data;
+    if (!r.ok || !d || !d.enabled || !d.code) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>Refer a friend</h3>' +
+        '<p>' + (d && d.enabled === false
+                 ? "Referrals are not open at the moment."
+                 : "Could not load your referral link just now.") + '</p></div></div>';
+      return;
+    }
+
+    //  What they can spend right now. The server has already applied the
+    //  ceiling and decided the order — this only prints the answer, because a
+    //  page that works out a discount for itself is a page that can be argued
+    //  with.
+    var have = "";
+    if (d.usable_pct > 0) {
+      have = '<div class="ac-have"><b>' + esc(d.usable_pct) + '% off your next payment.</b> ' +
+        (d.welcome_pct ? "That includes the " + esc(d.welcome_pct) +
+                         "% welcome discount from your invitation, which is used first. " : "") +
+        'Applied automatically at checkout — there is nothing to type.' +
+        (d.next_expiry ? ' Your next reward expires ' +
+                         esc(String(d.next_expiry).slice(0, 10)) + '.' : '') +
+        '</div>';
+    }
+
+    //  Carry-forward, said plainly. "3 available, 30% usable" looks like a
+    //  contradiction unless the page explains that the cap is per purchase.
+    var carry = "";
+    if (d.rewards_available * d.unit_pct > d.max_discount_pct) {
+      carry = '<p class="ac-note">You are holding more than one purchase can use. ' +
+        'The maximum on any single payment is ' + esc(d.max_discount_pct) +
+        '%, and the rest waits for your next one.</p>';
+    }
+
+    var url  = d.link;
+    var msg  = "I use DSE Pulse for Dhaka Stock Exchange signals. Sign up with my " +
+               "link and you get " + d.referred_pct + "% off your first subscription: ";
+    var wa   = "https://wa.me/?text=" + encodeURIComponent(msg + url);
+    var fb   = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url);
+
+    host.innerHTML =
+      '<div class="ac">' +
+      '<div class="ac-card"><h3>Refer a friend</h3>' +
+      '<p>' + esc(d.terms || "") + '</p>' + have + carry +
+      '<span class="ac-k">Your link</span>' +
+      '<div class="ac-link"><input id="ac-reflink" readonly value="' + esc(url) + '">' +
+      '<button type="button" id="ac-refcopy">Copy</button></div>' +
+      '<div class="ac-share">' +
+        '<a class="ac-btn" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        '<a class="ac-btn" href="' + esc(fb) + '" target="_blank" rel="noopener">Facebook</a>' +
+      '</div>' +
+      '<p class="ac-note" id="ac-refmsg"></p>' +
+
+      //  The four concepts, kept apart on purpose. One combined "rewards"
+      //  number would hide the difference between what has been earned and
+      //  what can actually be spent — which is exactly the thing a customer
+      //  writes in to ask about.
+      '<span class="ac-k">Your rewards</span>' +
+      '<div class="ac-row">' +
+        '<div><b>' + esc(d.successful_referrals) + '</b><span>friends who paid</span></div>' +
+        '<div><b>' + esc(d.rewards_earned)  + '</b><span>rewards earned</span></div>' +
+        '<div><b>' + esc(d.rewards_used)    + '</b><span>rewards used</span></div>' +
+        '<div><b>' + esc(d.rewards_available) + '</b><span>available now</span></div>' +
+      '</div>' +
+      (d.pending ? '<p class="ac-note">' + esc(d.pending) + ' more signed up but have ' +
+                   'not paid yet. A reward is earned when they do, not before.</p>' : '') +
+      '</div>' +
+
+      '<div class="ac-card"><h3>How it works</h3><ul class="ac-steps">' +
+      '<li><b>1</b><span>Share your link. It stays the same for as long as you ' +
+        'have an account.</span></li>' +
+      '<li><b>2</b><span>They create their account through it. The invitation is ' +
+        'attached at that moment and cannot be added later.</span></li>' +
+      '<li><b>3</b><span>They pay for their first subscription and get ' +
+        esc(d.referred_pct) + '% off it — any package.</span></li>' +
+      '<li><b>4</b><span>Once that payment clears, you earn ' + esc(d.unit_pct) +
+        '% off your own next payment. Not for the signup — for the payment.</span></li>' +
+      '<li><b>5</b><span>Rewards add up to a maximum of ' + esc(d.max_discount_pct) +
+        '% on one purchase. Anything above that waits for your next one.</span></li>' +
+      '</ul>' +
+      '<p class="ac-fine">A referral reward is a percentage discount on your own ' +
+      'subscription. It is not cash, cannot be withdrawn or transferred, and cannot ' +
+      'be used to pay for someone else’s subscription.</p>' +
+      '</div></div>';
+
+    var btn = document.getElementById("ac-refcopy");
+    if (btn) btn.onclick = function () {
+      var inp = document.getElementById("ac-reflink"), m = document.getElementById("ac-refmsg");
+      try {
+        inp.select();
+        if (navigator.clipboard) { navigator.clipboard.writeText(inp.value); }
+        else { document.execCommand("copy"); }
+        m.className = "ac-note ok"; m.textContent = "Link copied.";
+      } catch (e) {
+        m.className = "ac-note"; m.textContent = "Select the link above and copy it.";
+      }
+    };
+  };
+})();
 </script>
 </body>
 </html>

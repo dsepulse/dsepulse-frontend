@@ -211,3 +211,23 @@
     });
   };
 })();
+
+/* ── the shared site footer ──────────────────────────────────────────────────
+ *  Loaded from here rather than added as a <script> tag to twenty-five pages.
+ *  Every page already loads env.js, so this is the one hook that reaches all
+ *  of them without any page being edited. footer.js decides for itself where
+ *  to render and where to stay out of the way (inside the dashboard iframe,
+ *  and on the internal admin pages).
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  try {
+    if (window.top !== window.self) return;   // don't even fetch it in a frame
+  } catch (e) { return; }
+  if (document.getElementById("dse-footer-js")) return;
+  var s = document.createElement("script");
+  s.id = "dse-footer-js";
+  s.src = "/footer.js";
+  s.defer = true;
+  (document.head || document.documentElement).appendChild(s);
+})();

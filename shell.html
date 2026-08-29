@@ -1216,122 +1216,19 @@ async function buildSectors(){
   } catch (e) { /* leave hardcoded values if the backend can't be reached */ }
 })();
 </script>
-<script>
-(async function () {
-  try {
-    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
-    const pr = (c && c.pricing) || {};
-    const trial = pr.trial_days || 7;
-    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
-    const plans = document.querySelector(".plans");
-    if (!plans) return;
+<!--  The pricing section is built ONCE, below.
 
-    const periods = {
-      monthly:   { label: "Monthly",   span: "Per month",   data: pr.monthly   || {}, save: "" },
-      quarterly: { label: "Quarterly", span: "Per quarter", data: pr.quarterly || {}, save: (pr.quarterly && pr.quarterly.label) || "" },
-      annual:    { label: "Annually",  span: "Per year",    data: pr.annual    || {}, save: (pr.annual && pr.annual.label) || "" }
-    };
+      It used to be built three times: three near-identical scripts, each
+      fetching /api/config and each inserting its own period toggle, plus a
+      fourth script on a 400ms timer trying to delete the duplicates. Because
+      each builder awaited its own fetch, the order they finished in was not
+      fixed — so the cleanup sometimes ran before the stragglers inserted, the
+      timer gave up after four seconds, and a second toggle row was left on
+      screen. That is what customers were seeing.
 
-    let active = "monthly";
-    const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;justify-content:center;gap:8px;margin:0 0 28px;flex-wrap:wrap";
-    const buttons = {};
-    Object.keys(periods).forEach(key => {
-      const b = document.createElement("button");
-      b.textContent = periods[key].label + (periods[key].save ? " · " + periods[key].save : "");
-      b.style.cssText = "padding:8px 16px;border-radius:999px;border:1px solid #0D1F3C;background:transparent;color:#0D1F3C;cursor:pointer;font:inherit;font-size:13px;font-weight:600";
-      b.onclick = () => { active = key; render(); };
-      buttons[key] = b;
-      wrap.appendChild(b);
-    });
-    plans.parentNode.insertBefore(wrap, plans);
-
-    function render() {
-      Object.keys(buttons).forEach(k => {
-        const on = k === active;
-        buttons[k].style.background = on ? "#0D1F3C" : "transparent";
-        buttons[k].style.color = on ? "#FFFFFF" : "#0D1F3C";
-      });
-      const p = periods[active];
-      document.querySelectorAll(".plan").forEach(card => {
-        const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
-        if (tier === "free") return;
-        const amt = p.data[tier];
-        if (amt == null) return;
-        const priceEl = card.querySelector(".plan-price");
-        const periodEl = card.querySelector(".plan-period");
-        const cta = card.querySelector(".plan-cta");
-        if (priceEl) priceEl.textContent = fmt(amt);
-        if (periodEl) {
-          let txt = p.span;
-          if (active === "monthly") txt += " · " + trial + "-day free trial";
-          else if (p.save) txt += " · " + p.save;
-          periodEl.textContent = txt;
-        }
-        if (cta && /trial/i.test(cta.textContent)) cta.textContent = "Start " + trial + "-day trial free";
-      });
-    }
-    render();
-  } catch (e) {}
-})();
-</script>
-<script>
-(async function () {
-  try {
-    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
-    const pr = (c && c.pricing) || {};
-    const trial = pr.trial_days || 7;
-    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
-    const plans = document.querySelector(".plans");
-    if (!plans) return;
-
-    const save = (periodData, months) => {
-      const mp = Number((pr.monthly || {}).premium || 0);
-      const pp = Number((periodData || {}).premium || 0);
-      if (!mp || !pp) return "";
-      const pct = Math.round((1 - pp / (mp * months)) * 100);
-      return pct > 0 ? "Save " + pct + "%" : "";
-    };
-
-    const periods = {
-      monthly:   { label: "Monthly",   span: "Per month",   data: pr.monthly   || {}, save: "" },
-      quarterly: { label: "Quarterly", span: "Per quarter", data: pr.quarterly || {}, save: save(pr.quarterly, 3) },
-      annual:    { label: "Annually",  span: "Per year",    data: pr.annual    || {}, save: save(pr.annual, 12) }
-    };
-
-    let active = "monthly";
-    const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;justify-content:center;gap:8px;margin:0 0 28px;flex-wrap:wrap";
-    const buttons = {};
-    Object.keys(periods).forEach(key => {
-      const b = document.createElement("button");
-      b.textContent = periods[key].label + (periods[key].save ? " · " + periods[key].save : "");
-      b.style.cssText = "padding:8px 16px;border-radius:999px;border:1px solid #0D1F3C;background:transparent;color:#0D1F3C;cursor:pointer;font:inherit;font-size:13px;font-weight:600";
-      b.onclick = () => { active = key; render(); };
-      buttons[key] = b;
-      wrap.appendChild(b);
-    });
-    plans.parentNode.insertBefore(wrap, plans);
-
-    function render() {
-      Object.keys(buttons).forEach(k => {
-        const on = k === active;
-        buttons[k].style.background = on ? "#0D1F3C" : "transparent";
-        buttons[k].style.color = on ? "#FFFFFF" : "#0D1F3C";
-      });
-      const p = periods[active];
-      document.querySelectorAll(".plan").forEach(card => {
-        const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
-        if (tier === "free") return;
-        const amt = p.data[tier];
-        if (amt == null) return;
-        const priceEl = card.querySelector(".plan-price");
-        const periodEl = card.querySelector(".plan-period");
-        const cta = card.querySelector(".plan-cta");
-        if (priceEl) priceEl.textContent = fmt(amt);
-        if (periodEl) {
-          let txt = p.span;
-          if (active === "monthly") txt += " · " + trial + "-day free trial";
+      Two builders and the timer are gone. One builder, one row, no race, and
+      two fewer API calls per page load.  -->
+ial";
           else if (p.save) txt += " · " + p.save;
           periodEl.textContent = txt;
         }
@@ -1566,21 +1463,6 @@ async function buildSectors(){
 })();
 </script>
 <!-- ===== end Auth ===== -->
-<!-- ===== DSE Pulse · pricing toggle dedupe ===== -->
-<script>
-(function(){
-  function clean(){
-    var rows=[].slice.call(document.querySelectorAll('div')).filter(function(el){
-      var t=el.textContent.replace(/\s+/g,' ').trim();
-      return /^Monthly/.test(t) && /Quarterly/.test(t) && /Annually/.test(t) && t.length<140;
-    });
-    rows.slice(0,-1).forEach(function(el){ el.remove(); });
-  }
-  function boot(){ clean(); var n=0,iv=setInterval(function(){ clean(); if(++n>10) clearInterval(iv); },400); }
-  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
-})();
-</script>
-<!-- ===== end dedupe ===== -->
 <script>
 (function(){
   function setGreeting(){

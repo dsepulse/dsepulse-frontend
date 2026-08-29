@@ -142,16 +142,31 @@
                 youtube: "YouTube", whatsapp: "WhatsApp" };
 
   var CSS =
-  '.dsef{background:#10203A;color:#B9C3D2;font:400 14px/1.6 Inter,system-ui,' +
-    '-apple-system,"Segoe UI",sans-serif;margin:0;padding:0;' +
-    'box-sizing:border-box}' +
+  //  This footer is injected into ~20 pages that each have their own CSS, and
+  //  several of them style the `footer` element directly. shell.html has
+  //  `footer{display:flex;align-items:center;justify-content:space-between}`,
+  //  which turned the three sections below into three columns sitting side by
+  //  side — the links squeezed into a sliver on the left, the disclaimer in
+  //  the middle and the copyright as a vertical strip on the right.
+  //
+  //  So the first rule RESETS every property a host page is likely to set on
+  //  `footer`. `footer.dsef` outranks a bare `footer` selector, so no
+  //  !important is needed — but each property has to be named, and the ones
+  //  below are exactly the ones that were not.
+  'footer.dsef{all:revert;display:block;background:#10203A;color:#B9C3D2;' +
+    'font:400 14px/1.6 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;' +
+    'margin:0;padding:0;border:0;box-sizing:border-box;align-items:initial;' +
+    'justify-content:initial;gap:0;flex-wrap:initial;text-align:left;' +
+    'max-width:none;width:auto}' +
   '.dsef *,.dsef *:before,.dsef *:after{box-sizing:border-box}' +
+  '.dsef>div{width:auto;max-width:none;flex:none;float:none}' +
   '.dsef a{color:#B9C3D2;text-decoration:none}' +
   '.dsef a:hover{color:#fff;text-decoration:underline}' +
-  '.dsef-in{max-width:1200px;margin:0 auto;padding:46px 24px 30px;' +
+  '.dsef>.dsef-in{max-width:1200px;margin:0 auto;padding:46px 24px 30px;' +
+    
     'display:grid;gap:34px 40px;grid-template-columns:1fr}' +
-  '@media(min-width:680px){.dsef-in{grid-template-columns:1fr 1fr}}' +
-  '@media(min-width:1000px){.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}}' +
+  '@media(min-width:680px){.dsef>.dsef-in{grid-template-columns:1fr 1fr}}' +
+  '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}}' +
   '.dsef h4{font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;' +
     'text-transform:uppercase;color:#C9A227;margin:0 0 6px;padding-bottom:9px;' +
     'border-bottom:2px solid rgba(201,162,39,.35);display:inline-block}' +

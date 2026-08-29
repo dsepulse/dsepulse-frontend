@@ -36,7 +36,15 @@
 
     if (h === "localhost" || h === "127.0.0.1" || h === "" ) return "development";
     if (h.indexOf("dev.") === 0) return "development";
-    if (h.indexOf("--") !== -1 && h.indexOf(".netlify.app") !== -1) return "development";
+    //  SUFFIX, not substring. The old test was h.indexOf(".netlify.app") !== -1,
+    //  which a hostname like "dev--x.netlify.app.attacker.net" satisfies. The
+    //  impact was bounded — it aimed a rogue copy at DEVELOPMENT, never at
+    //  production — but the check was simply wrong. shell.html's inline guard
+    //  has always used the suffix test and says this file should match it.
+    var NETLIFY = ".netlify.app";
+    if (h.indexOf("--") !== -1 &&
+        h.length > NETLIFY.length &&
+        h.lastIndexOf(NETLIFY) === h.length - NETLIFY.length) return "development";
 
     return "production";
   }
@@ -72,4 +80,134 @@
       } else { paint(); }
     } catch (e) {}
   }
+})();
+
+/* ── The paywall, said in words ──────────────────────────────────────────────
+ *
+ * When PLAN_GATE_MODE is enforce, a call a plan cannot reach comes back 403
+ * with {"error":"plan_required", ...}. Left alone, every tool page renders
+ * that as its own generic failure — "could not load", or an empty table. A
+ * customer whose trial ended yesterday would conclude the site is broken, and
+ * a broken site is not one you pay for.
+ *
+ * This lives in env.js because env.js is the one file all 24 pages already
+ * load, before any page script. Handling it in each tool page instead would be
+ * twelve copies of the same logic, and the twelfth would be the one that got
+ * missed.
+ *
+ * It is deliberately narrow: it acts ONLY on a 403 whose body says
+ * plan_required. An admin key rejection is also a 403 and must fall through
+ * untouched, so the check is on the payload, never on the status alone.
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  if (!window.fetch || window.__dsePlanGate) return;
+  window.__dsePlanGate = true;
+
+  var shown = false;
+
+  function pricingHref(fallback) {
+    //  The pricing anchor differs by which landing file is serving: home.html
+    //  uses #join, shell.html uses #pricing-section. Ask the page rather than
+    //  guessing, and fall back to whatever the server suggested.
+    try {
+      if (document.getElementById("join")) return "#join";
+      if (document.getElementById("pricing-section")) return "#pricing-section";
+    } catch (e) {}
+    return fallback || "/";
+  }
+
+  function words(d) {
+    var need = d.needs === "pro" ? "Pro" : d.needs === "premium" ? "Premium" : "a paid plan";
+    if (!d.signed_in) {
+      return ["Sign in to see this",
+              "This is part of " + need + ". Create a free account to start a "
+              + "7-day trial with everything unlocked."];
+    }
+    if (d.trial_expired) {
+      return ["Your free trial has ended",
+              "You had everything for seven days. This tool is part of " + need
+              + " — choose a plan to get it back."];
+    }
+    if (d.plan_lapsed) {
+      return ["Your subscription has ended",
+              "You keep your free tools. This one is part of " + need
+              + " — renew to get it back."];
+    }
+    return [need + " plan required",
+            "This tool is not part of your current plan. Upgrading unlocks it "
+            + "immediately — there is nothing to reinstall."];
+  }
+
+  function panel(d) {
+    if (shown) return;
+    shown = true;
+    try {
+      var t = words(d), href = pricingHref(d.upgrade);
+      var w = document.createElement("div");
+      w.id = "dse-plan-gate";
+      w.setAttribute("role", "alert");
+      w.style.cssText =
+        "position:fixed;inset:0;z-index:2147483646;display:flex;" +
+        "align-items:center;justify-content:center;padding:24px;" +
+        "background:rgba(16,32,58,.55);backdrop-filter:blur(2px)";
+      var card = document.createElement("div");
+      card.style.cssText =
+        "max-width:420px;width:100%;background:#fff;color:#10203A;" +
+        "border-radius:14px;padding:26px 28px;box-shadow:0 18px 50px rgba(0,0,0,.28);" +
+        "font:400 14px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif";
+      card.innerHTML =
+        '<div style="font:700 19px/1.25 Georgia,serif;margin-bottom:8px">' +
+          t[0].replace(/[<>]/g, "") + "</div>" +
+        '<p style="margin:0 0 18px;color:#3E4A61">' + t[1].replace(/[<>]/g, "") + "</p>" +
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+          '<a id="dse-pg-go" style="background:#10203A;color:#fff;text-decoration:none;' +
+            'font:600 13px/1 system-ui,sans-serif;padding:12px 17px;border-radius:8px;' +
+            'cursor:pointer">' + (d.signed_in ? "See plans" : "Start free") + "</a>" +
+          '<button id="dse-pg-x" style="background:#fff;border:1.5px solid #E2DDD1;' +
+            'color:#3E4A61;font:600 13px/1 system-ui,sans-serif;padding:12px 17px;' +
+            'border-radius:8px;cursor:pointer">Not now</button>' +
+        "</div>";
+      w.appendChild(card);
+      (document.body || document.documentElement).appendChild(w);
+
+      var go = card.querySelector("#dse-pg-go");
+      go.href = href;
+      go.onclick = function () {
+        //  Inside the dashboard the tool runs in an iframe, so navigating this
+        //  document would leave the customer looking at a pricing page in a
+        //  little box. Send the TOP window instead.
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href =
+              (href.charAt(0) === "#" ? window.top.location.pathname : "") + href;
+            return false;
+          }
+        } catch (e) {}
+        return true;
+      };
+      card.querySelector("#dse-pg-x").onclick = function () {
+        w.parentNode && w.parentNode.removeChild(w);
+        shown = false;
+      };
+    } catch (e) { shown = false; }
+  }
+
+  var real = window.fetch;
+  window.fetch = function () {
+    var args = arguments;
+    return real.apply(this, args).then(function (res) {
+      if (res && res.status === 403) {
+        //  clone() so the caller still gets an unread body and can handle the
+        //  403 its own way as well
+        try {
+          res.clone().json().then(function (j) {
+            var d = (j && j.detail) || j;
+            if (d && d.error === "plan_required") panel(d);
+          }).catch(function () {});
+        } catch (e) {}
+      }
+      return res;
+    });
+  };
 })();

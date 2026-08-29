@@ -424,6 +424,15 @@ tr.lk .sc{color:var(--ink2)}
   border:0;background:var(--navy);color:#fff;cursor:pointer;margin-top:3px}
 .jr button:hover{background:var(--navy2)}
 .jr button:disabled{opacity:.55;cursor:default}
+.authtabs{display:flex;gap:6px;margin-bottom:2px}
+.authtabs button{flex:1 1 0;font:600 12.5px/1 var(--sans);padding:10px 8px;
+  border-radius:8px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer}
+.authtabs button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+#login{display:none;gap:12px}
+#login.on{display:grid}
+#reg.off{display:none}
 .jmsg{margin:0;font-size:13px;min-height:1px;color:var(--red)}
 .jmsg.ok{color:var(--green)}
 .jalt{margin:0;font-size:13px;color:var(--ink3)}
@@ -681,6 +690,12 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .pbanner.wait{background:var(--gold-bg);border-color:var(--gold-bd)}
 .pbanner.wait b{color:var(--gold-d)}
 
+
+/* the banner someone sees when they arrive on a referral link */
+.rbanner{border-radius:11px;padding:13px 16px;margin-bottom:14px;font-size:14px;
+  line-height:1.55;background:var(--green-bg);border:1px solid var(--green-bd)}
+.rbanner b{color:var(--green);font-weight:600}
+
 /* ── what the engines found ────────────────────────────────────────────── */
 .tools-sec{padding:8px 0 56px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
@@ -912,6 +927,7 @@ footer .disc{max-width:76ch;line-height:1.65}
 
 <div class="wrap">
   <section class="join" id="join">
+    <div id="refbanner"></div>
     <div id="paybanner"></div>
 
     <div class="joinbox">
@@ -939,6 +955,10 @@ footer .disc{max-width:76ch;line-height:1.65}
 
       <div class="jr">
         <div id="account"></div>
+        <div class="authtabs" id="authtabs">
+          <button type="button" data-t="reg" aria-pressed="true">Create account</button>
+          <button type="button" data-t="in" aria-pressed="false">Sign in</button>
+        </div>
         <form id="reg" autocomplete="on" novalidate>
           <label>Name<input id="r-name" name="name" autocomplete="name"
             placeholder="Your name" maxlength="80"></label>
@@ -951,12 +971,21 @@ footer .disc{max-width:76ch;line-height:1.65}
             maxlength="72"></label>
           <button type="submit" id="r-go">Get started free</button>
           <p class="jmsg" id="r-msg"></p>
-          <p class="jalt">Already have an account?
-            <a href="/shell.html">Sign in</a></p>
+        </form>
+        <form id="login" autocomplete="on" novalidate>
+          <label>Email<input id="l-email" name="email" type="email"
+            autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
+          <label>Password<input id="l-pass" name="password" type="password"
+            autocomplete="current-password" placeholder="Your password"
+            maxlength="72"></label>
+          <button type="submit" id="l-go">Sign in</button>
+          <p class="jmsg" id="l-msg"></p>
+          <p class="jalt"><a href="/shell.html">Forgotten your password?</a></p>
         </form>
       </div>
     </div>
   </section>
+
 </div>
 
 <div class="wrap">
@@ -1773,7 +1802,11 @@ footer .disc{max-width:76ch;line-height:1.65}
   //  ── the signed-in panel: what you have, and how to cancel it ───────
   function paint_account() {
     var host = el("account");
-    if (!signedIn()) { host.innerHTML = ""; return; }
+    if (!signedIn()) { host.innerHTML = ""; showAuth("reg"); return; }
+    //  signed in: neither form belongs on the screen any more
+    el("reg").className = "off";
+    el("login").className = "";
+    el("authtabs").style.display = "none";
     var s = SUB;
     if (!s) { host.innerHTML = ""; return; }
 
@@ -1846,7 +1879,8 @@ footer .disc{max-width:76ch;line-height:1.65}
   }
 
   function loadSubscription() {
-    if (!signedIn()) { SUB = null; paint_account(); paint_prices(); return; }
+    if (!signedIn()) { SUB = null; paint_account(); paint_prices();
+                       return; }
     return authJSON("/api/subscription").then(function (d) {
       SUB = d; paint_account(); paint_prices();
     }).catch(function () { SUB = null; paint_account(); });
@@ -1907,7 +1941,8 @@ footer .disc{max-width:76ch;line-height:1.65}
       el("r-go").disabled = true;
       msg.textContent = "Creating your account…";
       postJSON("/api/auth/register",
-               { name: name, email: mail, password: pass, phone: phone })
+               { name: name, email: mail, password: pass, phone: phone,
+                 ref: referralForSignup() })
         .then(function (d) {
           if (d && d.token) {
             try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
@@ -1926,13 +1961,112 @@ footer .disc{max-width:76ch;line-height:1.65}
         })
         .catch(function (err) {
           msg.className = "jmsg";
-          msg.textContent = (err && err.message)
-            ? String(err.message)
-            : "Could not create the account. Please try again shortly.";
+          var m = (err && err.message) ? String(err.message)
+                : "Could not create the account. Please try again shortly.";
+          msg.textContent = m;
+          //  The commonest failure here is someone who already signed up — very
+          //  often on a first attempt the gateway then refused. Put them on the
+          //  sign-in tab with their email already filled in, rather than leaving
+          //  them staring at a rejection with nowhere to go.
+          if (/already registered/i.test(m)) {
+            msg.textContent = m + " — sign in below and we'll carry on.";
+            el("l-email").value = mail;
+            showAuth("in");
+            try { el("l-pass").focus(); } catch (x) {}
+          }
           el("r-go").disabled = false;
         });
     });
   }
+
+
+  /* ── signing in, without leaving the page ───────────────────────────── */
+  //  A visitor who tried to buy, got as far as an account, then hit a gateway
+  //  error is now REGISTERED — so the registration form rejects them, and the
+  //  only way back was a link to another page. That is the worst possible
+  //  moment to send someone away. Both forms live here now, and either one
+  //  resumes the purchase they were part-way through.
+  function showAuth(which) {
+    el("reg").className   = which === "reg" ? "" : "off";
+    el("login").className = which === "in"  ? "on" : "";
+    Array.prototype.forEach.call(el("authtabs").querySelectorAll("button"),
+      function (b) {
+        b.setAttribute("aria-pressed", b.dataset.t === which ? "true" : "false");
+      });
+  }
+  Array.prototype.forEach.call(el("authtabs").querySelectorAll("button"),
+    function (b) {
+      b.addEventListener("click", function () { showAuth(b.dataset.t); });
+    });
+
+  function afterAuth(d, msg) {
+    if (d && d.token) {
+      try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
+    }
+    if (INTENT) {
+      msg.className = "jmsg ok";
+      msg.textContent = "Signed in — opening payment…";
+      startPayment(INTENT.plan, INTENT.period, null);
+      return;
+    }
+    msg.className = "jmsg ok";
+    msg.textContent = "Signed in.";
+    loadSubscription();
+  }
+
+  el("login").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg  = el("l-msg");
+    var mail = String(el("l-email").value || "").trim().toLowerCase();
+    var pass = String(el("l-pass").value || "");
+    msg.className = "jmsg";
+    if (!mail || !pass) { msg.textContent = "Enter your email and password."; return; }
+    el("l-go").disabled = true;
+    msg.textContent = "Signing in…";
+    postJSON("/api/auth/login", { email: mail, password: pass })
+      .then(function (d) { afterAuth(d, msg); })
+      .catch(function (err) {
+        msg.className = "jmsg";
+        msg.textContent = (err && err.message) || "Could not sign in.";
+        el("l-go").disabled = false;
+      });
+  });
+
+
+  /* ── referrals ──────────────────────────────────────────────────────── */
+  //  One job on this page: someone arriving on an invitation link. Capture
+  //  the code, tell them what it is worth, and carry it into registration.
+  //  Managing your OWN link belongs in the dashboard, not here — a landing
+  //  page that sells to strangers should not spend space on a panel only a
+  //  signed-in customer can use.
+  //
+  //  The code is never trusted here. The page asks the server whether it is
+  //  real before showing any figure, and the discount itself is decided
+  //  server-side at payment time from the user's own record — a code typed
+  //  into this page cannot buy anything cheaper than the server says.
+  var REF_CODE = "";
+
+  (function () {
+    var q = "";
+    try { q = String(window.location.search || ""); } catch (e) { return; }
+    var m = /[?&]ref=([A-Za-z0-9]{4,16})/.exec(q);
+    if (!m) return;
+    var code = m[1].toUpperCase();
+    getJSON("/api/referral/check?code=" + encodeURIComponent(code))
+      .then(function (d) {
+        if (!d || !d.valid) return;          // a mistyped link says nothing
+        REF_CODE = code;
+        var b = el("refbanner");
+        b.className = "rbanner";
+        b.innerHTML = "<b>You were invited.</b> Your first payment is " +
+          esc(String(d.referred_pct)) + "% off — applied automatically at " +
+          "checkout, there is nothing to type. Create your account below.";
+      })
+      .catch(function () {});
+  })();
+
+  //  the code travels with the registration, and only with the registration
+  function referralForSignup() { return REF_CODE || ""; }
 
   /* ── social links ───────────────────────────────────────────────────── */
   //  Paste the two page URLs here and they appear in the footer. A link is

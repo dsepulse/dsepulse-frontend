@@ -149,6 +149,13 @@
   var LABEL = { facebook: "Facebook", linkedin: "LinkedIn",
                 youtube: "YouTube", whatsapp: "WhatsApp" };
 
+  //  TYPE SIZE. The page this sits under runs at 16px. The footer used to run
+  //  at 14px with a 13.5px link and an 11.5px disclaimer, which is what made
+  //  it read as an afterthought printed in the margin — the complaint was that
+  //  the letters were smaller than the body and the whole block went faint.
+  //  Everything here is now within a point or two of the page above it, and
+  //  the disclaimer in particular went from 11.5px at 4.55:1 contrast — which
+  //  passes WCAG AA by 0.05 and is still hard to read — to 13px at 7.26:1.
   var CSS =
   //  This footer is injected into ~20 pages that each have their own CSS, and
   //  several of them style the `footer` element directly. shell.html has
@@ -162,7 +169,7 @@
   //  !important is needed — but each property has to be named, and the ones
   //  below are exactly the ones that were not.
   'footer.dsef{all:revert;display:block;background:#10203A;color:#B9C3D2;' +
-    'font:400 14px/1.6 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;' +
+    'font:400 15.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;' +
     'margin:0;padding:0;border:0;box-sizing:border-box;align-items:initial;' +
     'justify-content:initial;gap:0;flex-wrap:initial;text-align:left;' +
     'max-width:none;width:auto}' +
@@ -176,7 +183,7 @@
   //  the footer left a 370px empty margin either side on a wide screen and
   //  still ran past 600px tall, because four columns and a disclaimer were
   //  being squeezed into two thirds of the window.
-  '.dsef>.dsef-in{max-width:1400px;margin:0 auto;padding:38px 32px 26px;' +
+  '.dsef>.dsef-in{max-width:1400px;margin:0 auto;padding:34px 32px 22px;' +
     'display:grid;gap:30px 46px;grid-template-columns:1fr}' +
   //  Four link columns stacked one above another made this 1,400px tall on a
   //  phone — longer than the page it sits under. Two columns from 360px up
@@ -187,7 +194,7 @@
     '.dsef>.dsef-in>.dsef-brand{grid-column:1/-1}}' +
   '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}' +
     '.dsef>.dsef-in>.dsef-brand{grid-column:auto}}' +
-  '.dsef h4{font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;' +
+  '.dsef h4{font:600 11.5px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;' +
     'text-transform:uppercase;color:#C9A227;margin:0 0 6px;padding-bottom:9px;' +
     'border-bottom:2px solid rgba(201,162,39,.35);display:inline-block}' +
   '.dsef ul{list-style:none;margin:12px 0 0;padding:0}' +
@@ -195,31 +202,31 @@
   //  to touch; the li spacing goes up with it so two neighbouring targets
   //  do not overlap, which is worse than a small target — it means the tap
   //  that misses lands on the wrong page rather than on nothing.
-  '.dsef li{margin-bottom:12px;font-size:13.5px}' +
+  '.dsef li{margin-bottom:12px;font-size:14.5px}' +
   '.dsef li a{padding:4px 0}' +
   '.dsef-brand b{display:block;font:700 20px/1.2 "Playfair Display",Georgia,serif;' +
     'color:#fff;margin-bottom:4px}' +
-  '.dsef-brand .l{display:block;font:500 11.5px/1.5 ui-monospace,SFMono-Regular,' +
-    'Menlo,monospace;color:#8A93A5;margin-bottom:14px}' +
-  '.dsef-brand p{margin:0;font-size:13.5px;max-width:52ch;color:#B9C3D2}' +
+  '.dsef-brand .l{display:block;font:500 13px/1.5 ui-monospace,SFMono-Regular,' +
+    'Menlo,monospace;color:#9AA6B8;margin-bottom:14px}' +
+  '.dsef-brand p{margin:0;font-size:14.5px;max-width:52ch;color:#B9C3D2}' +
   '.dsef-social{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}' +
   '.dsef-social a{display:inline-flex;align-items:center;justify-content:center;' +
     'width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);' +
     'border:1px solid rgba(255,255,255,.14)}' +
   '.dsef-social a:hover{background:#C9A227;border-color:#C9A227;color:#10203A}' +
   '.dsef-social svg{width:15px;height:15px;fill:currentColor}' +
-  '.dsef-c{margin:12px 0 0;font-size:13.5px}' +
+  '.dsef-c{margin:12px 0 0;font-size:14.5px}' +
   '.dsef-c div{margin-bottom:9px;display:flex;gap:9px;align-items:flex-start}' +
-  '.dsef-c span{color:#8A93A5;flex:0 0 auto;font-size:11.5px;letter-spacing:.06em;' +
+  '.dsef-c span{color:#9AA6B8;flex:0 0 auto;font-size:12px;letter-spacing:.06em;' +
     'text-transform:uppercase;padding-top:2px;min-width:58px}' +
   //  `.dsef>div{max-width:none}` above resets what host pages do to the
   //  footer's children, and it OUTRANKS a bare `.dsef-disc` — which is how
   //  the disclaimer ended up running the full width of the window while
   //  everything above it sat in a 1080px column. Match the specificity.
   '.dsef>.dsef-disc{max-width:1400px;margin:0 auto;padding:0 32px 22px;' +
-    'font-size:11.5px;line-height:1.7;color:#7E8898}' +
-  '.dsef-disc b{color:#9AA5B6}' +
-  '.dsef-disc a{color:#9AA5B6;text-decoration:underline}' +
+    'font-size:13px;line-height:1.75;color:#A3AEBF}' +
+  '.dsef-disc b{color:#C4CDD9}' +
+  '.dsef-disc a{color:#C4CDD9;text-decoration:underline}' +
   //  Same 32px the header bar uses, dropping to the site's 20px on a phone
   //  where there is no width to give away. Both numbers live in home.html's
   //  `.band .wrap` too; if one moves, move the other or they stop lining up.
@@ -227,7 +234,7 @@
     '{padding-left:20px;padding-right:20px}}' +
   '.dsef-bar{border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22)}' +
   '.dsef-bar div{max-width:1400px;margin:0 auto;padding:14px 32px;' +
-    'font-size:12.5px;color:#8A93A5;display:flex;gap:12px;flex-wrap:wrap;' +
+    'font-size:13.5px;color:#9AA6B8;display:flex;gap:12px;flex-wrap:wrap;' +
     'justify-content:space-between}';
 
   function linkHTML(l) {

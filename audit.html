@@ -37,7 +37,13 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .pill.warn{background:var(--gold-bg);color:var(--gold)}
 .trow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--cream2);font-size:12px}
 .trow .l{color:var(--text2)}.trow .r{font-weight:600;font-family:var(--mono);font-size:11px}
-.ptbl{display:grid;grid-template-columns:120px 85px 85px 85px 75px;gap:4px;font-size:11px}
+/*  Fixed columns came to 465px, so on a 360px phone the last two ran off the
+    side of the screen and took the whole page sideways with them. Flexible
+    columns with a floor instead: 70 + 4x52 = 278px, which fits the narrowest
+    phone still in service. */
+.ptbl{display:grid;grid-template-columns:minmax(70px,1.4fr) repeat(4,minmax(52px,1fr));
+  gap:4px;font-size:11px}
+@media (max-width:480px){ .ptbl{font-size:10px;gap:3px} }
 .ptbl .th{font-size:9px;font-weight:700;color:var(--text3);text-align:right;padding:2px 0}
 .ptbl .th:first-child{text-align:left}
 .ptbl .td{text-align:right;padding:4px 0;border-top:1px solid var(--cream2);font-family:var(--mono)}
@@ -52,6 +58,18 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .dot-sq{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
 .dot-lbl{font-size:9px;color:var(--text3)}
 .foot{text-align:center;font-size:11px;color:var(--text3);padding:22px;margin-top:6px}
+/*  This page is now behind the admin key. It was unlinked, which is not the
+    same as private: it called six PAID endpoints with no token, so anyone who
+    knew the URL read subscriber-only output for free. */
+.gate{max-width:340px;margin:70px auto;text-align:center;padding:0 18px}
+.gate h2{font-family:var(--serif);font-size:20px;color:var(--navy);margin-bottom:6px}
+.gate p{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:16px}
+.gate input{width:100%;padding:11px 13px;border:1px solid var(--border2);
+  border-radius:8px;font:400 13px/1 inherit;background:var(--white);color:var(--text)}
+.gate button{width:100%;margin-top:10px;padding:11px;border:0;border-radius:8px;
+  background:var(--navy);color:#fff;font:600 13px/1 inherit;cursor:pointer}
+.gate .err{font-size:11.5px;color:var(--red);margin-top:10px;min-height:16px}
+.hide{display:none!important}
 </style>
 </head>
 <body>
@@ -59,7 +77,16 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div class="logo"><span>&#9670;</span> DSE Pulse</div>
   <a class="back" href="https://dsepulse.com">&larr; Back to app</a>
 </div></div>
-<div class="wrap">
+<div class="gate" id="gate">
+  <h2>Data sync audit</h2>
+  <p>Internal. Enter your admin key to run the check.</p>
+  <input id="keyIn" type="password" placeholder="Admin key" autocomplete="off"
+         onkeydown="if(event.key==='Enter')unlock()">
+  <button onclick="unlock()">Run the audit</button>
+  <div class="err" id="gateMsg"></div>
+</div>
+
+<div class="wrap hide" id="app">
   <div class="top">
     <div>
       <div class="h-title">Data sync audit</div>
@@ -68,6 +95,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     <div style="display:flex;align-items:center;gap:10px">
       <span class="badge" id="sync-badge"></span>
       <button class="refresh" onclick="run()">&#8635; Refresh</button>
+      <button class="refresh" onclick="lock()">Lock</button>
     </div>
   </div>
   <div id="alerts"></div>
@@ -79,10 +107,45 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 <script>
 const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
-const fmtD=s=>{if(!s)return'—';try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return s;}};
-const diff=s=>{if(!s)return 999;try{const a=new Date(s.slice(0,10)+'T00:00:00'),b=new Date();b.setHours(0,0,0,0);return Math.round((b-a)/864e5);}catch(e){return 999;}};
-const todayISO=()=>{const d=new Date();d.setUTCHours(d.getUTCHours()+6);return d.toISOString().slice(0,10);};
-async function fj(p){try{const r=await fetch(API+p);if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+/*  ONE call, with the admin key, to an endpoint that returns a VERDICT.
+
+    What this replaces: eight anonymous calls — picks, wma, tech, combined, bd,
+    activity, track-record, freshness — six of them plan-gated, all of them
+    unauthenticated, with the comparing done here in the browser. Three
+    problems with that, and only the first is about security:
+
+      · the page handed subscriber-only output to anyone with the URL;
+      · when PLAN_GATE_MODE goes to enforce, six of the eight return 403 and
+        this page reports the whole pipeline as dead;
+      · "is the data in sync" was decided in a browser, where it can be edited.
+
+    The endpoint reads the same tables and returns counts, dates and deltas.
+    It never returns a signal, a score or a level.  */
+let KEY = sessionStorage.getItem("dse_admin_key") || "";
+const H = () => ({ "X-Admin-Key": KEY });
+
+const fmtD=s=>{if(!s)return'—';try{return new Date(String(s).slice(0,10)+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return s;}};
+const ago=n=>n==null?'no data':n===0?'today':n===1?'yesterday':n+'d ago';
+const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function show(app){
+  document.getElementById('gate').classList.toggle('hide', !!app);
+  document.getElementById('app').classList.toggle('hide', !app);
+}
+async function unlock(){
+  KEY=document.getElementById('keyIn').value.trim();
+  const m=document.getElementById('gateMsg');
+  if(!KEY){m.textContent='Enter a key.';return;}
+  m.textContent='Checking…';
+  try{
+    const r=await fetch(API+'/api/admin/audit',{headers:H()});
+    if(r.status===401||r.status===403){m.textContent='Wrong admin key.';return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    sessionStorage.setItem('dse_admin_key',KEY);
+    show(true); render(await r.json());
+  }catch(e){ m.textContent='Could not reach the backend: '+e.message; }
+}
+function lock(){ sessionStorage.removeItem('dse_admin_key'); location.reload(); }
 
 function sec(t){return `<div class="section-lbl">${t}</div>`;}
 function card(h,body){return `<div class="card"><div class="card-hdr">${h}</div>${body}</div>`;}
@@ -114,202 +177,136 @@ function copyCmd(id,cmd){
 
 async function run(){
   const out=document.getElementById('out');
-  const alEl=document.getElementById('alerts');
-  const badge=document.getElementById('sync-badge');
-  const rt=document.getElementById('run-time');
   out.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Checking all tools&hellip;</div>';
-  alEl.innerHTML=''; badge.textContent=''; badge.className='badge';
+  try{
+    const r=await fetch(API+'/api/admin/audit',{headers:H()});
+    if(r.status===401||r.status===403){ show(false); return; }
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    render(await r.json());
+  }catch(e){
+    out.innerHTML='<div class="alert red">Could not run the audit: '+
+      String(e.message||e).replace(/</g,'&lt;')+'</div>';
+  }
+}
 
-  const [pk,wm,tc,cb,bd,ac,tr,fresh] = await Promise.all([
-    fj('/api/picks/today'),
-    fj('/api/wma/today'),
-    fj('/api/tech/today'),
-    fj('/api/combined/today'),
-    fj('/api/bd/all'),
-    fj('/api/activity/today'),
-    fj('/api/track-record?days=10&top=3'),
-    fj('/api/freshness?days=7'),
-  ]);
-
-  // helper: find date from any row — tries multiple field names
-  const getDate=(r)=>r?.trade_date||r?.date||r?.as_of||null;
-  // use track record's updated date as the canonical last-run date for tools
-  // that don't embed a date in each row
-  const canonDate=tr?.updated||null;
-
-  const tools={
-    picks:{label:"Today's picks",date:pk?.date,list:pk?.picks||[]},
-    wma:{label:'WMA signals',date:Array.isArray(wm)&&wm.length?(getDate(wm[0])||canonDate):null,list:Array.isArray(wm)?wm:[]},
-    tech:{label:'Tech analysis',date:Array.isArray(tc)&&tc.length?(getDate(tc[0])||canonDate):null,list:Array.isArray(tc)?tc:[]},
-    combined:{label:'Combined signal',date:Array.isArray(cb)&&cb.length?(getDate(cb[0])||canonDate):null,list:Array.isArray(cb)?cb:[]},
-    bd:{label:'BD signal',date:Array.isArray(bd)&&bd.length?(getDate(bd[0])||canonDate):null,list:Array.isArray(bd)?bd:[]},
-    activity:{label:'Smart money',date:Array.isArray(ac)&&ac.length?(getDate(ac[0])||canonDate):null,list:Array.isArray(ac)?ac:[]},
-  };
-
-  const techMap={},wmaMap={},cbMap={};
-  (tools.tech.list).forEach(r=>{techMap[r.code]=Number(r.ltp||0);});
-  (tools.wma.list).forEach(r=>{wmaMap[r.code]=Number(r.ltp||0);});
-  (tools.combined.list).forEach(r=>{cbMap[r.code]=Number(r.ltp||0);});
-
-  let issues=0; const alerts=[];
+function render(d){
+  const c=d.checks, out=document.getElementById('out');
+  const alEl=document.getElementById('alerts'), badge=document.getElementById('sync-badge');
   let html='';
 
-  // ── 1. DATE ALIGNMENT ─────────────────────────────────────
-  // exclude Today's Picks from date alignment — it only stores rows when
-  // stocks qualify, so an older date just means a quiet stretch, not a sync failure
-  const dates=Object.entries(tools).filter(([k])=>k!=='picks').map(([,t])=>t.date).filter(Boolean);
-  const uniqueDates=[...new Set(dates)].sort();
-  const latest=uniqueDates[uniqueDates.length-1]||'—';
-  const allSame=uniqueDates.length<=1;
-  const dateStale=diff(latest)>1;
-  const dateState=allSame&&!dateStale?'ok':!allSame?'fail':'warn';
-  if(dateState!=='ok'){issues++;if(!allSame)alerts.push(alertBox('Tools are on <b>different trade dates</b> — some didn\'t upload on the latest run.','red','DSE_MANUAL.bat'));if(dateStale)alerts.push(alertBox(`Latest data is from ${fmtD(latest)} (${diff(latest)}d ago) — today's run may not have uploaded yet.`,'amber','python dse_tech.py --manual'));}
-
-  let dateBody=Object.entries(tools).map(([k,t])=>{
-    const d=t.date,n=diff(d);
-    const col=!d?'var(--text3)':d===latest&&n<=1?'var(--green)':d===latest?'var(--gold)':'var(--red)';
-    const note=!d?'no data':n===0?'today':n===1?'yesterday':n+'d ago';
-    return trow(t.label,(d?fmtD(d)+' &middot; '+note:'—'),col);
-  }).join('');
-  dateBody+=trow('Latest date across tools',fmtD(latest),diff(latest)<=1?'var(--green)':'var(--red)');
+  // 1 · trade date alignment
   html+=sec('1. Trade date alignment — all tools must show same date');
-  html+=card(hdr('Date sync','every tool should upload on the same day',dateState),dateBody);
+  html+=card(hdr('Date sync','every tool should upload on the same day',c.dates.state),
+    c.dates.tools.map(t=>trow(t.label, t.date?fmtD(t.date)+' &middot; '+ago(t.days_ago):'—',
+      !t.date?'var(--text3)':t.date===c.dates.latest&&t.days_ago<=1?'var(--green)':
+      t.date===c.dates.latest?'var(--gold)':'var(--red)')).join('')+
+    trow('Latest date across tools',fmtD(c.dates.latest),
+      c.dates.state==='ok'?'var(--green)':'var(--red)'));
 
-  // ── 2. STOCK UNIVERSE ─────────────────────────────────────
-  const techN=tools.tech.list.length,wmaN=tools.wma.list.length,bdN=tools.bd.list.length,cbN=tools.combined.list.length;
-  const techCodes=new Set(tools.tech.list.map(r=>r.code));
-  const wmaCodes=new Set(tools.wma.list.map(r=>r.code));
-  const cbCodes=new Set(tools.combined.list.map(r=>r.code));
-  const uniOk=Math.abs(techN-wmaN)<=10&&(cbN===0||[...cbCodes].every(c=>techCodes.has(c)||wmaCodes.has(c)));
-  const uniState=uniOk?'ok':Math.abs(techN-wmaN)>50?'fail':'warn';
-  if(uniState!=='ok'){issues++;if(Math.abs(techN-wmaN)>50)alerts.push(alertBox(`Tech has ${techN} stocks but WMA only ${wmaN} — large gap suggests an upload failure.`,'amber','python dse_wma.py --manual'));}
+  // 2 · universe
+  const n=c.universe.counts;
   html+=sec('2. Stock universe — tools should cover similar number of stocks');
-  html+=card(hdr('Universe coverage','stock count across all tools',uniState),
-    trow("Today's picks",tools.picks.list.length+' stocks')+
-    trow('WMA signals',wmaN+' Strong Buy signals today')+
-    trow('Tech analysis',techN+' stocks')+
-    trow('Combined signal',cbN+' stocks qualifying today')+
-    trow('BD signal',bdN+' stocks')+
-    trow('Smart money',tools.activity.list.length+' signals')
-  );
+  html+=card(hdr('Universe coverage','stock count across all tools',c.universe.state),
+    trow("Today's picks",n.picks+' stocks')+
+    trow('WMA signals',n.wma+' signals today')+
+    trow('Tech analysis',n.tech+' stocks')+
+    trow('Combined signal',n.combined+' stocks qualifying today')+
+    trow('BD signal',n.bd+' stocks')+
+    trow('Smart money',n.activity+' signals'));
 
-  // ── 3. PRICE CONSISTENCY ──────────────────────────────────
-  const sample=[...new Set([...Object.keys(techMap),...Object.keys(wmaMap),...Object.keys(cbMap)])].slice(0,12);
-  let mismatch=0,priceRows='';
-  sample.forEach(code=>{
-    const tl=techMap[code]||0,wl=wmaMap[code]||0,cl=cbMap[code]||0;
-    const active=[tl,wl,cl].filter(x=>x>0);
-    const maxD=active.length>1?Math.max(...active)-Math.min(...active):0;
-    const ok=maxD<2; // under ৳2 difference is timing noise, not a sync problem
-    if(!ok)mismatch++;
-    priceRows+=`<span class="td${ok?'':' warn'}" title="${code}">${code}</span>`+
-      `<span class="td ${tl?'':'muted'}">${tl?'৳'+tl.toFixed(2):'—'}</span>`+
-      `<span class="td ${wl?'':'muted'}">${wl?'৳'+wl.toFixed(2):'—'}</span>`+
-      `<span class="td ${cl?'':'muted'}">${cl?'৳'+cl.toFixed(2):'—'}</span>`+
-      `<span class="td ${ok?'ok':'warn'}">${ok?'✓':'Δ'+maxD.toFixed(2)}</span>`;
+  // 3 · price consistency
+  const money=v=>v?'৳'+Number(v).toFixed(2):'—';
+  let rows='';
+  c.prices.rows.forEach(p=>{
+    rows+='<span class="td'+(p.ok?'':' warn')+'">'+esc(p.code)+'</span>'+
+      '<span class="td'+(p.tech?'':' muted')+'">'+money(p.tech)+'</span>'+
+      '<span class="td'+(p.wma?'':' muted')+'">'+money(p.wma)+'</span>'+
+      '<span class="td'+(p.combined?'':' muted')+'">'+money(p.combined)+'</span>'+
+      '<span class="td '+(p.ok?'ok':'warn')+'">'+(p.ok?'✓':'Δ'+p.delta.toFixed(2))+'</span>';
   });
-  const priceState=mismatch===0?'ok':mismatch<=3?'warn':'fail';
-  if(priceState!=='ok'){issues++;alerts.push(alertBox(`${mismatch} stock${mismatch>1?'s':''} show price differences above ৳2 across tools — possible stale price.`,'amber',null));}
   html+=sec('3. LTP price consistency — same stock must show same price in every tool');
-  html+=card(hdr('Price sync','LTP comparison across Tech, WMA and Combined',priceState),
-    `<div class="ptbl"><span class="th">Code</span><span class="th">Tech</span><span class="th">WMA</span><span class="th">Combined</span><span class="th">Match</span>${priceRows}</div>`+
-    (mismatch?`<div style="margin-top:8px;font-size:11px;color:var(--gold)">⚠ ${mismatch} mismatch${mismatch>1?'es':''}. Prices refresh from today's tech run. Hard-refresh the site after each daily run.</div>`:'')
-  );
+  html+=card(hdr('Price sync','LTP comparison across Tech, WMA and Combined',c.prices.state),
+    '<div class="ptbl"><span class="th">Code</span><span class="th">Tech</span>'+
+    '<span class="th">WMA</span><span class="th">Combined</span><span class="th">Match</span>'+
+    rows+'</div>'+
+    (c.prices.mismatches?'<div style="margin-top:8px;font-size:11px;color:var(--gold)">⚠ '+
+      c.prices.mismatches+' above ৳2 apart. Prices refresh from the tech run.</div>':''));
 
-  // ── 4. COMBINED INTEGRITY ─────────────────────────────────
-  // Combined integrity: each tool uses a completely independent formula and
-  // principle, so a stock passing WMA but not Tech (or vice versa) is NORMAL —
-  // the engines measure different things. The only meaningful check is whether
-  // Combined ran on the same date as Tech and WMA (i.e. all tools uploaded together).
-  const cbDate=tools.combined.date, techDate=tools.tech.date, wmaDate=tools.wma.date;
-  const cbDateOk=cbDate&&techDate&&wmaDate&&cbDate===techDate&&cbDate===wmaDate;
-  const cbFail=cbDateOk?0:1;
-  let cbRows='';
-  if(cbDateOk){
-    cbRows=`<div style="font-size:11px;color:var(--green);padding:4px 0">Combined (${fmtD(cbDate)}), Tech (${fmtD(techDate)}), WMA (${fmtD(wmaDate)}) all on same date — engines ran together ✓</div>
-    <div style="font-size:11px;color:var(--text3);padding:4px 0;border-top:1px solid var(--cream2)">Note: individual stocks may differ across engines — each tool uses an independent formula. That is expected behaviour, not a data issue.</div>`;
-  } else if(cbN===0){
-    cbRows='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — strict criteria not met. This is normal on quiet or bearish days.</div>';
+  // 4 · combined ran with the others
+  const cb=c.combined;
+  let cbBody;
+  if(cb.state==='ok'){
+    cbBody='<div style="font-size:11px;color:var(--green);padding:4px 0">Combined, Tech and WMA all on '+
+      fmtD(cb.combined_date)+' — the engines ran together ✓</div>'+
+      '<div style="font-size:11px;color:var(--text3);padding:4px 0;border-top:1px solid var(--cream2)">'+
+      'Individual stocks may differ between engines. Each uses an independent formula; that is expected.</div>';
+  } else if(!cb.count){
+    cbBody='<div style="font-size:11px;color:var(--text3);padding:4px 0">No combined stocks today — '+
+      'the strict criteria were not met. Normal on a quiet or bearish day.</div>';
   } else {
-    cbRows=`<div style="font-size:11px;color:var(--gold);padding:4px 0">Combined is on ${fmtD(cbDate)} but Tech is on ${fmtD(techDate)} — run DSE_MANUAL.bat to sync all tools to the same date.</div>`;
+    cbBody='<div style="font-size:11px;color:var(--gold);padding:4px 0">Combined is on '+
+      fmtD(cb.combined_date)+' but Tech is on '+fmtD(cb.tech_date)+
+      ' — run DSE_MANUAL.bat to sync every tool to the same date.</div>';
   }
-  const cbState=cbFail===0?'ok':'warn';
-  if(cbFail>0){issues++;alerts.push(alertBox('Combined and Tech/WMA are on different dates — run DSE_MANUAL.bat to sync.','amber','DSE_MANUAL.bat'));}
+  html+=sec('4. Combined signal integrity — did it run with Tech and WMA');
+  html+=card(hdr('Combined integrity','same run, same date',cb.state),cbBody);
 
-  html+=sec('4. Combined signal integrity — every combined pick must pass Tech ≥70 AND WMA Strong Buy');
-  html+=card(hdr('Combined integrity','cross-checking picker / WMA / tech agreement',cbState),cbRows);
-
-  // ── 5. 52-WEEK TABLE ──────────────────────────────────────
-  const s52date=fresh&&fresh.stock52_updated?String(fresh.stock52_updated).slice(0,10):null;
-  const s52Fresh=diff(s52date)<=1;
-  const s52State=s52Fresh?'ok':'warn';
-  if(!s52Fresh){issues++;alerts.push(alertBox('52-week range table (stock_52w) is stale — dse_tech.py may not have uploaded 52-week data today.','amber','python dse_tech.py --manual'));}
+  // 5 · the 52-week table
   html+=sec('5. 52-week high/low table — must update with every dse_tech.py run');
-  html+=card(hdr('52-wk sync','stock_52w Supabase table',s52State),
-    trow('Last updated',s52date?fmtD(s52date)+' &middot; '+(diff(s52date)===0?'today':diff(s52date)+'d ago'):'—',s52Fresh?'var(--green)':'var(--gold)')
-  );
+  html+=card(hdr('52-wk sync','stock_52w Supabase table',c.stock52.state),
+    trow('Last updated',c.stock52.updated?fmtD(c.stock52.updated)+' &middot; '+ago(c.stock52.days_ago):'—',
+      c.stock52.state==='ok'?'var(--green)':'var(--gold)'));
 
-  // ── 6. 7-DAY RUN HISTORY ──────────────────────────────────
-  // fetch distinct dates by checking each of last 7 days individually
-  // (bulk fetch doesn't work well since each date has 391 rows)
-  const today2=todayISO();
-  // trade dates now come from the backend in a single call
-  const hist=(fresh&&Array.isArray(fresh.tech_dates))?fresh.tech_dates:[];
-  const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const today=todayISO();
-  let dots='';let missedDays=0;
-  for(let i=6;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const iso=d.toISOString().slice(0,10);
-    const dow=d.getDay();
-    const BD_HOL=new Set(['2026-01-01','2026-02-21','2026-03-17','2026-03-26','2026-04-14','2026-04-17','2026-04-18','2026-05-01','2026-05-25','2026-06-05','2026-06-07','2026-07-01','2026-08-05','2026-08-15','2026-09-05','2026-10-02','2026-10-14','2026-12-16','2026-12-25','2026-12-26']);
-    const trading=dow>=0&&dow<=4&&!BD_HOL.has(iso);
-    const ran=hist.includes(iso);
-    const isToday=iso===today;
+  // 6 · seven days of runs
+  let dots='';
+  c.history.days.forEach(day=>{
     let bg,lbl,col;
-    if(ran){bg='var(--green)';lbl='✓';col='#fff';}
-    else if(trading&&!isToday){bg='var(--red)';lbl='✗';col='#fff';missedDays++;}
-    else if(isToday&&!ran){bg='var(--gold)';lbl='?';col='#fff';}
+    if(day.ran){bg='var(--green)';lbl='✓';col='#fff';}
+    else if(day.today){bg='var(--gold)';lbl='?';col='#fff';}
+    else if(day.trading){bg='var(--red)';lbl='✗';col='#fff';}
     else{bg='var(--cream2)';lbl='–';col='var(--text3)';}
-    dots+=`<div class="dot"><div class="dot-sq" style="background:${bg};color:${col}">${lbl}</div><div class="dot-lbl">${DAY[dow]}</div></div>`;
-    if(trading&&!ran&&!isToday){
-      alerts.push(alertBox(`No upload on ${iso} (${DAY[dow]}) — trading day missed.`,'amber',`python dse_tech.py --date ${iso}`));
-    }
-  }
-  const runState=missedDays===0?'ok':missedDays<=1?'warn':'fail';
-  if(missedDays>0)issues++;
+    dots+='<div class="dot"><div class="dot-sq" style="background:'+bg+';color:'+col+'">'+
+      lbl+'</div><div class="dot-lbl">'+DAY[day.dow]+'</div></div>';
+  });
   html+=sec('6. 7-day upload history — tech_signals table');
-  html+=card(hdr('Daily run history','green=uploaded · red=missed trading day · grey=weekend',runState),
-    `<div class="dot-row">${dots}</div>`+
-    `<div style="font-size:10px;color:var(--text3);margin-top:8px">Green = uploaded &middot; Red = trading day missed &middot; Gold = today pending &middot; Grey = weekend/holiday</div>`
-  );
+  html+=card(hdr('Daily run history','the DSE trades Sunday to Thursday',c.history.state),
+    '<div class="dot-row">'+dots+'</div>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:8px">Green = uploaded '+
+    '&middot; Red = trading day missed &middot; Gold = today, pending &middot; '+
+    'Grey = Friday, Saturday or a public holiday</div>');
 
-  // ── TRACK RECORD ──────────────────────────────────────────
-  const trDate=tr?.updated;
-  const trState=diff(trDate)<=2?'ok':'warn';
+  // 7 · track record
   html+=sec('7. Track record currency');
-  html+=card(hdr('Track record','reflects latest resolved picks',trState),
-    trow('Last updated',fmtD(trDate),diff(trDate)<=2?'var(--green)':'var(--gold)')+
-    trow('Tools tracked',(tr?.tools||[]).length)+
-    trow('Total resolved picks',(tr?.tools||[]).reduce((s,t)=>s+(t.agg?.resolved||0),0))
-  );
+  html+=card(hdr('Track record','reflects latest resolved picks',c.track.state),
+    trow('Last updated',fmtD(c.track.updated),c.track.state==='ok'?'var(--green)':'var(--gold)')+
+    trow('Tools tracked',c.track.tools)+
+    trow('Total resolved picks',c.track.resolved));
 
-  // ── ALERTS + SUMMARY ──────────────────────────────────────
-  const allGood=issues===0;
-  const passed=7-issues;
-  badge.textContent=allGood?`${passed}/7 All synced ✓`:`${passed}/7 checks passed`;
-  badge.className='badge '+(allGood?'ok':issues>2?'fail':'warn');
-  badge.style.cssText=`background:${allGood?'var(--green-bg)':issues>2?'var(--red-bg)':'var(--gold-bg)'};color:${allGood?'var(--green)':issues>2?'var(--red)':'var(--gold)'}`;
+  // the verdict, and what to do about it
+  const good=d.issues===0;
+  badge.textContent=good?d.passed+'/'+d.total+' All synced ✓':d.passed+'/'+d.total+' checks passed';
+  badge.style.cssText='background:'+(good?'var(--green-bg)':d.issues>2?'var(--red-bg)':'var(--gold-bg)')+
+    ';color:'+(good?'var(--green)':d.issues>2?'var(--red)':'var(--gold)');
+  alEl.innerHTML = good
+    ? alertBox('All '+d.total+' checks passed — every tool is in sync with the same data.','green')
+    : d.alerts.map(a=>alertBox(esc(a.message),a.level,a.command||null)).join('');
 
-  alEl.innerHTML = allGood
-    ? alertBox('All 7 checks passed — every tool is in sync with the same data.','green')
-    : alerts.join('');
-
-  const now=new Date();now.setUTCHours(now.getUTCHours()+6);
-  rt.textContent='Last checked: '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' BD time';
+  document.getElementById('run-time').textContent =
+    'Checked ' + new Date(d.generated_at).toLocaleTimeString('en-GB',
+      {hour:'2-digit',minute:'2-digit'}) + (d.env?' · '+d.env:'');
   out.innerHTML=html;
 }
-run();
+
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+//  A key already in this tab means straight in; anything else shows the gate.
+if(KEY){
+  fetch(API+'/api/admin/audit',{headers:H()})
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(d=>{show(true);render(d);})
+    .catch(()=>{sessionStorage.removeItem('dse_admin_key');show(false);});
+}else{ show(false); }
 </script>
 </body>
 </html>

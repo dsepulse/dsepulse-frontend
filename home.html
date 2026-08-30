@@ -99,8 +99,31 @@ a{color:inherit}
 
 /* ── live band ─────────────────────────────────────────────────────────── */
 .band{background:var(--navy);color:#fff}
+/*  The chrome runs wider than the reading column on purpose. The bar and the
+    footer are navigation and small print, not prose — holding them to the
+    1080px measure that suits body text left a 370px empty margin either side
+    of the footer on a wide screen and pushed it to well over 600px tall.
+    Both are set here so they stay the same width as each other; the content
+    between them is unchanged. */
 .band .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 26px;
-  padding-top:11px;padding-bottom:11px}
+  padding:11px 32px;max-width:1400px}
+/*  32px is what keeps the brand off the glass on a 1440 screen, where the
+    1400px cap leaves almost no margin of its own. A phone has none to spare,
+    so it goes back to the site's 20px there. footer.js matches both. */
+@media (max-width:560px){ .band .wrap{padding-left:20px;padding-right:20px} }
+/*  The bar is sticky, so every row it wraps to is a row taken off the screen
+    for the whole visit. On a 320px phone it was wrapping to 165px — 29% of
+    the viewport, permanently. Two of the four figures go on small screens;
+    DSEX and the date are the two that answer "is this today's data", which is
+    the only question the bar is there to answer at a glance. Both survive in
+    full further down the page. */
+@media (max-width:700px){ .band .stat.opt{display:none} }
+/*  And the nav row goes too. Every link in it is an anchor to a section of
+    this same page — on a phone that is what scrolling is for — and the one
+    that is not, Pricing, is where the gold Sign up button beside it already
+    goes. Dropping it takes a whole row off a bar that never leaves the
+    screen. */
+@media (max-width:620px){ .band .bnav{display:none} }
 .band .brand{font:700 15px/1 var(--sans);letter-spacing:.02em;margin-right:auto;
   display:flex;align-items:center;gap:8px}
 .band .brand i{width:7px;height:7px;border-radius:50%;background:var(--gold);
@@ -494,9 +517,16 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   border-color:var(--navy)}
 
 /* ── band nav and the two auth buttons ─────────────────────────────── */
-.bnav{display:flex;gap:16px;align-items:center}
+/*  It must wrap. Five links at 12px come to ~294px, and a 320px phone gives
+    the bar 280px to put them in — without wrap:wrap the nav simply hung over
+    the right edge and the whole page scrolled sideways. */
+.bnav{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;min-width:0}
+/*  The padding is hit area, the negative margin gives the layout back. A 12px
+    line of text is a 12px tap target, which is half what a thumb needs; this
+    makes each link ~30px to touch without moving anything or changing the
+    height of the bar, which --bandh and the hero's min-height both depend on. */
 .bnav a{font:600 12px/1 var(--sans);color:rgba(255,255,255,.72);
-  text-decoration:none;white-space:nowrap}
+  text-decoration:none;white-space:nowrap;padding:9px 3px;margin:-9px -3px}
 .bnav a:hover{color:#fff;text-decoration:underline}
 .band a.signin{font:600 12px/1 var(--sans);color:#fff;border:1px solid
   rgba(255,255,255,.32);padding:8px 13px;border-radius:6px;text-decoration:none;
@@ -805,8 +835,8 @@ footer .disc{max-width:76ch;line-height:1.65}
     <div class="wrap">
       <span class="brand"><i></i>DSE&nbsp;Pulse</span>
       <span class="stat"><span class="l">DSEX</span><span class="v" id="b-dsex">—</span></span>
-      <span class="stat"><span class="l">Scanned</span><span class="v" id="b-scan">—</span></span>
-      <span class="stat"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
+      <span class="stat opt"><span class="l">Scanned</span><span class="v" id="b-scan">—</span></span>
+      <span class="stat opt"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
       <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
       <nav class="bnav">
         <a href="#top">Home</a><a href="#tools">Tools</a><a href="#about">About</a><a

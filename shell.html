@@ -1986,6 +1986,23 @@ function openFirstVisibleTool(){
     '/calculator.html'];
   try{
     var hash=location.hash.replace('#','');
+    /*  #plan and #account open the customer's own plan, not a market tool.
+        Without this, every "Open dashboard" link on the landing page — the one
+        a subscriber clicks straight after paying — landed on the market
+        overview, because the code below falls through to "open the first
+        visible tab" and the first visible tab is a market tool.
+
+        This does the rail-and-tab click DIRECTLY rather than calling
+        window.openAccountPlan(), which starts by calling showView('dashboard')
+        — and showView('dashboard') is what called this function. Going through
+        it would loop forever.  */
+    if(hash==='plan'||hash==='account'){
+      var rail=document.querySelector('.cat-btn[data-cat="account"]');
+      if(rail) rail.click();
+      var ptab=document.querySelector('.cat-panel[data-cat="account"] .tab');
+      if(ptab) ptab.click();
+      return;
+    }
     if(hash){
       var last='/'+hash+'.html';
       if(VALID.indexOf(last)>=0){

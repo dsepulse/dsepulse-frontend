@@ -170,23 +170,38 @@
   '.dsef>div{width:auto;max-width:none;flex:none;float:none}' +
   '.dsef a{color:#B9C3D2;text-decoration:none}' +
   '.dsef a:hover{color:#fff;text-decoration:underline}' +
-  //  1080px with 20px of padding is home.html's .wrap to the pixel. The
-  //  footer's own background runs the full width of the window; what it holds
-  //  lines up with the header band and with the page above it.
-  '.dsef>.dsef-in{max-width:1080px;margin:0 auto;padding:46px 20px 30px;' +
-    'display:grid;gap:34px 40px;grid-template-columns:1fr}' +
-  '@media(min-width:680px){.dsef>.dsef-in{grid-template-columns:1fr 1fr}}' +
-  '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}}' +
+  //  1400px with 20px of padding is home.html's `.band .wrap` to the pixel,
+  //  so the footer and the header bar are the same width as each other. It is
+  //  deliberately WIDER than the 1080px reading column between them: at 1080
+  //  the footer left a 370px empty margin either side on a wide screen and
+  //  still ran past 600px tall, because four columns and a disclaimer were
+  //  being squeezed into two thirds of the window.
+  '.dsef>.dsef-in{max-width:1400px;margin:0 auto;padding:38px 32px 26px;' +
+    'display:grid;gap:30px 46px;grid-template-columns:1fr}' +
+  //  Four link columns stacked one above another made this 1,400px tall on a
+  //  phone — longer than the page it sits under. Two columns from 360px up
+  //  halves that, with the brand block spanning both so its paragraph still
+  //  has a readable width. At 1000px it becomes four across and the brand
+  //  takes its own column again.
+  '@media(min-width:360px){.dsef>.dsef-in{grid-template-columns:1fr 1fr}' +
+    '.dsef>.dsef-in>.dsef-brand{grid-column:1/-1}}' +
+  '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}' +
+    '.dsef>.dsef-in>.dsef-brand{grid-column:auto}}' +
   '.dsef h4{font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;' +
     'text-transform:uppercase;color:#C9A227;margin:0 0 6px;padding-bottom:9px;' +
     'border-bottom:2px solid rgba(201,162,39,.35);display:inline-block}' +
   '.dsef ul{list-style:none;margin:12px 0 0;padding:0}' +
-  '.dsef li{margin-bottom:9px;font-size:13.5px}' +
+  //  A 16px line is a 16px tap target. The padding takes each link to ~24px
+  //  to touch; the li spacing goes up with it so two neighbouring targets
+  //  do not overlap, which is worse than a small target — it means the tap
+  //  that misses lands on the wrong page rather than on nothing.
+  '.dsef li{margin-bottom:12px;font-size:13.5px}' +
+  '.dsef li a{padding:4px 0}' +
   '.dsef-brand b{display:block;font:700 20px/1.2 "Playfair Display",Georgia,serif;' +
     'color:#fff;margin-bottom:4px}' +
   '.dsef-brand .l{display:block;font:500 11.5px/1.5 ui-monospace,SFMono-Regular,' +
     'Menlo,monospace;color:#8A93A5;margin-bottom:14px}' +
-  '.dsef-brand p{margin:0;font-size:13.5px;max-width:46ch;color:#B9C3D2}' +
+  '.dsef-brand p{margin:0;font-size:13.5px;max-width:52ch;color:#B9C3D2}' +
   '.dsef-social{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}' +
   '.dsef-social a{display:inline-flex;align-items:center;justify-content:center;' +
     'width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);' +
@@ -201,12 +216,17 @@
   //  footer's children, and it OUTRANKS a bare `.dsef-disc` — which is how
   //  the disclaimer ended up running the full width of the window while
   //  everything above it sat in a 1080px column. Match the specificity.
-  '.dsef>.dsef-disc{max-width:1080px;margin:0 auto;padding:0 20px 26px;' +
+  '.dsef>.dsef-disc{max-width:1400px;margin:0 auto;padding:0 32px 22px;' +
     'font-size:11.5px;line-height:1.7;color:#7E8898}' +
   '.dsef-disc b{color:#9AA5B6}' +
   '.dsef-disc a{color:#9AA5B6;text-decoration:underline}' +
+  //  Same 32px the header bar uses, dropping to the site's 20px on a phone
+  //  where there is no width to give away. Both numbers live in home.html's
+  //  `.band .wrap` too; if one moves, move the other or they stop lining up.
+  '@media(max-width:560px){.dsef>.dsef-in,.dsef>.dsef-disc,.dsef-bar div' +
+    '{padding-left:20px;padding-right:20px}}' +
   '.dsef-bar{border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22)}' +
-  '.dsef-bar div{max-width:1080px;margin:0 auto;padding:15px 20px;' +
+  '.dsef-bar div{max-width:1400px;margin:0 auto;padding:14px 32px;' +
     'font-size:12.5px;color:#8A93A5;display:flex;gap:12px;flex-wrap:wrap;' +
     'justify-content:space-between}';
 

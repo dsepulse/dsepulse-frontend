@@ -13,9 +13,17 @@
  *   script tag and no page needs editing to gain a footer.
  *
  * WHERE IT PUTS ITSELF
- *   If the page already has a <footer>, this REPLACES it. That is how
- *   home.html and shell.html get the shared version without being edited.
- *   Otherwise it appends to the end of <body>.
+ *   Always as the LAST CHILD OF <body>, and a page's own footer is removed
+ *   first so nobody ends up with two. That is how home.html and shell.html get
+ *   the shared version without being edited.
+ *
+ *   The "last child of body" part matters and is not tidiness. home.html's
+ *   footer sat inside <div class="wrap">, which is 1080px wide and centred, so
+ *   the footer's dark background stopped 1080px short of the window while the
+ *   header band above it ran edge to edge. A band across the top and a floating
+ *   slab in the middle at the bottom is the thing people notice first. Lifted
+ *   out of the wrap, the background is full width and the CONTENT inside is
+ *   held to the same 1080px as the header, so the two line up.
  *
  * WHERE IT DOES NOT APPEAR
  *   - inside an iframe: the dashboard loads tool pages in one, and a footer
@@ -162,8 +170,10 @@
   '.dsef>div{width:auto;max-width:none;flex:none;float:none}' +
   '.dsef a{color:#B9C3D2;text-decoration:none}' +
   '.dsef a:hover{color:#fff;text-decoration:underline}' +
-  '.dsef>.dsef-in{max-width:1200px;margin:0 auto;padding:46px 24px 30px;' +
-    
+  //  1080px with 20px of padding is home.html's .wrap to the pixel. The
+  //  footer's own background runs the full width of the window; what it holds
+  //  lines up with the header band and with the page above it.
+  '.dsef>.dsef-in{max-width:1080px;margin:0 auto;padding:46px 20px 30px;' +
     'display:grid;gap:34px 40px;grid-template-columns:1fr}' +
   '@media(min-width:680px){.dsef>.dsef-in{grid-template-columns:1fr 1fr}}' +
   '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}}' +
@@ -187,12 +197,16 @@
   '.dsef-c div{margin-bottom:9px;display:flex;gap:9px;align-items:flex-start}' +
   '.dsef-c span{color:#8A93A5;flex:0 0 auto;font-size:11.5px;letter-spacing:.06em;' +
     'text-transform:uppercase;padding-top:2px;min-width:58px}' +
-  '.dsef-disc{max-width:1200px;margin:0 auto;padding:0 24px 26px;' +
+  //  `.dsef>div{max-width:none}` above resets what host pages do to the
+  //  footer's children, and it OUTRANKS a bare `.dsef-disc` — which is how
+  //  the disclaimer ended up running the full width of the window while
+  //  everything above it sat in a 1080px column. Match the specificity.
+  '.dsef>.dsef-disc{max-width:1080px;margin:0 auto;padding:0 20px 26px;' +
     'font-size:11.5px;line-height:1.7;color:#7E8898}' +
   '.dsef-disc b{color:#9AA5B6}' +
   '.dsef-disc a{color:#9AA5B6;text-decoration:underline}' +
   '.dsef-bar{border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22)}' +
-  '.dsef-bar div{max-width:1200px;margin:0 auto;padding:15px 24px;' +
+  '.dsef-bar div{max-width:1080px;margin:0 auto;padding:15px 20px;' +
     'font-size:12.5px;color:#8A93A5;display:flex;gap:12px;flex-wrap:wrap;' +
     'justify-content:space-between}';
 
@@ -260,11 +274,14 @@
       f.className = "dsef";
       f.innerHTML = build();
 
-      //  Replace a page's own footer rather than adding a second one. This is
-      //  what lets home.html and shell.html join in without being edited.
+      //  Take out the page's own footer rather than adding a second one, then
+      //  put ours at the end of the body — NOT where the old one stood. Where
+      //  the old one stood is usually inside a centred column, and a footer
+      //  that only covers the middle of the window looks broken next to a
+      //  header that covers all of it.
       var old = document.querySelector("footer:not(.dsef)");
-      if (old && old.parentNode) old.parentNode.replaceChild(f, old);
-      else document.body.appendChild(f);
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      document.body.appendChild(f);
     } catch (e) {}
   }
 

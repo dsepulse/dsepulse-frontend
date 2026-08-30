@@ -1680,7 +1680,7 @@ footer .disc{max-width:76ch;line-height:1.65}
     //  A subscriber clicking a lock is not asking to create an account. This
     //  page cannot show them the name — it does not have it — but the page
     //  that can is one click away, so send them there instead of selling.
-    if (ENTITLED) { window.location.href = "/shell.html"; return; }
+    if (ENTITLED) { window.location.href = "/shell.html#plan"; return; }
     openAuth();
   });
   el("auth-x").addEventListener("click", closeAuth);
@@ -1960,10 +1960,18 @@ footer .disc{max-width:76ch;line-height:1.65}
     return (p === "pro" || p === "premium") ? p.toUpperCase() : "";
   }
 
-  function setCTA(id, text) {
+  function setCTA(id, text, href) {
     var a = el(id);
-    if (a) a.textContent = text;
+    if (!a) return;
+    a.textContent = text;
+    if (href) a.setAttribute("href", href);
   }
+
+  //  A customer clicking "Open dashboard" wants THEIR account, not the market
+  //  overview. shell.html opens the first visible tool unless the hash says
+  //  otherwise, so a bare /shell.html link always landed on the market — which
+  //  is the one screen a subscriber does not need pointing out to them.
+  var DASH_PLAN = "/shell.html#plan";
 
   function paint_entitled() {
     var plan = paidPlan();
@@ -1974,14 +1982,14 @@ footer .disc{max-width:76ch;line-height:1.65}
     if (si) si.style.display = signedIn() ? "none" : "";
     if (su) {
       su.textContent = signedIn() ? "Dashboard" : "Sign up";
-      su.setAttribute("href", signedIn() ? "/shell.html" : "#join");
+      su.setAttribute("href", signedIn() ? DASH_PLAN : "#join");
     }
 
     var b = el("youbanner") || { className: "", innerHTML: "" };
     if (!ENTITLED) {
       b.className = ""; b.innerHTML = "";
-      setCTA("cta-screen", "Start free — 7 days of Pro");
-      setCTA("cta-tools",  "Start free — 7 days of Pro");
+      setCTA("cta-screen", "Start free — 7 days of Pro", "/shell.html");
+      setCTA("cta-tools",  "Start free — 7 days of Pro", "/shell.html");
       //  An invitation has already retitled this column, and it is still the
       //  right title — do not put it back.
       if (el("join-h") && !signedIn() && !INVITED)
@@ -2018,10 +2026,10 @@ footer .disc{max-width:76ch;line-height:1.65}
                   '<span class="yt"><b>' + esc(head) + "</b>" +
                   (meta ? ' <span class="ymeta">' + esc(meta) + "</span>" : "") +
                   ' <span class="ylong">' + esc(longer) + "</span></span>" +
-                  '<a class="yg" href="/shell.html">Open dashboard</a>';
+                  '<a class="yg" href="' + DASH_PLAN + '">Open dashboard</a>';
 
-    setCTA("cta-screen", "Open your dashboard →");
-    setCTA("cta-tools",  "Open your dashboard →");
+    setCTA("cta-screen", "Open your dashboard →", DASH_PLAN);
+    setCTA("cta-tools",  "Open your dashboard →", DASH_PLAN);
     if (el("join-h")) el("join-h").textContent = "Your account";
     if (el("join-p")) {
       el("join-p").textContent = sub

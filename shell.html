@@ -53,6 +53,24 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 /* NAV */
 .nav{background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
 .nav-inner{max-width:1200px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:64px}
+/* ── the dashboard header strip ───────────────────────────────────────────
+   One line: greeting, then the market summary beside it. The two used to be
+   stacked and the band came to 96px before any content. Everything the old
+   version said is still said. */
+.dash-hd{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px 14px;margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid var(--border)}
+.dash-hd-l{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
+.dash-hd-greet{font-family:var(--serif);font-size:17px;font-weight:700;
+  color:var(--navy);white-space:nowrap}
+.dash-hd-sub{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
+
+/* ── the ticker is marketing, and the dashboard is past that ──────────────
+   A scrolling marquee of prices earns its place on the landing page. Inside
+   the dashboard it is 34px of a screen the customer is trying to read a
+   market view on, and every figure in it is available in the tools below. */
+body.dash-open .ticker{display:none}
+
 /*  The row above is fixed-height and never wraps, so on a 360px phone the
     logo, four links and two buttons ran to 568px and the WHOLE dashboard
     scrolled sideways — not just the header. Below 820px it wraps and the
@@ -701,11 +719,16 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 
 <!-- DASHBOARD VIEW -->
 <div id="view-dashboard" style="display:none">
-  <div style="background:var(--cream);min-height:100vh;padding:14px 40px 28px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
-      <div>
-        <div id="greet-main" style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening</div>
-        <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
+  <div style="background:var(--cream);min-height:100vh;padding:10px 40px 24px">
+    <!--  The greeting and the market line used to stack: a 20px serif heading
+          on one row, a 10px mono strip on the next, inside a band with 14px
+          above it and 22px below. 96px of a sticky-ish header to say good
+          morning. They sit on one line now and the band is 46px; the words
+          are unchanged, and on a phone they still wrap to two rows.  -->
+    <div class="dash-hd">
+      <div class="dash-hd-l">
+        <span id="greet-main" class="dash-hd-greet">Good evening</span>
+        <span id="dash-date-sub" class="dash-hd-sub">Loading market…</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="trialBadge" style="display:none;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px"></span>
@@ -999,6 +1022,8 @@ function navTo(id){showView('landing');setTimeout(function(){var e=document.getE
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
+  //  hides the ticker while the dashboard is open; see body.dash-open above
+  try{ document.body.classList.toggle('dash-open', v==='dashboard'); }catch(e){}
  if(v==='dashboard'){ applyToolGates().then(openFirstVisibleTool); }
   window.scrollTo(0,0);
 }

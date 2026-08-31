@@ -341,6 +341,13 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 }
 </style>
 <style>
+/*  This was an inline style, which no media query can reach. 40px of padding
+    either side is right on a desk; on a 320px phone it is 80px of the 320 —
+    a quarter of the screen spent on margin, leaving a 240px column for a
+    table. Same value on a wide screen, a quarter of it on a narrow one. */
+.dash-pad{background:var(--cream);min-height:100vh;padding:10px 40px 24px}
+@media(max-width:760px){.dash-pad{padding:10px 14px 20px}}
+@media(max-width:400px){.dash-pad{padding:8px 10px 18px}}
 .dash-layout{display:flex;gap:0;align-items:flex-start}
 .cat-rail{width:150px;flex-shrink:0;border-right:1px solid var(--border);padding:10px 6px;background:var(--cream)}
 .cat-btn{display:flex;align-items:center;gap:8px;padding:10px 10px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:7px;border-left:2px solid transparent;user-select:none}
@@ -354,7 +361,16 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 .dash-layout .tabs .tab.active{border-color:var(--gold);background:var(--gold-bg);color:var(--navy);font-weight:700}
 .dash-content{flex:1;min-width:0;padding:0 24px}
 #tool-frame{width:100%;height:80vh;border:0;border-radius:10px;background:#fff;display:block}
-@media(max-width:760px){.dash-layout{flex-direction:column}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:16px 0 0}}
+/*  align-items:flex-start above is right in row mode — it stops the rail
+    stretching to the full height of the content beside it. The moment the
+    container turns into a column, though, that same property stops being a
+    vertical alignment and becomes a HORIZONTAL one: .dash-main is then sized
+    to fit-content rather than to the column, and any pane whose natural width
+    exceeds the phone screen pushes the whole document sideways. Measured at
+    390px: a 310px column holding a 400px pane, 50px of sideways scroll on
+    every dashboard view. Putting stretch back for the column restores the
+    ordinary behaviour — the pane is exactly as wide as the space it is in. */
+@media(max-width:760px){.dash-layout{flex-direction:column;align-items:stretch}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:16px 0 0}}
 </style>
 </head>
 <body>
@@ -719,7 +735,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 
 <!-- DASHBOARD VIEW -->
 <div id="view-dashboard" style="display:none">
-  <div style="background:var(--cream);min-height:100vh;padding:10px 40px 24px">
+  <div class="dash-pad">
     <!--  The greeting and the market line used to stack: a 20px serif heading
           on one row, a 10px mono strip on the next, inside a band with 14px
           above it and 22px below. 96px of a sticky-ish header to say good
@@ -774,6 +790,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="cat-panel" data-cat="account" style="display:none">
         <div class="tab" onclick="switchDashTab('plan',this)">My plan</div>
         <div class="tab" onclick="switchDashTab('refer',this)">Refer a friend</div>
+        <div class="tab" onclick="switchDashTab('details',this)">My details</div>
       </div>
     </div>
     <div class="dash-content">
@@ -783,6 +800,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     </div>
     <div id="dt-plan"  style="display:none"><div id="plan-root"></div></div>
     <div id="dt-refer" style="display:none"><div id="refer-root"></div></div>
+    <div id="dt-details" style="display:none"><div id="details-root"></div></div>
     </div>
     </div>
   </div>
@@ -1030,11 +1048,12 @@ function showView(v){
 
 function switchDashTab(t,el){
   var __f=document.getElementById('tool-frame'); if(__f)__f.style.display='none';
-  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings','plan','refer'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings','plan','refer','details'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
   const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors,
-             plan:window.buildPlanPane,refer:window.buildReferPane};
+             plan:window.buildPlanPane,refer:window.buildReferPane,
+             details:window.buildDetailsPane};
   if(fns[t]){try{fns[t]();}catch(e){}}
 }
 function openTool(url,el){
@@ -2134,6 +2153,29 @@ function openFirstVisibleTool(){
     .ac-strip .sf b{font-size:17px}
     .ac-card{padding:16px 15px}
   }
+  /* ── My details ───────────────────────────────────────────────────────
+     A form, so it is laid out like one: label above field, fields in a grid
+     that becomes one column when there is no room for two. */
+  .ac-form{display:grid;gap:14px 18px;grid-template-columns:1fr;margin-bottom:4px}
+  @media (min-width:900px){ .ac-form.two{grid-template-columns:1fr 1fr} }
+  .ac-f label{display:block;font:600 10px/1 var(--mono);letter-spacing:.11em;
+    text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+  .ac-f input{width:100%;font:400 14px/1.3 var(--sans);padding:10px 12px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);
+    color:var(--text)}
+  .ac-f input:focus{outline:0;border-color:var(--navy)}
+  .ac-f input:disabled{background:var(--cream);color:var(--text3);
+    cursor:not-allowed}
+  .ac-f .hint{margin:6px 0 0;font-size:11.5px;color:var(--text3);line-height:1.5}
+  .ac-ro{display:flex;gap:10px 26px;flex-wrap:wrap;margin:0 0 16px;
+    padding:12px 14px;background:var(--cream);border:1px solid var(--border);
+    border-radius:9px}
+  .ac-ro div{min-width:0}
+  .ac-ro b{display:block;font:600 13px/1.3 var(--mono);color:var(--navy);
+    word-break:break-all}
+  .ac-ro span{font:600 9.5px/1.2 var(--mono);letter-spacing:.11em;
+    text-transform:uppercase;color:var(--text3)}
+
   /* the sentence that used to be a paragraph */
   .ac-fine{margin:0 0 12px;font-size:12.5px;line-height:1.6;color:var(--text3);
     max-width:70ch}
@@ -2145,6 +2187,10 @@ function openFirstVisibleTool(){
     background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap}
   .ac-note{margin:0;font-size:12.5px;color:var(--text3);min-height:1px}
   .ac-note.ok{color:var(--green)}
+  /*  .ac-note.err was set in JS on three different panes and had no rule,
+      so every failure message rendered in the same grey as 'Saving…' —
+      the two states a customer most needs told apart looked identical. */
+  .ac-note.err{color:var(--red)}
   .ac-have{background:var(--green-bg,#ECFDF5);border:1px solid var(--green-border,#A7F3D0);
     border-radius:9px;padding:13px 15px;font-size:13.5px;line-height:1.55;margin-bottom:14px}
   .ac-have b{color:var(--green)}
@@ -2196,6 +2242,15 @@ function openFirstVisibleTool(){
     return { ok: r.ok, status: r.status, data: j };
   }
 
+  /*  POST with the caller's token, returning {ok,status,data} like get() does.
+      NOT the global post() defined further up this file: that one belongs to
+      the landing page's sign-in code, sends no Authorization header, and
+      THROWS on a non-2xx instead of returning a result. Calling it from here
+      would 401 and then reject unhandled, which looks like a dead button. */
+  async function send(path, body) {
+    return get(path, { method: "POST", body: JSON.stringify(body || {}) });
+  }
+
   function gate(what) {
     return '<div class="ac"><div class="ac-card"><h3>Sign in</h3>' +
            '<p>' + esc(what) + '</p>' +
@@ -2220,6 +2275,129 @@ function openFirstVisibleTool(){
       var tab = document.querySelector('.cat-panel[data-cat="account"] .tab');
       if (tab) tab.click();
     } catch (e) {}
+  };
+
+  /*  My details — the customer's own record.
+
+      Two forms, deliberately separate. Changing a name and changing a password
+      are different acts with different consequences, and putting them behind
+      one Save button means somebody who wanted to fix a typo in their phone
+      number has to think about their password.  */
+  window.buildDetailsPane = async function () {
+    var host = document.getElementById("details-root");
+    if (!host) return;
+    if (!tok()) { host.innerHTML = gate("Your details are private to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your details…</p></div></div>';
+
+    var r = await get("/api/auth/me");
+    if (!r.ok || !r.data) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>My details</h3>' +
+        '<p>Could not load your details just now. Please try again shortly.</p></div></div>';
+      return;
+    }
+    var d = r.data;
+    var since = d.member_since ? String(d.member_since).slice(0, 10) : "—";
+
+    host.innerHTML =
+      '<div class="ac">' +
+
+      '<div class="ac-card"><h3>My details</h3>' +
+        '<span class="ac-k">Your account</span>' +
+        '<div class="ac-ro">' +
+          '<div><b>' + esc(d.email || "—") + '</b><span>email · sign-in</span></div>' +
+          '<div><b>' + esc(since) + '</b><span>member since</span></div>' +
+          (d.referral_code
+            ? '<div><b>' + esc(d.referral_code) + '</b><span>referral code</span></div>'
+            : "") +
+          '<div><b>' + esc(String(d.user_id || "").slice(0, 8)) + '</b>' +
+            '<span>account reference</span></div>' +
+        '</div>' +
+
+        '<div class="ac-form two">' +
+          '<div class="ac-f"><label for="ac-name">Name</label>' +
+            '<input id="ac-name" maxlength="80" value="' + esc(d.name || "") + '"></div>' +
+          '<div class="ac-f"><label for="ac-phone">Phone</label>' +
+            '<input id="ac-phone" maxlength="20" placeholder="01XXXXXXXXX" value="' +
+            esc(d.phone || "") + '"></div>' +
+        '</div>' +
+        '<p class="ac-fine">Your email is how you sign in and where receipts go, ' +
+          'so it cannot be changed here. Contact us if it needs correcting.</p>' +
+        '<button class="ac-btn primary" id="ac-save">Save changes</button>' +
+        '<p class="ac-note" id="ac-dmsg"></p>' +
+      '</div>' +
+
+      '<div class="ac-card"><h3>Change password</h3>' +
+        '<div class="ac-form">' +
+          '<div class="ac-f"><label for="ac-pw0">Current password</label>' +
+            '<input id="ac-pw0" type="password" autocomplete="current-password"></div>' +
+          '<div class="ac-f"><label for="ac-pw1">New password</label>' +
+            '<input id="ac-pw1" type="password" autocomplete="new-password" ' +
+            'maxlength="72" placeholder="At least 8 characters"></div>' +
+          '<div class="ac-f"><label for="ac-pw2">New password again</label>' +
+            '<input id="ac-pw2" type="password" autocomplete="new-password" ' +
+            'maxlength="72"></div>' +
+        '</div>' +
+        '<p class="ac-fine">Anyone already signed in on another device stays ' +
+          'signed in until that session expires.</p>' +
+        '<button class="ac-btn" id="ac-pwgo">Change password</button>' +
+        '<p class="ac-note" id="ac-pmsg"></p>' +
+      '</div>' +
+
+      '</div>';
+
+    /* ── save name and phone ─────────────────────────────────────────── */
+    var save = document.getElementById("ac-save");
+    var dmsg = document.getElementById("ac-dmsg");
+    save.onclick = async function () {
+      var name  = document.getElementById("ac-name").value.trim();
+      var phone = document.getElementById("ac-phone").value.trim();
+      dmsg.className = "ac-note";
+      if (!name) { dmsg.textContent = "Please enter your name."; return; }
+      save.disabled = true; dmsg.textContent = "Saving…";
+      var res = await send("/api/account/profile", { name: name, phone: phone });
+      save.disabled = false;
+      if (res.ok) {
+        dmsg.className = "ac-note ok";
+        dmsg.textContent = "Saved.";
+        //  the greeting in the header carries the name; keep it honest
+        try {
+          var g = document.getElementById("greet-main");
+          if (g && window.__dseGreet) g.textContent = window.__dseGreet;
+        } catch (e) {}
+      } else {
+        dmsg.className = "ac-note err";
+        dmsg.textContent = (res.data && res.data.detail) || "Could not save.";
+      }
+    };
+
+    /* ── change password ─────────────────────────────────────────────── */
+    var go   = document.getElementById("ac-pwgo");
+    var pmsg = document.getElementById("ac-pmsg");
+    go.onclick = async function () {
+      var a = document.getElementById("ac-pw0").value;
+      var b = document.getElementById("ac-pw1").value;
+      var c = document.getElementById("ac-pw2").value;
+      pmsg.className = "ac-note";
+      if (!a)        { pmsg.textContent = "Enter your current password."; return; }
+      if (b.length < 8) { pmsg.textContent = "The new password must be at least 8 characters."; return; }
+      //  Caught here rather than at the server: a typo in the confirmation is
+      //  the commonest way to change a password to something you do not know.
+      if (b !== c)   { pmsg.textContent = "The two new passwords do not match."; return; }
+      go.disabled = true; pmsg.textContent = "Changing…";
+      var res = await send("/api/account/password",
+                           { current_password: a, new_password: b });
+      go.disabled = false;
+      if (res.ok) {
+        pmsg.className = "ac-note ok";
+        pmsg.textContent = "Your password has been changed.";
+        document.getElementById("ac-pw0").value = "";
+        document.getElementById("ac-pw1").value = "";
+        document.getElementById("ac-pw2").value = "";
+      } else {
+        pmsg.className = "ac-note err";
+        pmsg.textContent = (res.data && res.data.detail) || "Could not change it.";
+      }
+    };
   };
 
   window.buildPlanPane = async function () {

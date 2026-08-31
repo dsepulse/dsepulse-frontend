@@ -2158,6 +2158,16 @@ function openFirstVisibleTool(){
      that becomes one column when there is no room for two. */
   .ac-form{display:grid;gap:14px 18px;grid-template-columns:1fr;margin-bottom:4px}
   @media (min-width:900px){ .ac-form.two{grid-template-columns:1fr 1fr} }
+  /*  On the details pane the fields sit inside a card that may itself be
+      half the pane, so the window width says nothing useful about the room
+      a field has. Ask the container instead. */
+  @supports (container-type:inline-size){
+    #dt-details .ac-card{container-type:inline-size}
+    #dt-details .ac-form.two{grid-template-columns:1fr}
+    @container (min-width:430px){ #dt-details .ac-form.two{grid-template-columns:1fr 1fr} }
+    /*  and on the narrowest phone even two fact columns is too many */
+    @container (max-width:290px){ #dt-details .ac-ro{grid-template-columns:1fr} }
+  }
   .ac-f label{display:block;font:600 10px/1 var(--mono);letter-spacing:.11em;
     text-transform:uppercase;color:var(--text3);margin-bottom:6px}
   .ac-f input{width:100%;font:400 14px/1.3 var(--sans);padding:10px 12px;
@@ -2191,6 +2201,56 @@ function openFirstVisibleTool(){
       so every failure message rendered in the same grey as 'Saving…' —
       the two states a customer most needs told apart looked identical. */
   .ac-note.err{color:var(--red)}
+
+  /* ── My details, compacted ────────────────────────────────────────────
+     Four editable fields and three password boxes were filling two full
+     screens. Nothing in it was wrong; there was simply no reason for any
+     of it to be that big. What the height was actually spent on: two
+     cards at full width stacked one under the other, when together they
+     are narrower than the pane; a 22px pad; a heading followed by an
+     all-caps label repeating the heading; and two sentences set at
+     13.5/1.6, the size of body copy, when they are hints.
+
+     So: the cards sit side by side the moment the pane can hold two
+     columns, the label goes, the padding and the type come down a step,
+     and the read-only strip stops being a 2x2 block. The rules are
+     scoped to this pane — My plan and Refer a friend are untouched. */
+  #details-root .ac2{display:grid;gap:14px;align-items:start;
+    /*  min() so the track can go narrower than 330px rather than forcing the
+        grid wider than the pane — a bare minmax(330px,1fr) pushes a 320px
+        phone sideways. */
+    grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr))}
+  #dt-details .ac-card{padding:17px 19px;margin-bottom:0}
+  #dt-details .ac-card h3{margin:0 0 11px;font-size:17px}
+  /*  Four facts in a flex row wrap 3-then-1, which reads as a mistake. Two
+      even columns, so the fourth has company. */
+  #dt-details .ac-ro{display:grid;grid-template-columns:1fr 1fr;
+    gap:9px 18px;padding:10px 12px;margin:0 0 13px}
+  #dt-details .ac-ro b{font-size:12.5px}
+  #dt-details .ac-form{gap:10px 14px}
+  #dt-details .ac-f label{margin-bottom:4px}
+  #dt-details .ac-f input{padding:8px 11px;font-size:13.5px}
+  #dt-details .ac-fine{font-size:12px;line-height:1.5;margin:11px 0 11px}
+  #dt-details .ac-note{margin-top:9px}
+  /*  Two buttons on one line, wrapping rather than overflowing. */
+  #dt-details .ac-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  /*  "I have forgotten it" is not a second Change password — it is the way
+      out for someone who cannot use the form above, and it should read as
+      the quieter of the two. */
+  #dt-details .ac-btn.quiet{border:0;background:none;padding:11px 2px;
+    color:var(--navy);text-decoration:underline;text-underline-offset:3px}
+  #dt-details .ac-btn.quiet:hover{color:var(--gold-ink,var(--navy))}
+  #dt-details .ac-btn.quiet:disabled{color:var(--text3);text-decoration:none;
+    cursor:default}
+
+  /*  The plan block is the My plan pane, rendered here. It sits under the two
+      identity cards at full width — its pricing cards need the room, and half
+      of it is a horizontal strip. The compaction rules above are written for
+      the identity cards, so put back the gaps its own stacked cards need. */
+  #details-plan{margin-top:14px}
+  #details-plan .ac-card{margin-bottom:14px}
+  #details-plan .ac-card:last-child{margin-bottom:0}
+  #details-plan .ac{max-width:none}
   .ac-have{background:var(--green-bg,#ECFDF5);border:1px solid var(--green-border,#A7F3D0);
     border-radius:9px;padding:13px 15px;font-size:13.5px;line-height:1.55;margin-bottom:14px}
   .ac-have b{color:var(--green)}
@@ -2299,18 +2359,19 @@ function openFirstVisibleTool(){
     var since = d.member_since ? String(d.member_since).slice(0, 10) : "—";
 
     host.innerHTML =
-      '<div class="ac">' +
+      '<div class="ac"><div class="ac2">' +
 
       '<div class="ac-card"><h3>My details</h3>' +
-        '<span class="ac-k">Your account</span>' +
+        /*  The referral code and the account reference were here and are not
+            any more. The code already lives on Refer a friend WITH the share
+            link, the explanation and the count of who signed up; here it was
+            eight characters with nothing to do with them. The reference was
+            for quoting to support, and there is no contact address published
+            yet to quote it to — an identifier a customer cannot act on is
+            furniture. Both come back the day they have somewhere to go.  */
         '<div class="ac-ro">' +
           '<div><b>' + esc(d.email || "—") + '</b><span>email · sign-in</span></div>' +
           '<div><b>' + esc(since) + '</b><span>member since</span></div>' +
-          (d.referral_code
-            ? '<div><b>' + esc(d.referral_code) + '</b><span>referral code</span></div>'
-            : "") +
-          '<div><b>' + esc(String(d.user_id || "").slice(0, 8)) + '</b>' +
-            '<span>account reference</span></div>' +
         '</div>' +
 
         '<div class="ac-form two">' +
@@ -2320,8 +2381,9 @@ function openFirstVisibleTool(){
             '<input id="ac-phone" maxlength="20" placeholder="01XXXXXXXXX" value="' +
             esc(d.phone || "") + '"></div>' +
         '</div>' +
-        '<p class="ac-fine">Your email is how you sign in and where receipts go, ' +
-          'so it cannot be changed here. Contact us if it needs correcting.</p>' +
+        '<p class="ac-fine">Your email is how you sign in and where receipts ' +
+          'go, so it cannot be changed here. Contact us if it needs ' +
+          'correcting.</p>' +
         '<button class="ac-btn primary" id="ac-save">Save changes</button>' +
         '<p class="ac-note" id="ac-dmsg"></p>' +
       '</div>' +
@@ -2337,12 +2399,24 @@ function openFirstVisibleTool(){
             '<input id="ac-pw2" type="password" autocomplete="new-password" ' +
             'maxlength="72"></div>' +
         '</div>' +
-        '<p class="ac-fine">Anyone already signed in on another device stays ' +
-          'signed in until that session expires.</p>' +
-        '<button class="ac-btn" id="ac-pwgo">Change password</button>' +
+        '<p class="ac-fine">Anyone signed in on another device stays signed in ' +
+          'until that session expires.</p>' +
+        '<div class="ac-acts">' +
+          '<button class="ac-btn" id="ac-pwgo">Change password</button>' +
+          //  The way out for the person who cannot fill in the first box.
+          //  It goes to the address on the account, which is on screen just
+          //  above — nothing is typed, so nothing can be mistyped.
+          '<button class="ac-btn quiet" id="ac-forgot">' +
+            'I have forgotten my password</button>' +
+        '</div>' +
         '<p class="ac-note" id="ac-pmsg"></p>' +
       '</div>' +
 
+      '</div>' +
+      //  Filled by the same builder the My plan tab uses. Not a copy of it —
+      //  a copy is two things to keep in step, and the one that drifts is
+      //  always the one showing a price.
+      '<div id="details-plan"></div>' +
       '</div>';
 
     /* ── save name and phone ─────────────────────────────────────────── */
@@ -2398,11 +2472,71 @@ function openFirstVisibleTool(){
         pmsg.textContent = (res.data && res.data.detail) || "Could not change it.";
       }
     };
+
+    /* ── forgotten it ────────────────────────────────────────────────────
+       The form above is deliberately unusable without the current password
+       — a token left in a borrowed browser is otherwise enough to take the
+       account outright. That is the right rule, and it leaves exactly one
+       person stranded: the one who is signed in on a device that remembered
+       the password for them and does not know it any more. Sending them to
+       the sign-out screen to use "forgot password" is a strange thing to
+       ask of somebody who is already signed in.
+
+       So this reuses the reset flow that already exists — no new endpoint,
+       no new email template. The address is the one on the account, read
+       from the record and never typed, so it cannot be mistyped or pointed
+       somewhere else. The link lasts an hour and stops working the moment
+       the password changes, so a second click does not leave two live
+       links; and one send per visit is plenty, so the button retires
+       afterwards rather than letting anyone mail themselves in a loop. */
+    var forgot = document.getElementById("ac-forgot");
+    forgot.onclick = async function () {
+      var to = d.email || "";
+      if (!to) { pmsg.className = "ac-note err";
+                 pmsg.textContent = "No email is on this account."; return; }
+      forgot.disabled = true;
+      pmsg.className = "ac-note"; pmsg.textContent = "Sending…";
+      var res = await send("/api/auth/forgot", { email: to });
+      if (res.ok) {
+        pmsg.className = "ac-note ok";
+        pmsg.textContent = "A reset link is on its way to " + to +
+          ". It works for one hour, and once.";
+        forgot.textContent = "Link sent";
+      } else {
+        forgot.disabled = false;
+        pmsg.className = "ac-note err";
+        pmsg.textContent = (res.data && res.data.detail) ||
+          "Could not send the link just now.";
+      }
+    };
+
+    /*  The plan, and the way to pay for it, at the foot of this pane. Awaited
+        last so a slow /api/config never holds up the details above it. */
+    try { await window.buildPlanPane("details-plan"); } catch (e) {}
   };
 
-  window.buildPlanPane = async function () {
-    var host = document.getElementById("plan-root");
+  /*  ROOT, not a hard-coded id, because this pane is now built in two places:
+      the My plan tab, and again at the foot of My details so a customer who
+      went looking for their own record can renew without going hunting for
+      another tab.
+
+      The markup carries ids — ac-cancel, ac-plans, ac-buymsg — and the same
+      id cannot exist twice in one document: getElementById returns the first
+      match, so every button in the second copy would silently drive the
+      first. Rather than prefixing every id, only ONE copy is ever live. The
+      pane being looked at builds itself and empties the other. Both are
+      rebuilt from the server on every tab switch anyway, so nothing is lost
+      by throwing one away.  */
+  var PLAN_ROOTS = ["plan-root", "details-plan"];
+  window.buildPlanPane = async function (rootId) {
+    var ROOT = rootId || "plan-root";
+    var host = document.getElementById(ROOT);
     if (!host) return;
+    PLAN_ROOTS.forEach(function (id) {
+      if (id === ROOT) return;
+      var other = document.getElementById(id);
+      if (other) other.innerHTML = "";
+    });
     if (!tok()) { host.innerHTML = gate("Your plan and billing are private to your account."); return; }
     host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your plan…</p></div></div>';
 
@@ -2511,14 +2645,14 @@ function openFirstVisibleTool(){
                           "until " + (until || "the end of the period") + ".")) return;
       cancel.disabled = true; msg.className = "ac-note"; msg.textContent = "Cancelling…";
       var res = await get("/api/subscription/cancel", { method: "POST", body: "{}" });
-      if (res.ok) { window.buildPlanPane(); }
+      if (res.ok) { window.buildPlanPane(ROOT); }
       else { cancel.disabled = false; msg.textContent =
              (res.data && res.data.detail) || "Could not cancel just now."; }
     };
     if (resume) resume.onclick = async function () {
       resume.disabled = true; msg.className = "ac-note"; msg.textContent = "Resuming…";
       var res = await get("/api/subscription/resume", { method: "POST", body: "{}" });
-      if (res.ok) { window.buildPlanPane(); }
+      if (res.ok) { window.buildPlanPane(ROOT); }
       else { resume.disabled = false; msg.textContent =
              (res.data && res.data.detail) || "Could not resume just now."; }
     };

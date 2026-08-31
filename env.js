@@ -244,3 +244,112 @@
   s.defer = true;
   (document.head || document.documentElement).appendChild(s);
 })();
+
+/* ── the tab icon, on every page ─────────────────────────────────────────────
+ *  Twenty-five pages, none of which declare one, so every tab reads as a blank
+ *  document. Adding six <link> tags to twenty-five files is twenty-five edits
+ *  and one page that gets missed; env.js already loads everywhere.
+ *
+ *  A page that declares its OWN icon keeps it — this fills a gap, it does not
+ *  overrule a decision someone made deliberately.
+ *
+ *  16 and 32 carry the pulse mark alone. The full tile has "DSE PULSE" and a
+ *  tagline on it, and at tab size those are three grey smudges — an icon that
+ *  cannot be told from any other dark square is not doing the one job it has.
+ *  The home-screen sizes get the whole tile, where the wordmark reads.
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  try {
+    if (window.top !== window.self) return;      // a frame has no tab of its own
+  } catch (e) { return; }
+  try {
+    if (document.querySelector('link[rel~="icon"]')) return;   // page has its own
+    var ICONS = [
+      ["icon",             "/favicon-32x32.png", "image/png", "32x32"],
+      ["icon",             "/favicon-16x16.png", "image/png", "16x16"],
+      ["shortcut icon",    "/favicon.ico",       null,        null],
+      ["apple-touch-icon", "/apple-touch-icon.png", null,     "180x180"]
+    ];
+    var head = document.head || document.documentElement;
+    for (var i = 0; i < ICONS.length; i++) {
+      var l = document.createElement("link");
+      l.rel = ICONS[i][0];
+      l.href = ICONS[i][1];
+      if (ICONS[i][2]) l.type = ICONS[i][2];
+      if (ICONS[i][3]) l.setAttribute("sizes", ICONS[i][3]);
+      head.appendChild(l);
+    }
+  } catch (e) {}
+})();
+
+/* ── the logo goes home ──────────────────────────────────────────────────────
+ *  Every page draws the wordmark as a <div>, so the first thing a visitor
+ *  tries on any website does nothing at all here.
+ *
+ *  Where "home" is depends on the page. Inside shell.html the app has its own
+ *  landing view and its own Back-to-site button, so leaving the page would
+ *  throw away the dashboard someone is standing in — it switches view instead.
+ *  Everywhere else, the site root, which each branch already resolves for
+ *  itself through _redirects.
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  function wire() {
+    try {
+      var logos = document.querySelectorAll(".logo, .brand");
+      for (var i = 0; i < logos.length; i++) {
+        var el = logos[i];
+        if (el.dataset && el.dataset.dseHome) continue;
+        if (el.closest && el.closest("a")) continue;   // already a link
+        if (el.dataset) el.dataset.dseHome = "1";
+        el.style.cursor = "pointer";
+        el.setAttribute("role", "link");
+        el.setAttribute("tabindex", "0");
+        el.setAttribute("aria-label", "DSE Pulse — home");
+        var go = function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          try {
+            //  in the dashboard shell, switch view rather than navigate away
+            if (typeof window.showView === "function") {
+              window.showView("landing");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              return;
+            }
+          } catch (x) {}
+          window.location.href = "/";
+        };
+        el.addEventListener("click", go);
+        el.addEventListener("keydown", function (e) {
+          if (e && (e.key === "Enter" || e.key === " ")) go(e);
+        });
+      }
+    } catch (e) {}
+  }
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", wire);
+  else wire();
+})();
+
+/* ── and the mirror of it, for pages inside the dashboard ────────────────────
+ *  Every tool page is a complete standalone page: its own header, its own big
+ *  title, its own disclaimer. Correct on its own; inside the dashboard iframe
+ *  it is 169px of things already on screen once. framed.js strips that, and
+ *  ONLY in a frame — a page opened on its own is untouched.
+ *
+ *  Loaded WITHOUT defer, unlike footer.js: this one hides things that are
+ *  already in the markup, so a deferred load would show the header and title
+ *  for a moment and then snatch them away. footer.js adds rather than hides,
+ *  so it can wait.
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  try {
+    if (window.top === window.self) return;   // not framed: nothing to do
+  } catch (e) { return; }                     // cross-origin: not our frame
+  if (document.getElementById("dse-framed-js")) return;
+  var s = document.createElement("script");
+  s.id = "dse-framed-js";
+  s.src = "/framed.js";
+  (document.head || document.documentElement).appendChild(s);
+})();

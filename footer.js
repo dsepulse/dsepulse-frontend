@@ -309,6 +309,44 @@
       var old = document.querySelector("footer:not(.dsef)");
       if (old && old.parentNode) old.parentNode.removeChild(old);
       document.body.appendChild(f);
+
+      /*  LAST CHILD OF BODY IS NOT THE SAME AS BELOW EVERYTHING.
+       *
+       *  Found on reset.html, which is a single centred card and therefore
+       *  centres it the ordinary way — `display:flex` on <body>. Appending to
+       *  a flex container does not put you underneath its other children; it
+       *  puts you BESIDE them. The footer became column two: a card squeezed
+       *  into the left third of the window with the disclaimer filling the
+       *  rest. Every rule in the stylesheet above resets what the PAGE sets on
+       *  `footer`; none of them can reset what the page's own <body> does to
+       *  its children.
+       *
+       *  Any centred-card page is built this way — sign in, reset, thank-you,
+       *  a payment return. This file reaches roughly twenty-five pages and I
+       *  have opened about ten, so the fix has to be the general one.
+       *
+       *  Claim a whole row instead of a column, and only when the parent is
+       *  actually a flex or grid container. On an ordinary page nothing here
+       *  runs and nothing changes — which is what makes it safe to send to
+       *  fifteen pages nobody has looked at.
+       */
+      try {
+        var bs = window.getComputedStyle(document.body);
+        var d  = String(bs.display || "");
+        if (d.indexOf("flex") > -1 || d.indexOf("grid") > -1) {
+          f.style.width = "100%";
+          f.style.flex = "1 0 100%";      // a row of its own, not a column
+          f.style.gridColumn = "1 / -1";  // and the same for a grid parent
+          f.style.alignSelf = "stretch";  // never centred or shrunk to content
+          //  A flex row that cannot wrap has nowhere to put the new row, so
+          //  the footer would still be squeezed in beside the card. This is
+          //  the one property of the page's own that gets touched, and on a
+          //  body holding a single centred card it changes nothing about the
+          //  card — it only gives the footer somewhere to go.
+          if (d.indexOf("flex") > -1 && bs.flexWrap === "nowrap")
+            document.body.style.flexWrap = "wrap";
+        }
+      } catch (e) {}
     } catch (e) {}
   }
 

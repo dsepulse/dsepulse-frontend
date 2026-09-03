@@ -49,9 +49,9 @@
       line: "Bangladesh Stock Intelligence · dsepulse.com",
       //  One or two sentences. Keep it factual — this sits above a disclaimer
       //  that says we are not advisers, so it must not read like a promise.
-      about: "Six analysis engines run every evening after the Dhaka Stock " +
-             "Exchange closes, scoring 400+ listed companies and publishing " +
-             "the entry, target and stop-loss levels each engine derived."
+      about: "The Signal Stack runs every evening after the Dhaka Stock " +
+             "Exchange closes — layered readings over 400+ listed companies, " +
+             "published as an entry, a target and a stop-loss level."
     },
 
     columns: [

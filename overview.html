@@ -88,7 +88,12 @@ async function buildOverview(){
     ${turnBlk}
     ${m.hot&&m.hot.length?DIV+sect(m.hot,'Hot Sectors','#4ADE80'):''}
     ${sect(m.cold,'Cold Sectors','#F87171')}
-    <div style="margin-left:auto;text-align:right"><span style="${L}">Updated</span><br><span style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.7)">${d.updated_time||(d.updated?fmtD(d.updated):'—')}</span></div>
+    <!--  Two lines and a right-aligned column of its own: on any width where the
+          facts fill the row, margin-left:auto pushed this onto a SECOND LINE,
+          and a second line of a flex row is as tall as the tallest thing that
+          could sit on it — about 60px of navy holding one timestamp. One line,
+          nowrap, and it either fits beside the facts or costs 15px. -->
+    <div style="margin-left:auto;white-space:nowrap;font-size:10.5px;font-family:var(--mono);color:rgba(255,255,255,0.55);letter-spacing:0.4px">UPDATED ${d.updated_time||(d.updated?fmtD(d.updated):'—')}</div>
   </div>`;
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';

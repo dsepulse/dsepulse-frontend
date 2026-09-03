@@ -22,20 +22,36 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .logo span{color:var(--gold)}
 .back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}
 .back:hover{text-decoration:underline}
-.wrap{max-width:960px;margin:0 auto;padding:22px}
+.wrap{max-width:1080px;margin:0 auto;padding:10px 20px}
 .h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
-.h-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
-.lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:10px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
-.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin-bottom:10px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:9px 12px}
 .c-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
-.c-val{font-size:22px;font-weight:800;font-family:var(--mono);color:var(--navy);margin-top:4px}
-.c-sub{font-size:12px;margin-top:2px}
-.section{margin-bottom:22px}
-.breadth{display:flex;height:14px;border-radius:6px;overflow:hidden;margin-bottom:8px}
-.b-leg{display:flex;justify-content:space-between;font-size:12px}
+.c-val{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--navy);margin-top:2px}
+.c-sub{font-size:11.5px;margin-top:1px}
+.section{margin-bottom:12px}
+
+/* ── two rows of columns instead of six stacked sections ───────────────────
+   The page was six blocks in a single column: cards, breadth, sectors,
+   movers, most active, outlook. That is about 900px of content, and no
+   amount of trimming takes 900 to 590 — the height was a consequence of the
+   shape, not of the padding.
+
+   Inside the dashboard the pane is 1100-1560px wide and every one of those
+   blocks is narrow. Two rows of columns use the width the page already has,
+   and auto-fit means there are no breakpoints to maintain: the browser fits
+   as many columns as the minimum allows and reflows to one on a phone.
+   min() rather than a bare minmax, so a 320px screen narrows the track
+   instead of forcing the grid wider than the screen.  */
+.mrow{display:grid;gap:10px;margin-bottom:10px;align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(min(265px,100%),1fr))}
+.mrow.two{grid-template-columns:repeat(auto-fit,minmax(min(370px,100%),1fr))}
+.breadth{display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:7px}
+.b-leg{display:flex;justify-content:space-between;font-size:11.5px;gap:8px;flex-wrap:wrap}
 .pills{display:flex;flex-wrap:wrap;gap:8px}
-.pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px}
+.pill{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:6px}
 .heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(134px,1fr));gap:10px}
 .tile{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:9px;transition:border-color .15s,box-shadow .15s}
 .tile:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(13,31,60,0.05)}
@@ -46,13 +62,13 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .tile .t-bar{height:5px;border-radius:3px;background:var(--cream2);overflow:hidden}
 .tile .t-bar i{display:block;height:100%;border-radius:3px;min-width:0}
 .tile .t-meta{font-size:9px;color:var(--text3);display:flex;justify-content:space-between;letter-spacing:0.2px}
-.tbl{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.thead,.trow{display:grid;grid-template-columns:1fr 80px 90px 130px 110px;gap:8px;padding:9px 18px;align-items:center}
+.tbl{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto}
+.thead,.trow{display:grid;grid-template-columns:minmax(74px,1fr) 68px 76px 104px 92px;gap:8px;padding:6px 14px;align-items:center;min-width:430px}
 .thead{background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
 .thead div:nth-child(2),.thead div:nth-child(3){text-align:right}
 .thead div:nth-child(5){text-align:center}
 .trow{border-bottom:1px solid var(--border)}
-.foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+.foot{font-size:11px;color:var(--text3);text-align:center;padding:8px;margin-top:0}
 </style>
 </head>
 <body>
@@ -67,30 +83,37 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 
   <div class="cards" id="m-cards"></div>
 
-  <div class="section">
-    <div class="lbl">Market breadth</div>
-    <div class="breadth" id="m-breadth"></div>
-    <div class="b-leg" id="m-breadth-leg"></div>
+  <!--  Row one: what the market did. Breadth and sector heat answer the same
+        question from two angles, so they share a card; the two mover lists sit
+        beside them rather than under them.  -->
+  <div class="mrow">
+    <div>
+      <div class="lbl">Market breadth</div>
+      <div class="card">
+        <div class="breadth" id="m-breadth"></div>
+        <div class="b-leg" id="m-breadth-leg"></div>
+        <div id="m-sectors-wrap" style="display:none;margin-top:12px">
+          <div class="lbl" style="margin-bottom:5px">Hot &amp; cold sectors</div>
+          <div class="pills" id="m-hotcold"></div>
+        </div>
+      </div>
+    </div>
+    <div><div class="lbl">Top gainers</div><div id="m-gainers"></div></div>
+    <div><div class="lbl">Top losers</div><div id="m-losers"></div></div>
   </div>
 
-  <div class="section" id="m-sectors-wrap" style="display:none">
-    <div class="lbl">Hot &amp; cold sectors</div>
-    <div class="pills" id="m-hotcold"></div>
-  </div>
-
-  <div class="section">
-    <div class="lbl">Top movers</div>
-    <div id="m-movers" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"></div>
-  </div>
-
-  <div class="section">
-    <div class="lbl">Most active &middot; by turnover</div>
-    <div class="tbl"><div id="m-active"></div></div>
-  </div>
-
-  <div class="section">
-    <div class="lbl">Market outlook</div>
-    <div id="m-outlook"></div>
+  <!--  Row two: where the money went, and what it might mean. Both want more
+        width than the mover lists — a table with five columns and a paragraph
+        of prose — so they get a two-column row of their own.  -->
+  <div class="mrow two">
+    <div>
+      <div class="lbl">Most active &middot; by turnover</div>
+      <div class="tbl"><div id="m-active"></div></div>
+    </div>
+    <div>
+      <div class="lbl">Market outlook</div>
+      <div id="m-outlook"></div>
+    </div>
   </div>
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
@@ -207,12 +230,12 @@ async function load(){
 
     document.getElementById('m-outlook').innerHTML=
       '<div class="card" style="padding:16px 18px">'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
+      +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap">'
       +'<span style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:'+col+';background:'+bg+'">'+label+'</span>'
       +'<span style="font-size:13px;color:var(--text2)">'+head+'</span></div>'
-      +'<p style="font-size:13px;line-height:1.7;color:var(--text2);margin-bottom:12px">'+read+'</p>'
-      +'<div style="font-size:12.5px;line-height:1.6;color:var(--navy);background:var(--cream2);border-radius:8px;padding:11px 13px"><b>What to watch next session:</b> '+watch+'</div>'
-      +'<div style="font-size:10.5px;color:var(--text3);margin-top:10px">A data-driven read of today\u2019s momentum and breadth \u2014 not a forecast or investment advice.</div>'
+      +'<p style="font-size:12px;line-height:1.55;color:var(--text2);margin-bottom:8px">'+read+'</p>'
+      +'<div style="font-size:12px;line-height:1.5;color:var(--navy);background:var(--cream2);border-radius:8px;padding:8px 10px"><b>What to watch next session:</b> '+watch+'</div>'
+
       +'</div>';
   })();
 
@@ -224,29 +247,33 @@ async function load(){
     function rows(arr){
       return arr.map(function(r){
         var p=Number(r.pct||0), pc=p>=0?'var(--green)':'var(--red)';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">'
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">'
           +'<span style="font-weight:700;font-family:var(--mono);color:var(--navy)">'+r.code+'</span>'
           +'<span style="font-family:var(--mono);color:var(--text3)">\u09f3'+Number(r.ltp||0).toFixed(2)+'</span>'
           +'<span style="font-weight:700;font-family:var(--mono);color:'+pc+'">'+(p>=0?'+':'')+p.toFixed(2)+'%</span>'
           +'</div>';
       }).join('') || '<div style="font-size:12px;color:var(--text3);padding:6px 0">No data.</div>';
     }
-    var mv=document.getElementById('m-movers'); if(mv) mv.innerHTML=
-      '<div class="card" style="padding:12px 14px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--green);margin-bottom:4px">Top gainers</div>'+rows(g)+'</div>'
-      +'<div class="card" style="padding:12px 14px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin-bottom:4px">Top losers</div>'+rows(l)+'</div>';
+    //  Each list is now its own column in the row above, and the heading is
+    //  the .lbl outside the card like every other block on the page — so the
+    //  card no longer repeats it.
+    var G=document.getElementById('m-gainers');
+    if(G) G.innerHTML='<div class="card" style="padding:4px 13px 8px">'+rows(g)+'</div>';
+    var L=document.getElementById('m-losers');
+    if(L) L.innerHTML='<div class="card" style="padding:4px 13px 8px">'+rows(l)+'</div>';
   })();
 
   // Most active by turnover
   (function(){
     var withVal=list.filter(function(r){return Number(r.value||0)>0;}).sort(function(a,b){return Number(b.value)-Number(a.value);}).slice(0,6);
     var el=document.getElementById('m-active'); if(!el) return;
-    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 92px 80px 78px;gap:8px;padding:9px 16px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Turnover</div><div style="text-align:right">LTP</div><div style="text-align:right">Chg</div></div>'
+    el.innerHTML='<div style="display:grid;grid-template-columns:minmax(70px,1fr) 104px 78px 74px;gap:8px;padding:6px 14px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text3)"><div>Stock</div><div style="text-align:right">Turnover</div><div style="text-align:right">LTP</div><div style="text-align:right">Chg</div></div>'
       +(withVal.map(function(r,i){
         var p=Number(r.pct||0), pc=p>=0?'var(--green)':'var(--red)', cr=Number(r.value||0)/10;
         var last=i===withVal.length-1?';border-bottom:none':'';
-        return '<div style="display:grid;grid-template-columns:1fr 92px 80px 78px;gap:8px;padding:9px 16px;align-items:center;border-bottom:1px solid var(--border)'+last+'">'
+        return '<div style="display:grid;grid-template-columns:minmax(70px,1fr) 104px 78px 74px;gap:8px;padding:5px 14px;align-items:center;border-bottom:1px solid var(--border)'+last+'">'
           +'<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy)">'+r.code+(r.cat?' <span style="font-size:9px;padding:1px 5px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;color:var(--text3)">'+r.cat+'</span>':'')+'</div>'
-          +'<div style="text-align:right;font-size:12px;font-family:var(--mono);color:var(--navy);font-weight:700">\u09f3'+cr.toLocaleString('en-US',{maximumFractionDigits:1})+' cr</div>'
+          +'<div style="text-align:right;font-size:12px;font-family:var(--mono);color:var(--navy);font-weight:700;white-space:nowrap">\u09f3'+cr.toLocaleString('en-US',{maximumFractionDigits:1})+' cr</div>'
           +'<div style="text-align:right;font-size:12px;font-family:var(--mono);color:var(--text3)">\u09f3'+Number(r.ltp||0).toFixed(2)+'</div>'
           +'<div style="text-align:right;font-size:12px;font-family:var(--mono);font-weight:700;color:'+pc+'">'+(p>=0?'+':'')+p.toFixed(2)+'%</div>'
           +'</div>';

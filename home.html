@@ -489,7 +489,17 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 /*  The numbers are the point now that entry, target and stop are open, so the
     box gives them room: a wider screen container, a bigger gap, more padding
     and a larger figure size. Six boxes still fit one viewport. */
-.screen .wrap{max-width:1180px}
+/*  ONE COLUMN, TOP TO BOTTOM.
+    .screen is a grid, and its three rows — the hero, the card grid and the
+    line under them — are grid items with `margin:0 auto` and no width. In a
+    grid that does NOT centre a full-width block: it shrinks each item to its
+    own content and centres that. So the headline picked one width, the cards
+    picked another and the closing line picked a third, and none of the three
+    shared an edge with each other or with the sections below.
+    width:100% is the whole fix. Every row now fills the column and stops at
+    the same 1080px the Signal Stack, How it works and the pricing block use,
+    so a single edge runs from the top of the page to the footer. */
+.screen > .wrap{width:100%;max-width:1080px;margin-left:auto;margin-right:auto}
 .boxes{gap:11px}
 .bx{padding:12px 16px;gap:8px;border-radius:13px}
 .bx .nm .bl,.bx .nm .rl{font-size:19px}
@@ -867,17 +877,57 @@ footer .disc{max-width:76ch;line-height:1.65}
 .screen .lede1{margin-bottom:10px;max-width:74ch}
 .screen .eg{margin-top:11px}
 .screen .cap{margin-top:14px}
-/*  A subscriber carries an extra 85px strip above all of this, and the six
-    cards cannot shrink below their own content. Subtracting the strip from
-    .screen is not enough on a 900px window, so the hero gives up ~30px of
-    air — but only for the one visitor who has the strip. A prospect keeps
-    the full hero, because for them it is the pitch. */
-body.has-banner .top{padding-top:8px;padding-bottom:6px}
-body.has-banner .top h1{margin-bottom:6px}
-body.has-banner .screen .lede1{margin-bottom:7px}
-body.has-banner .screen .eg{margin-top:8px}
-body.has-banner .screen .cap{margin-top:10px}
 body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
+/*  The strip wraps to two lines on a wide screen and that second line is the
+    explanation, which a paying customer needs least. */
+body.has-banner .ybanner .ylong{display:none}
+
+/* ── fitting six cards on one screen, measured rather than guessed ─────── */
+/*  This page is authored on a machine that cannot reach Google Fonts, so
+    every height measured here is a fallback-font height — and Playfair, Inter
+    and JetBrains all set taller than the fallbacks. Numbers computed at build
+    time were wrong on the real site by about 200px, which is a whole row of
+    cards.
+    So the page measures itself instead. fitScreen() asks the browser one
+    honest question — does the first screen end above the fold? — and if it
+    does not, it turns on these three steps in order until it does. Nothing
+    here fires unless the screen is genuinely short, and step 3 never fires
+    for anyone who has the room for step 2.
+    The order is deliberate: air first, then type, and only last does any
+    information leave. */
+
+/*  1 · air. Padding and gaps, which cost the reader nothing. */
+.screen.fit-1 .top{padding-top:8px;padding-bottom:6px}
+.screen.fit-1 h1{margin-bottom:6px}
+.screen.fit-1 .lede1{margin-bottom:7px}
+.screen.fit-1 .eg{margin-top:8px}
+.screen.fit-1 .cap{margin-top:10px}
+.screen.fit-1 .boxes{gap:9px}
+.screen.fit-1 .bx{padding:10px 13px;gap:7px}
+.screen.fit-1 .ladder{gap:4px}
+.screen.fit-1 .bfoot{padding-top:6px}
+.screen.fit-1 .screenfoot{padding-bottom:11px}
+
+/*  2 · type. A notch off the headline and the supporting text — never off
+    the prices, which are the thing being read. */
+.screen.fit-2 h1{font-size:clamp(19px,2.5vw,28px)}
+.screen.fit-2 h1 .hq{font-size:clamp(15px,1.8vw,20px);margin-top:3px}
+.screen.fit-2 .lede1{font-size:14px;line-height:1.45}
+.screen.fit-2 .caphint{display:none}
+.screen.fit-2 .cap button{padding:5px 9px;font-size:11.5px}
+.screen.fit-2 .eg{font-size:12px}
+.screen.fit-2 .bx .nm .bl,.screen.fit-2 .bx .nm .rl{font-size:16px}
+.screen.fit-2 .lr .p2{font-size:14px}
+.screen.fit-2 .lr .d2{font-size:11px}
+.screen.fit-2 .bfoot{font-size:11.5px}
+.screen.fit-2 .screenfoot{font-size:12px;padding-bottom:6px}
+.screen.fit-2 .gridwrap{padding-bottom:6px}
+
+/*  3 · the only step that removes anything. The LAST traded price goes; the
+    plan — entry, target, stop — stays whole, and the entry row already
+    carries how far the entry sits from that last trade, so the number is
+    not lost, only its own row. */
+.screen.fit-3 .lr.lastrow{display:none}
 
 /* ── the stack ─────────────────────────────────────────────────────────── */
 /*  Five layers, each one narrower than the last. The narrowing IS the
@@ -1561,7 +1611,7 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
         //  was checkable against any live quote in ten seconds. Being caught
         //  wrong on the one figure a stranger can verify is expensive for a
         //  site selling analysis. "Last" is true whenever the batch ran.
-        (L.ltp != null ? lrow("Last", L.ltp, "", "", false) : "") +
+        (L.ltp != null ? lrow("Last", L.ltp, "", "lastrow", false) : "") +
         lrow("Entry", L.entry, pctTxt(ef), "", false) +
         lrow("Target", L.target, "+" + num(gp, 1) + "%", "t2", false) +
         lrow("Stop", L.sl, "−" + num(sp, 1) + "%", "s2", false) +
@@ -1578,7 +1628,7 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
     } else if (L && L.target_pct != null) {
       //  the server is running with TEASER_LEVELS_OPEN=false: shape only
       body = '<div class="ladder">' +
-        lrow("Last", 0, "", "", true) +
+        lrow("Last", 0, "", "lastrow", true) +
         lrow("Entry", 0, pctTxt(L.entry_from_last), "", true) +
         lrow("Target", 0, "+" + num(L.target_pct, 1) + "%", "t2", true) +
         lrow("Stop", 0, "−" + num(L.stop_pct, 1) + "%", "s2", true) +
@@ -1606,6 +1656,8 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
         "held back — except today's, <b>" + esc(fp.code) + "</b> from " +
         esc(fp.tool_name) + ", which you can check on any DSE site.";
     }
+    //  the cards have just changed height — re-measure the first screen
+    if (window.__dseFit) fitSoon();
   }
 
   /* ── what the six engines found ─────────────────────────────────────── */
@@ -1917,6 +1969,9 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
   function showPanel(on) {
     el("panel").className = on ? "panel on" : "panel";
     el("boxes").className = on ? "boxes off" : "boxes";
+    //  going back to the boxes means they need measuring again; opening the
+    //  result means the steps come off, because the card sizes itself
+    if (window.__dseFit) fitSoon();
   }
 
   function ask(code) {
@@ -2273,6 +2328,87 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
   //  Tell the CSS how tall the subscriber banner actually is, so the first
   //  screen can subtract it. Measured rather than hard-coded, because the
   //  strip wraps to two rows on a narrow window and to one on a wide one.
+  /* ── does the first screen fit? ask the browser, do not calculate ─────── */
+  //  The three fit-* steps are defined in the stylesheet. This turns them on
+  //  one at a time, re-measuring after each, and stops the moment the bottom
+  //  of the first screen clears the fold. It is the only honest way to do
+  //  this: the real heights depend on fonts that only the visitor's browser
+  //  has, so nothing computed anywhere else can be trusted.
+  //  --bandh was a hardcoded 46px. The sticky bar is not 46px — its height
+  //  depends on the font that loaded and on whether the nav has wrapped — and
+  //  .screen subtracts that constant from the viewport to size itself. Every
+  //  pixel the guess is wrong by is a pixel the first screen hangs over the
+  //  fold, on every screen, permanently. So it is measured.
+  function setBandVar() {
+    try {
+      var bar = document.querySelector(".band");
+      if (!bar || typeof bar.getBoundingClientRect !== "function") return;
+      var h = Math.round(bar.getBoundingClientRect().height);
+      if (h > 0 && h < 200) {
+        document.documentElement.style.setProperty("--bandh", h + "px");
+      }
+    } catch (e) {}
+  }
+
+  var FIT_STEPS = 3;
+  function fitScreen() {
+    try {
+      var scr  = document.querySelector(".screen");
+      var foot = document.querySelector(".screenfoot");
+      if (!scr || !foot) return;
+      setBandVar();
+
+      //  900px is where .boxes becomes three columns and six cards become two
+      //  rows. Below it they are three rows and no amount of shrinking puts
+      //  them on one screen — so the page is left to flow, which is what a
+      //  phone and a tablet want anyway. Squashing type in a fight that cannot
+      //  be won is pure loss.
+      var wide = window.innerWidth >= 900 && window.innerHeight >= 640;
+      //  And while a search result is open the boxes are hidden, so there is
+      //  nothing to fit and the measurement would be of the wrong thing.
+      var busy = document.getElementById("panel");
+      busy = busy && busy.classList.contains("on");
+
+      for (var i = 1; i <= FIT_STEPS; i++) scr.classList.remove("fit-" + i);
+      if (!wide || busy) return;
+
+      //  4px of tolerance: a sub-pixel overhang is not worth a whole step.
+      function over() {
+        return foot.getBoundingClientRect().bottom > window.innerHeight + 4;
+      }
+      var used = 0, trace = [Math.round(foot.getBoundingClientRect().bottom)];
+      for (var step = 1; step <= FIT_STEPS; step++) {
+        if (!over()) break;
+        scr.classList.add("fit-" + step);
+        used = step;
+        trace.push(Math.round(foot.getBoundingClientRect().bottom));
+      }
+      window.__dseFitTrace = trace;
+      //  Steps 1 and 2 stay whichever way this goes: they spend whitespace and
+      //  a point of type size, and a tighter screen is worth that even when it
+      //  does not quite reach the fold.
+      //
+      //  Step 3 is different — it takes the last traded price off every card —
+      //  so it has to earn its place. It is undone unless it actually won the
+      //  fold. On a window where the grid is already stretching to fill a
+      //  min-height, hiding a row frees no space at all (the grid absorbs it),
+      //  and on a genuinely short window nothing would have been enough. In
+      //  both cases the row comes back rather than being paid for nothing.
+      if (used === FIT_STEPS && over()) scr.classList.remove("fit-" + FIT_STEPS);
+    } catch (e) {}
+  }
+  window.__dseFit = fitScreen;
+
+  //  Re-measure whenever the thing being measured can have changed: after the
+  //  cards paint, after the subscriber strip appears, and on resize.
+  var fitT = null;
+  function fitSoon() {
+    if (fitT) clearTimeout(fitT);
+    fitT = setTimeout(fitScreen, 60);
+  }
+  window.addEventListener("resize", fitSoon);
+  window.addEventListener("load", fitSoon);
+
   //  Every step is guarded. This runs for cosmetic reasons only — if any of it
   //  is unavailable the page is still correct, just 85px taller for a
   //  subscriber, and a layout nicety must never be able to throw inside
@@ -2295,6 +2431,8 @@ body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
       document.documentElement.style.setProperty("--bannerh",
         Math.round(h) + "px");
     } catch (e) {}
+    //  the strip is space above the first screen, so its arrival changes the fit
+    try { fitSoon(); } catch (e) {}
   }
   window.addEventListener("resize", function () { setTimeout(setBannerVar, 120); });
 

@@ -2881,6 +2881,84 @@ function openFirstVisibleTool(){
     };
   };
 })();
+
+/* ── the frame sizes itself to what is in it ────────────────────────────────
+   A fixed height is a guess about content nobody has measured. Guess high and
+   the pane ends in white space; guess low and the tool gets its own scrollbar
+   inside the page's scrollbar — two bars for one document, which is the thing
+   that made Market Pulse feel like several pages.
+
+   Both documents are on the same origin, so the shell can simply ask the tool
+   how tall it is. On a desk monitor the content is shorter than the window and
+   the frame shrinks to fit; on a phone the content is taller, the frame grows,
+   and the PAGE scrolls — one scrollbar, the browser's own, in the place a
+   reader expects it.
+
+   The CSS height stays as the fallback: if anything here throws, or a page is
+   ever served from another origin, the viewport-based calc still applies and
+   nothing is worse than it was.  */
+(function () {
+  var RO = null;
+
+  function fit() {
+    var f = document.getElementById('tool-frame');
+    if (!f || f.style.display === 'none') return;
+    try {
+      var d = f.contentDocument;
+      if (!d || !d.body) return;
+      //  documentElement.scrollHeight is never LESS than the frame's own
+      //  viewport, so asking it how tall the content is returns the frame's
+      //  height back — it can only ever say "taller", never "shorter". The
+      //  body is the honest measure, plus whatever margins it carries.
+      var cs = (d.defaultView || window).getComputedStyle(d.body);
+      var h = d.body.scrollHeight + (parseFloat(cs.marginTop) || 0)
+                                  + (parseFloat(cs.marginBottom) || 0);
+      //  Fall back to the document if a page styles its body to no height.
+      if (!h || h < 80) h = d.documentElement.scrollHeight;
+      if (!h || h < 80) return;   // still painting; leave the CSS height alone
+      //  Resizing the frame resizes the document inside it, which fires the
+      //  observer again. Without a threshold that is an oscillation; with one
+      //  it settles in a step or two.
+      var cur = parseFloat(f.style.height) || 0;
+      if (Math.abs(h - cur) > 4) f.style.height = h + 'px';
+    } catch (e) {}
+  }
+
+  function watch() {
+    var f = document.getElementById('tool-frame');
+    if (!f) return;
+    fit();
+    //  Tool pages fetch their data after load, so the height at load is not
+    //  the final height. Watch the document itself rather than guessing how
+    //  long the fetch takes.
+    try {
+      if (RO) { RO.disconnect(); RO = null; }
+      var d = f.contentDocument;
+      if (d && d.documentElement && window.ResizeObserver) {
+        RO = new ResizeObserver(fit);
+        RO.observe(d.documentElement);
+      }
+    } catch (e) {}
+    //  Belt and braces for browsers without ResizeObserver, and for content
+    //  that arrives in more than one step.
+    [250, 700, 1500, 3000].forEach(function (t) { setTimeout(fit, t); });
+  }
+
+  function bind() {
+    var f = document.getElementById('tool-frame');
+    if (!f) return;
+    f.addEventListener('load', watch);
+    if (f.contentDocument && f.contentDocument.readyState === 'complete') watch();
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+
+  window.addEventListener('resize', function () { setTimeout(fit, 120); });
+  window.__dseFitFrame = fit;
+})();
+
 </script>
 </body>
 </html>

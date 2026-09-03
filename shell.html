@@ -57,11 +57,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
    One line: greeting, then the market summary beside it. The two used to be
    stacked and the band came to 96px before any content. Everything the old
    version said is still said. */
+/*  Four things sit between the top of the window and the tool: the site nav,
+    this greeting, the tab row, and the pane's own padding. None of them is
+    what the reader came for, and together they were 212px. */
 .dash-hd{display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;gap:8px 14px;margin-bottom:10px;padding-bottom:8px;
   border-bottom:1px solid var(--border)}
 .dash-hd-l{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
-.dash-hd-greet{font-family:var(--serif);font-size:17px;font-weight:700;
+.dash-hd-greet{font-family:var(--serif);font-size:16px;font-weight:700;
   color:var(--navy);white-space:nowrap}
 .dash-hd-sub{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
 
@@ -345,7 +348,12 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     either side is right on a desk; on a 320px phone it is 80px of the 320 —
     a quarter of the screen spent on margin, leaving a 240px column for a
     table. Same value on a wide screen, a quarter of it on a narrow one. */
-.dash-pad{background:var(--cream);min-height:100vh;padding:10px 40px 24px}
+/*  min-height:100vh sat under a 65px site nav, so the dashboard block alone
+    guaranteed a 965px page on a 900px window — 65px of scrolling before a
+    single pixel of content was counted, and no amount of trimming inside
+    could ever reach it. It only exists so the cream background fills a short
+    window; minus the nav is the height that actually does that. */
+.dash-pad{background:var(--cream);min-height:calc(100vh - 65px);padding:10px 40px 24px}
 @media(max-width:760px){.dash-pad{padding:10px 14px 20px}}
 @media(max-width:400px){.dash-pad{padding:8px 10px 18px}}
 .dash-layout{display:flex;gap:0;align-items:flex-start}
@@ -354,13 +362,46 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 .cat-btn:hover{background:var(--cream2)}
 .cat-btn.active{color:var(--navy);background:var(--gold-bg);border-left:2px solid var(--gold)}
 .dash-main{flex:1;min-width:0}
-.dash-layout .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.dash-layout .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:0 0 9px;margin-bottom:10px;border-bottom:1px solid var(--border)}
 .dash-layout .tabs .cat-panel{display:flex;gap:6px;flex-wrap:nowrap}
-.dash-layout .tabs .tab{white-space:nowrap;flex-shrink:0;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text2);background:var(--white)}
+.dash-layout .tabs .tab{white-space:nowrap;flex-shrink:0;border:1px solid var(--border2);border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--text2);background:var(--white)}
 .dash-layout .tabs .tab:hover{border-color:var(--navy2);color:var(--navy)}
 .dash-layout .tabs .tab.active{border-color:var(--gold);background:var(--gold-bg);color:var(--navy);font-weight:700}
 .dash-content{flex:1;min-width:0;padding:0 24px}
-#tool-frame{width:100%;height:80vh;border:0;border-radius:10px;background:#fff;display:block}
+/*  80vh was a guess made without reference to anything above or below it. At
+    900px it is 720px of frame under 212px of chrome, which overflows the
+    window by construction — the tool could be empty and the page would still
+    scroll. calc leaves exactly the room the chrome actually takes, so the
+    tool fills the screen and stops at the bottom of it. min-height keeps it
+    usable on a short window; below that the page scrolls, which is correct. */
+#tool-frame{width:100%;height:calc(100vh - 268px);min-height:380px;border:0;border-radius:10px;background:#fff;display:block}
+
+/* ── the footer, inside the dashboard ──────────────────────────────────────
+   MEASURED, because the eye is a poor judge of this. On a 1440x900 screen
+   the Overview page is 1473px tall — 573px of scrolling to see a market
+   summary. Of that 573, the FOOTER IS 498. The greeting, the tab row, the
+   navy strip and the signal card together come to about a hundred; the
+   footer is five times all four put together, and it is the one part of the
+   page nobody scrolled down there to read.
+
+   It is right on the landing page: Product, Market and Legal columns, the
+   six-engines paragraph, the social links. Inside the dashboard every one of
+   those is a second copy of something already on screen — the rail has the
+   tools, the top nav has Pricing and Home, and the reader is signed in and
+   already using the product the paragraph is selling.
+
+   Same rule as framed.js, for the same reason: the columns go, THE
+   DISCLAIMER STAYS. It is compressed to a line, never removed. Reclaiming
+   vertical space does not pay for dropping a risk warning, and that is not a
+   layout decision to make here.
+
+   Scoped to body.dash-open, so the landing page and every other view keep
+   the full footer exactly as it is. */
+body.dash-open footer.dsef > .dsef-in{display:none}
+body.dash-open footer.dsef > .dsef-disc{padding:14px 32px 12px;font-size:10.5px;
+  line-height:1.5;max-width:1400px}
+body.dash-open footer.dsef > .dsef-bar > div{padding:9px 32px}
+body.dash-open footer.dsef{font-size:13px}
 /*  align-items:flex-start above is right in row mode — it stops the rail
     stretching to the full height of the content beside it. The moment the
     container turns into a column, though, that same property stops being a
@@ -370,7 +411,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     390px: a 310px column holding a 400px pane, 50px of sideways scroll on
     every dashboard view. Putting stretch back for the column restores the
     ordinary behaviour — the pane is exactly as wide as the space it is in. */
-@media(max-width:760px){.dash-layout{flex-direction:column;align-items:stretch}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:16px 0 0}}
+@media(max-width:760px){.dash-layout{flex-direction:column;align-items:stretch}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:10px 0 0}}
 </style>
 </head>
 <body>

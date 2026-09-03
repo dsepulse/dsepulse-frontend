@@ -1266,7 +1266,14 @@ footer .disc{max-width:76ch;line-height:1.65}
         ? (Number(fp.entry) - Number(fp.ltp)) / Number(fp.ltp) * 100
         : L.entry_from_last;
       body = '<div class="ladder">' +
-        (L.ltp != null ? lrow("Now", L.ltp, "", "", false) : "") +
+        //  NOT "Now". This is `ltp` from the engine's row, written when the
+        //  batch ran — after the close on a normal day, and at whatever moment
+        //  a manual run happened otherwise. Calling it "Now" contradicted the
+        //  "AS OF 20 Aug" in this page's own header, and during market hours it
+        //  was checkable against any live quote in ten seconds. Being caught
+        //  wrong on the one figure a stranger can verify is expensive for a
+        //  site selling analysis. "Last" is true whenever the batch ran.
+        (L.ltp != null ? lrow("Last", L.ltp, "", "", false) : "") +
         lrow("Entry", L.entry, pctTxt(ef), "", false) +
         lrow("Target", L.target, "+" + num(gp, 1) + "%", "t2", false) +
         lrow("Stop", L.sl, "−" + num(sp, 1) + "%", "s2", false) +
@@ -1283,7 +1290,7 @@ footer .disc{max-width:76ch;line-height:1.65}
     } else if (L && L.target_pct != null) {
       //  the server is running with TEASER_LEVELS_OPEN=false: shape only
       body = '<div class="ladder">' +
-        lrow("Now", 0, "", "", true) +
+        lrow("Last", 0, "", "", true) +
         lrow("Entry", 0, pctTxt(L.entry_from_last), "", true) +
         lrow("Target", 0, "+" + num(L.target_pct, 1) + "%", "t2", true) +
         lrow("Stop", 0, "−" + num(L.stop_pct, 1) + "%", "s2", true) +

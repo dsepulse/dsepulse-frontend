@@ -374,7 +374,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     scroll. calc leaves exactly the room the chrome actually takes, so the
     tool fills the screen and stops at the bottom of it. min-height keeps it
     usable on a short window; below that the page scrolls, which is correct. */
-#tool-frame{width:100%;height:calc(100vh - 268px);min-height:380px;border:0;border-radius:10px;background:#fff;display:block}
+#tool-frame{width:100%;height:calc(100vh - 244px);min-height:380px;border:0;border-radius:10px;background:#fff;display:block}
 
 /* ── the footer, inside the dashboard ──────────────────────────────────────
    MEASURED, because the eye is a poor judge of this. On a 1440x900 screen
@@ -402,6 +402,22 @@ body.dash-open footer.dsef > .dsef-disc{padding:14px 32px 12px;font-size:10.5px;
   line-height:1.5;max-width:1400px}
 body.dash-open footer.dsef > .dsef-bar > div{padding:9px 32px}
 body.dash-open footer.dsef{font-size:13px}
+
+/* ── short windows ────────────────────────────────────────────────────────
+   A 1366x768 laptop has 132px less to work with than a 900px window, and the
+   chrome above the tool does not shrink with it — so the same layout that
+   fits comfortably on a desk monitor pushes the tool into its own scrollbar
+   on a laptop. Everything trimmed here is chrome: the greeting, the tab row,
+   and the padding around the pane. No content is touched, and above 820px
+   none of it applies. */
+@media (max-height:820px){
+  .dash-pad{padding:6px 40px 14px}
+  .dash-hd{padding-bottom:4px;margin-bottom:6px}
+  .dash-hd-greet{font-size:14px}
+  .dash-main{padding:12px 24px}
+  .dash-layout .tabs{padding:0 0 7px;margin-bottom:8px}
+  #tool-frame{height:calc(100vh - 182px)}
+}
 /*  align-items:flex-start above is right in row mode — it stops the rail
     stretching to the full height of the content beside it. The moment the
     container turns into a column, though, that same property stops being a

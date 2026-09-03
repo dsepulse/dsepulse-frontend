@@ -42,7 +42,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div id="dt-overview">
     <div id="ov-market"></div>
     <div id="ov-top"></div>
-    <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin-top:16px" id="ov-grid">
+    <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-top:12px;align-items:start" id="ov-grid">
       <div id="ov-funnel"></div>
       <div id="ov-consensus"></div>
     </div>
@@ -75,12 +75,12 @@ async function buildOverview(){
   const fmtD=s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();}catch(e){return s||'';}};
   const moodC=m.mood==='Bullish'?'#4ADE80':m.mood==='Bearish'?'#F87171':'var(--gold2)';
   const L='font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)';
-  const DIV='<div style="height:34px;width:1px;background:rgba(255,255,255,0.15)"></div>';
+  const DIV='<div style="height:28px;width:1px;background:rgba(255,255,255,0.15)"></div>';
   const sect=(arr,lbl,col)=>arr&&arr.length?`<div style="display:flex;flex-direction:column;gap:3px"><span style="${L}">${lbl}</span><span style="font-size:12px;font-weight:600;color:${col}">${arr.join(' · ')}</span></div>`:'';
   const dsexC=(m.dsex_change||0)>=0?'#4ADE80':'#F87171';
   const dsexBlk=(m.dsex>0)?`<div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">DSEX Index</span><span style="font-size:20px;font-weight:800;font-family:var(--mono);color:#fff;line-height:1.1">${m.dsex.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})} <span style="font-size:12px;color:${dsexC}">${(m.dsex_change||0)>=0?'▲':'▼'}${Math.abs(m.dsex_change||0).toFixed(2)}%</span></span></div>${DIV}`:'';
   const turnBlk=(m.turnover>0)?`${DIV}<div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">Turnover</span><span style="font-size:14px;font-weight:700;font-family:var(--mono);color:#fff">৳${(m.turnover/10).toLocaleString('en-US',{maximumFractionDigits:0})} cr</span></div>`:'';
-  document.getElementById('ov-market').innerHTML=`<div style="background:var(--navy);border-radius:10px;padding:16px 22px;display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+  document.getElementById('ov-market').innerHTML=`<div style="background:var(--navy);border-radius:10px;padding:11px 18px;display:flex;align-items:center;gap:9px 16px;flex-wrap:wrap">
     ${dsexBlk}
     <div style="display:flex;flex-direction:column;gap:2px"><span style="${L}">Market Mood</span><span style="font-size:20px;font-weight:800;font-family:var(--serif);color:${moodC}">${m.mood}</span></div>
     ${DIV}
@@ -98,33 +98,58 @@ async function buildOverview(){
   if(t){
     const pc=t.pct>=0?'var(--green)':'var(--red)';
     const chip=(lbl,val)=>`<div style="display:flex;flex-direction:column;gap:1px;align-items:center;padding:0 14px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)">${lbl}</span><span style="font-size:14px;font-weight:800;font-family:var(--mono);color:var(--navy)">${val}</span></div>`;
-    const lvl=(lbl,val,col)=>`<div style="flex:1;text-align:center;padding:8px 4px;background:var(--white);border:1px solid var(--border);border-radius:6px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)">${lbl}</div><div style="font-size:14px;font-weight:800;font-family:var(--mono);color:${col}">${val}</div></div>`;
-    document.getElementById('ov-top').innerHTML=`<div style="background:linear-gradient(135deg,var(--gold-bg),var(--white));border:1px solid var(--gold-border);border-radius:10px;padding:20px 22px;margin-top:16px">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:700;margin-bottom:10px">★ Today's Strongest Signal</div>
-      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-        <span style="font-size:26px;font-weight:800;font-family:var(--serif);color:var(--navy)">${t.code}</span>
-        <span style="font-size:10px;padding:2px 8px;background:var(--cream2);border:1px solid var(--border);border-radius:4px;color:var(--text3)">${t.cat||''}</span>
-        <span style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${t.ltp.toFixed(2)}</span>
-        <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:${pc}">${t.pct>=0?'+':''}${t.pct.toFixed(2)}%</span>
-        <div style="margin-left:auto;display:flex;align-items:center;border:1px solid var(--gold-border);border-radius:8px;background:var(--white)">${chip('Picker',t.picker.toFixed(0))}<div style="width:1px;height:24px;background:var(--border)"></div>${chip('WMA',t.wma||'—')}<div style="width:1px;height:24px;background:var(--border)"></div>${chip('Tech',t.tech.toFixed(0))}</div>
+    /*  flex:1 alone meant these four boxes divided whatever width existed. On a
+    1920 screen that is a 380px box holding six characters — the number sits
+    alone in the middle of a field, and the eye travels to read four figures
+    that belong together. A basis with a ceiling keeps them a group: they grow
+    to fill a narrow pane and stop where the four still read as one row.  */
+    const lvl=(lbl,val,col)=>`<div style="flex:0 1 auto;min-width:96px;text-align:center;padding:6px 12px;background:var(--white);border:1px solid var(--border);border-radius:6px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)">${lbl}</div><div style="font-size:14px;font-weight:800;font-family:var(--mono);color:${col}">${val}</div></div>`;
+    /*  ── the card, rethought ───────────────────────────────────────────────
+        It was two rows, and each had a hole in the middle: the name on the far
+        left with the scores pushed to the far right, then four boxes stretched
+        across the full width with the button orphaned underneath. On a 1920
+        screen that is roughly a thousand pixels of nothing between facts that
+        belong together, which is what makes it read as spread out rather than
+        spacious.
+
+        One row instead, in the order somebody actually asks the questions:
+        WHAT is it, WHAT does it cost, HOW strong is the case, WHERE do I get
+        in and out, and then the action. Nothing is pushed to an edge; the row
+        simply ends where the facts end. On a narrower pane it wraps into two
+        or three groups, and the reading order survives the wrap because the
+        order is the meaning.  */
+    document.getElementById('ov-top').innerHTML=`<div style="background:linear-gradient(135deg,var(--gold-bg),var(--white));border:1px solid var(--gold-border);border-radius:10px;padding:13px 18px;margin-top:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:700;margin-bottom:8px">★ Today's Strongest Signal</div>
+      <div style="display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap">
+
+        <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
+          <span style="font-size:23px;font-weight:800;font-family:var(--serif);color:var(--navy);line-height:1.1">${t.code}</span>
+          <span style="font-size:10px;padding:2px 7px;background:var(--cream2);border:1px solid var(--border);border-radius:4px;color:var(--text3)">${t.cat||''}</span>
+          <span style="font-size:17px;font-weight:700;font-family:var(--mono);color:var(--navy)">৳${t.ltp.toFixed(2)}</span>
+          <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:${pc}">${t.pct>=0?'+':''}${t.pct.toFixed(2)}%</span>
+        </div>
+
+        <div style="display:flex;align-items:center;border:1px solid var(--gold-border);border-radius:8px;background:var(--white)">${chip('Picker',t.picker.toFixed(0))}<div style="width:1px;height:22px;background:var(--border)"></div>${chip('WMA',t.wma||'—')}<div style="width:1px;height:22px;background:var(--border)"></div>${chip('Tech',t.tech.toFixed(0))}</div>
+
+        <div style="display:flex;gap:7px;flex-wrap:wrap">${lvl('Entry','৳'+t.entry.toFixed(2),'var(--navy)')}${lvl('Target','৳'+t.target.toFixed(2),'var(--green)')}${lvl('Stop Loss','৳'+t.sl.toFixed(2),'var(--red)')}${lvl('Risk : Reward','1:'+t.rr.toFixed(1),'var(--gold)')}</div>
+
+        <a href="/calculator.html?code=${encodeURIComponent(t.code)}&entry=${t.entry}&target=${t.target}&sl=${t.sl}" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--white);border:1px solid var(--gold-border);border-radius:8px;padding:9px 15px">Use these levels in Calculator →</a>
       </div>
-      <div style="display:flex;gap:8px">${lvl('Entry','৳'+t.entry.toFixed(2),'var(--navy)')}${lvl('Target','৳'+t.target.toFixed(2),'var(--green)')}${lvl('Stop Loss','৳'+t.sl.toFixed(2),'var(--red)')}${lvl('Risk : Reward','1:'+t.rr.toFixed(1),'var(--gold)')}</div>
-      <div style="margin-top:12px"><a href="/calculator.html?code=${encodeURIComponent(t.code)}&entry=${t.entry}&target=${t.target}&sl=${t.sl}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--white);border:1px solid var(--gold-border);border-radius:8px;padding:10px 16px">Use these levels in Calculator →</a></div>
     </div>`;
   }else{
     document.getElementById('ov-top').innerHTML=`<div style="background:var(--cream);border:1px dashed var(--border);border-radius:10px;padding:24px;margin-top:16px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text2)">No triple-confirmed signal today</div><div style="font-size:11px;color:var(--text3);margin-top:4px">In a cautious market the engines hold back — check the BD Signal tab for the watchlist.</div></div>`;
   }
   const steps=[['Stocks scanned',fn.scanned||0,'var(--navy)'],['WMA strong buy',fn.wma_strong||0,'var(--gold)'],['Tech 70+',fn.tech70||0,'var(--green-bright)'],['Triple-confirmed',fn.combined||0,'var(--green)']];
   const mx=Math.max(fn.scanned||1,1);
-  document.getElementById('ov-funnel').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;height:100%">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:14px">Confirmation Funnel</div>
-    ${steps.map(s=>{const w=Math.max((s[1]/mx)*100,6);return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--text2)">${s[0]}</span><span style="font-size:12px;font-weight:800;font-family:var(--mono);color:${s[2]}">${s[1]}</span></div><div style="height:8px;background:var(--cream2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${w}%;background:${s[2]};border-radius:4px"></div></div></div>`;}).join('')}
-    <div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic">Each layer filters for higher conviction.</div>
+  document.getElementById('ov-funnel').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:10px">Confirmation Funnel</div>
+    ${steps.map(s=>{const w=Math.max((s[1]/mx)*100,6);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--text2)">${s[0]}</span><span style="font-size:12px;font-weight:800;font-family:var(--mono);color:${s[2]}">${s[1]}</span></div><div style="height:8px;background:var(--cream2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${w}%;background:${s[2]};border-radius:4px"></div></div></div>`;}).join('')}
+    <div style="font-size:10px;color:var(--text3);margin-top:6px;font-style:italic">Each layer filters for higher conviction.</div>
   </div>`;
   const eg={Combined:'var(--green)',WMA:'var(--gold)',Tech:'var(--green-bright)',BD:'var(--navy2)'};
-  document.getElementById('ov-consensus').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;height:100%">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:10px">Cross-Tool Consensus</div>
-    ${cons.length?cons.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy);width:80px">${c.code}</span><div style="display:flex;gap:4px;flex:1;flex-wrap:wrap">${c.engines.map(e=>`<span style="font-size:8px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:3px;color:#fff;background:${eg[e]||'var(--text3)'}">${e}</span>`).join('')}</div><span style="font-size:13px;font-weight:800;font-family:var(--mono);color:var(--green)">${c.count}<span style="font-size:9px;color:var(--text3)">/4</span></span></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:14px 0;text-align:center">No multi-engine overlaps today.</div>'}
+  document.getElementById('ov-consensus').innerHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);font-weight:700;margin-bottom:6px">Cross-Tool Consensus</div>
+    ${cons.length?cons.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--navy);width:80px">${c.code}</span><div style="display:flex;gap:4px;flex:1;flex-wrap:wrap">${c.engines.map(e=>`<span style="font-size:8px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:3px;color:#fff;background:${eg[e]||'var(--text3)'}">${e}</span>`).join('')}</div><span style="font-size:13px;font-weight:800;font-family:var(--mono);color:var(--green)">${c.count}<span style="font-size:9px;color:var(--text3)">/4</span></span></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:14px 0;text-align:center">No multi-engine overlaps today.</div>'}
   </div>`;
   }catch(e){
     mk.innerHTML='<div style="padding:30px;text-align:center;color:var(--red);font-size:12px;border:1px dashed var(--red-bg);border-radius:10px">Render error: <span style="font-family:var(--mono)">'+e.message+'</span></div>';

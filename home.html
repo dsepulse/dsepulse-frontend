@@ -38,8 +38,8 @@
    ========================================================================== -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DSE Pulse — entry, target, stop</title>
-<meta name="description" content="Type any Dhaka Stock Exchange ticker and get the entry, the target, the stop — and what your capital does at those levels. Free.">
+<title>DSE Pulse — Find the Signal</title>
+<meta name="description" content="Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
@@ -137,15 +137,20 @@ a{color:inherit}
   padding:8px 13px;border-radius:6px;text-decoration:none;white-space:nowrap}
 
 /* ── hero ──────────────────────────────────────────────────────────────── */
-.hero{padding:52px 0 26px;text-align:center}
+/*  52px of air above a headline is right on a page somebody scrolls through
+    and wrong on one whose job is to show six cards at a glance. The six
+    engine cards ARE the argument; everything above them is the setup, and
+    the setup was pushing the second row past the fold on a 768px laptop and
+    on a subscriber's 900px screen, where the plan banner costs another 83px. */
+.hero{padding:30px 0 18px;text-align:center}
 .kicker{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
   color:var(--gold-d);margin-bottom:16px}
-h1{font:700 clamp(28px,5vw,47px)/1.12 var(--serif);margin:0 0 14px;
+h1{font:700 clamp(28px,4.6vw,42px)/1.12 var(--serif);margin:0 0 11px;
   letter-spacing:-.015em;text-wrap:balance}
-.hero p.sub{max-width:56ch;margin:0 auto;color:var(--ink2);font-size:17px}
-form.ask{display:flex;gap:9px;max-width:520px;margin:28px auto 0;flex-wrap:wrap}
-form.ask input{flex:1 1 240px;min-width:0;font:600 17px/1 var(--mono);
-  letter-spacing:.06em;text-transform:uppercase;padding:16px 18px;border-radius:9px;
+.hero p.sub{max-width:56ch;margin:0 auto;color:var(--ink2);font-size:16px}
+form.ask{display:flex;gap:9px;max-width:520px;margin:20px auto 0;flex-wrap:wrap}
+form.ask input{flex:1 1 240px;min-width:0;font:600 16px/1 var(--mono);
+  letter-spacing:.06em;text-transform:uppercase;padding:13px 16px;border-radius:9px;
   border:1.5px solid var(--bd);background:var(--paper);color:var(--ink)}
 form.ask input::placeholder{font-weight:400;letter-spacing:.03em;color:var(--ink3)}
 form.ask input:focus{outline:none;border-color:var(--gold);
@@ -316,8 +321,8 @@ tr.lk .sc{color:var(--ink2)}
 .top form.ask{margin:0 auto;max-width:500px}
 .top form.ask input{padding:12px 15px;font-size:15px}
 .top form.ask button{padding:12px 20px;font-size:15px}
-.top .cap{margin:11px 0 0}
-.top .cap button{padding:7px 11px;font-size:12.5px}
+.top .cap{margin:8px 0 0}
+.top .cap button{padding:6px 10px;font-size:12px}
 .gridwrap{min-height:0;padding-bottom:10px}
 .boxes{display:grid;gap:11px;height:100%;
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
@@ -485,14 +490,14 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
     box gives them room: a wider screen container, a bigger gap, more padding
     and a larger figure size. Six boxes still fit one viewport. */
 .screen .wrap{max-width:1180px}
-.boxes{gap:14px}
-.bx{padding:17px 18px;gap:12px;border-radius:13px}
+.boxes{gap:11px}
+.bx{padding:12px 16px;gap:8px;border-radius:13px}
 .bx .nm .bl,.bx .nm .rl{font-size:19px}
 .lr{grid-template-columns:56px 1fr auto;gap:10px}
 .lr .p2{font-size:16px}
 .lr .d2{font-size:12px}
-.ladder{gap:9px}
-.bfoot{padding-top:11px;gap:11px;font-size:12.5px}
+.ladder{gap:6px}
+.bfoot{padding-top:8px;gap:11px;font-size:12.5px}
 .ev2{gap:9px}
 .ev2 div{font-size:13px}
 .ev2 div b{font-size:13.5px}
@@ -634,8 +639,15 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   box-shadow:0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(13,31,60,.10)}
 #top,#about,#how,#join,#tools{scroll-margin-top:calc(var(--bandh) + 12px)}
 .screen{min-height:auto}
+/*  --bannerh is 0 for everyone except a signed-in subscriber, who gets an
+    83px "your subscription is active" strip ABOVE this block. Without
+    subtracting it the first screen is still exactly one viewport tall but
+    starts 83px down the page, so the bottom row of cards falls off a 900px
+    window for the one visitor who has already paid. paint_entitled() measures
+    the strip and writes the real number here. */
+:root{ --bannerh:0px }
 @media (min-width:720px) and (min-height:640px){
-  .screen{height:auto;min-height:calc(100svh - var(--bandh))}
+  .screen{height:auto;min-height:calc(100svh - var(--bandh) - var(--bannerh))}
 }
 .band .wrap{padding-top:9px;padding-bottom:9px}
 
@@ -829,6 +841,177 @@ footer .disc{max-width:76ch;line-height:1.65}
   .lv{padding:13px 9px}
   .lv .p{font-size:17px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE NEW STORY: stack → problem → how → shortlist → trust → pricing → CTA
+   Nothing below introduces a font, a colour or a radius the page did not
+   already use. Every value is drawn from the tokens at the top of this file,
+   so the new sections read as the same site as the old ones.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* the second line of the headline: the question, not the statement.
+   One <h1> so the document still has exactly one, but two voices — the
+   claim in ink, the question in the gold that marks everything the page
+   wants you to act on. */
+.top h1 .hq{display:block;margin-top:5px;color:var(--gold-d);
+  font:400 clamp(17px,2.2vw,25px)/1.25 var(--serif);font-style:italic;
+  letter-spacing:0}
+/*  The question costs a line the six boxes used to have. It is bought back
+    here rather than from the cards, which are the argument. */
+.top{padding:14px 20px 10px}
+.top h1{margin-bottom:9px}
+/*  A wider measure on the first screen only. 62ch is right for a paragraph
+    somebody reads; this is a one-sentence claim above six cards, and the
+    third line it wrapped to cost the bottom row of those cards on a 900px
+    subscriber screen. */
+.screen .lede1{margin-bottom:10px;max-width:74ch}
+.screen .eg{margin-top:11px}
+.screen .cap{margin-top:14px}
+/*  A subscriber carries an extra 85px strip above all of this, and the six
+    cards cannot shrink below their own content. Subtracting the strip from
+    .screen is not enough on a 900px window, so the hero gives up ~30px of
+    air — but only for the one visitor who has the strip. A prospect keeps
+    the full hero, because for them it is the pitch. */
+body.has-banner .top{padding-top:8px;padding-bottom:6px}
+body.has-banner .top h1{margin-bottom:6px}
+body.has-banner .screen .lede1{margin-bottom:7px}
+body.has-banner .screen .eg{margin-top:8px}
+body.has-banner .screen .cap{margin-top:10px}
+body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
+
+/* ── the stack ─────────────────────────────────────────────────────────── */
+/*  Five layers, each one narrower than the last. The narrowing IS the
+    argument — a field that starts at every listed stock and ends at a
+    handful — so it is done with width, not with decoration. Below the
+    two-column breakpoint every layer is full width, because a 340px phone
+    has no width to spend on a metaphor. */
+.stack{padding:46px 0 8px}
+.layers{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:9px}
+.ly{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:15px 18px;display:grid;gap:5px 18px;position:relative;
+  border-left:3px solid var(--gold-bd);margin:0 auto;width:100%}
+@media (min-width:860px){
+  .ly{grid-template-columns:118px 1fr;align-items:baseline}
+  .ly.l1{width:100%}
+  .ly.l2{width:96%}
+  .ly.l3{width:92%}
+  .ly.l4{width:88%}
+  .ly.l5{width:84%}
+}
+/*  The rail deepens as the field narrows: pale where everything is still in,
+    full gold at the layer that only a triple agreement gets through. */
+.ly.l2{border-left-color:#DEC57E}
+.ly.l3{border-left-color:#D4A017}
+.ly.l4{border-left-color:var(--gold-d)}
+.ly.l5{border-left-color:var(--navy2)}
+.ly .ln{font:600 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3);display:flex;align-items:baseline;gap:9px;white-space:nowrap}
+.ly .ln em{font-style:normal;font:500 10px/1 var(--mono);letter-spacing:.04em;
+  color:var(--gold-d)}
+.ly h3{font:600 15.5px/1.3 var(--sans);margin:0 0 4px}
+.ly p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/*  Smart Money is not layer six — it does not sit in the sequence, it runs
+    beside it. Saying so in the layout is more honest than numbering it. */
+.along{margin:14px auto 0;width:100%;background:var(--cream);
+  border:1px dashed var(--bd);border-radius:12px;padding:15px 18px;
+  display:grid;gap:5px 18px}
+@media (min-width:860px){
+  .along{grid-template-columns:118px 1fr;align-items:baseline;width:84%}
+}
+.along .ln{font:600 9.5px/1 var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+.along h3{font:600 15.5px/1.3 var(--sans);margin:0 0 4px}
+.along p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/*  The chain reads left to right on a desktop and top to bottom on a phone,
+    which is the direction each of those actually narrows in. */
+.chain{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:10px 12px;margin:26px 0 0;padding:16px 18px;background:var(--navy);
+  border-radius:12px;text-align:center}
+.chain span{font:500 12.5px/1.3 var(--sans);color:rgba(255,255,255,.72)}
+.chain b{font:700 13.5px/1.3 var(--mono);letter-spacing:.02em;color:var(--gold);
+  background:rgba(212,160,23,.13);border:1px solid rgba(212,160,23,.34);
+  border-radius:7px;padding:8px 12px}
+.chain i{width:16px;height:1px;background:rgba(255,255,255,.32);flex:0 0 auto;
+  position:relative}
+.chain i::after{content:"";position:absolute;right:0;top:-2.5px;
+  border:3px solid transparent;border-left-color:rgba(255,255,255,.5)}
+@media (max-width:620px){
+  .chain{flex-direction:column;gap:8px}
+  .chain i{width:1px;height:18px}
+  .chain i::after{right:-3.5px;top:auto;bottom:-1px;border-width:4px;
+    border-color:transparent;border-top-color:rgba(255,255,255,.55)}
+}
+
+/* ── the problem ───────────────────────────────────────────────────────── */
+/*  One paragraph on the cream, set wide and quiet. It is the only section on
+    the page with nothing to click, which is the point: it is the pause
+    between what the product does and how it does it. */
+/*  The measure is narrow here — a paragraph, not a grid — but the LEFT EDGE
+    stays where every other section's does. A centred 760px column starts
+    160px in from the heading above it, and that reads as a mistake rather
+    than as a pause. */
+.problem{padding:44px 0 40px}
+.pk{display:inline-block;font:600 10px/1 var(--sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold-d);margin-bottom:13px}
+.problem h2{font:700 clamp(22px,3.2vw,31px)/1.25 var(--serif);margin:0 0 14px;
+  max-width:32ch;letter-spacing:-.012em;text-wrap:balance}
+.problem p{margin:0;max-width:70ch;font-size:16px;line-height:1.7;
+  color:var(--ink2)}
+
+/* ── how it works ──────────────────────────────────────────────────────── */
+.steps.four{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.steps.four h3{font:600 16px/1.3 var(--sans);margin:7px 0 6px}
+.steps.four p b{color:var(--ink);font-weight:600}
+/*  The last line of the section, and the only sentence on the page that is
+    about the reader rather than the product. It gets the gold rule that
+    everything else on the page uses to mean "this is the point". */
+.decide{margin:22px 0 0;padding-left:13px;border-left:3px solid var(--gold);
+  font:600 16px/1.5 var(--sans);color:var(--ink)}
+
+/* ── trust ─────────────────────────────────────────────────────────────── */
+.about{padding:46px 0 8px}
+.about .qa{margin-top:20px}
+.q p i{font-style:italic;color:var(--ink)}
+
+/* ── the last word ─────────────────────────────────────────────────────── */
+/*  The page opened by asking for a ticker. It closes by asking for the same
+    thing, because that is the one action that costs the visitor nothing and
+    shows them everything. Signing up is the second button, not the first. */
+/*  navy2, not navy: the injected site footer is #10203A, and two adjacent
+    blocks of the same dark blue read as one very tall footer. The lighter
+    navy makes the close of the argument its own band. */
+.fcta{background:var(--navy2);color:#fff;padding:48px 0;margin-top:44px;
+  text-align:center;border-top:1px solid rgba(212,160,23,.30)}
+.fcta h2{font:700 clamp(23px,3.4vw,33px)/1.24 var(--serif);margin:0 0 12px;
+  letter-spacing:-.012em;text-wrap:balance}
+.fcta p{margin:0 auto;max-width:54ch;font-size:15.5px;line-height:1.65;
+  color:rgba(255,255,255,.74)}
+.fbtns{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;
+  margin-top:24px}
+.fgo{font:600 15px/1 var(--sans);padding:15px 26px;border-radius:9px;border:0;
+  background:var(--gold);color:var(--navy);cursor:pointer;font-family:inherit}
+.fgo:hover{background:var(--gold-d);color:#fff}
+.falt{font:600 15px/1 var(--sans);padding:15px 24px;border-radius:9px;
+  border:1.5px solid rgba(255,255,255,.34);color:#fff;text-decoration:none}
+.falt:hover{border-color:#fff}
+.fcta :focus-visible{outline-color:#fff}
+
+/* anchors added by the new story */
+#stack,#problem{scroll-margin-top:calc(var(--bandh) + 12px)}
+
+/* ── phones ────────────────────────────────────────────────────────────── */
+@media (max-width:560px){
+  .stack{padding:36px 0 6px}
+  .problem{padding:34px 0 30px}
+  .problem p{font-size:15px}
+  .ly{padding:13px 15px}
+  .along{padding:13px 15px}
+  .fcta{padding:38px 0;margin-top:34px}
+  .fbtns{flex-direction:column}
+  .fgo,.falt{width:100%}
+}
 </style>
 
 <div class="band" id="top">
@@ -839,7 +1022,7 @@ footer .disc{max-width:76ch;line-height:1.65}
       <span class="stat opt"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
       <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
       <nav class="bnav">
-        <a href="#top">Home</a><a href="#tools">Tools</a><a href="#about">About</a><a
+        <a href="#top">Home</a><a href="#stack">Tools</a><a href="#about">About</a><a
         href="#how">How it works</a><a href="#join">Pricing</a>
       </nav>
       <a class="signin" href="/shell.html" id="b-signin">Sign in</a>
@@ -851,14 +1034,15 @@ footer .disc{max-width:76ch;line-height:1.65}
 
 <div class="screen">
   <div class="wrap top">
-    <h1>Six engines. Six trades. One is yours to check.</h1>
-    <p class="lede1">Every Dhaka-listed share, scored after the close —
-    <b>where to buy, where to take profit, where to get out</b>. Free on any
-    ticker you name.</p>
+    <h1>Hundreds of stocks. One question.<span class="hq">Which one deserves
+      your attention?</span></h1>
+    <p class="lede1">DSE Pulse scans hundreds of Dhaka-listed stocks after every
+    close, turning noise into a structured plan —
+    <b>entry, target and risk</b>. Free on any ticker.</p>
     <form class="ask" id="ask" autocomplete="off">
-      <input id="code" name="code" placeholder="Or type your own ticker — e.g. BATBC"
+      <input id="code" name="code" placeholder="Type a ticker — e.g. BATBC"
              maxlength="20" aria-label="Stock ticker" spellcheck="false">
-      <button type="submit" id="go">Show me the plan</button>
+      <button type="submit" id="go">Find the signal</button>
     </form>
     <p class="eg">Try
       <button type="button" data-c="BATBC">BATBC</button> ·
@@ -873,16 +1057,16 @@ footer .disc{max-width:76ch;line-height:1.65}
       <button type="button" data-v="100000" aria-pressed="false">৳1,00,000</button>
       <button type="button" data-v="500000" aria-pressed="false">৳5,00,000</button>
       <span class="caphint">— changes only the taka profit and loss below.
-      Entry, target and stop are the engine's and never move.</span>
+      Entry, target and stop come from the Signal Stack and never move.</span>
     </div>
   </div>
 
   <div class="wrap gridwrap">
     <div class="boxes" id="boxes">
-      <div class="load">Loading today’s engine output…</div>
+      <div class="load">Loading today’s Signal Stack…</div>
     </div>
     <div class="panel" id="panel">
-      <button type="button" class="back" id="back">← Back to today’s engines</button>
+      <button type="button" class="back" id="back">← Back to today’s shortlist</button>
       <div id="out"></div>
     </div>
   </div>
@@ -894,54 +1078,135 @@ footer .disc{max-width:76ch;line-height:1.65}
   </div>
 </div>
 
-<section class="about" id="about">
+<!-- ── THE SIGNAL STACK ─────────────────────────────────────────────────── -->
+<section class="stack" id="stack">
   <div class="wrap">
-    <div class="qa">
-      <div class="q">
-        <span class="qk">What is it?</span>
-        <p><b>A verdict on every Dhaka-listed share, refreshed every trading
-        evening.</b> Six engines run in sequence after the close and produce a
-        score, a buy zone, a target and a stop for the stocks that clear them.</p>
-      </div>
-      <div class="q">
-        <span class="qk">Why use it?</span>
-        <p><b>Every other DSE site gives you data and leaves the decision to
-        you.</b> This one commits to an answer, shows the arithmetic behind it,
-        and prices it on the money you actually have.</p>
-      </div>
-      <div class="q">
-        <span class="qk">What does it cost?</span>
-        <p><b>Nothing to start.</b> Any ticker you name is free, forever. The
-        engines' shortlists are <span id="c-cost">priced below</span>, and the
-        trial is free without a card.</p>
+    <div class="hd">
+      <h2>The Signal Stack</h2>
+      <span class="note">runs every trading evening, from 4:35 PM</span>
+    </div>
+    <p class="lede">Multiple market readings. Layered confirmation.
+    One clearer shortlist.</p>
+
+    <ol class="layers">
+      <li class="ly l1">
+        <span class="ln">Layer 01<em>4:35 PM</em></span>
+        <div class="lc">
+          <h3>Daily Picker</h3>
+          <p>Momentum scan across every listed stock — price action, volume
+          surge, category, PE and spread. Score out of 45.</p>
+        </div>
+      </li>
+      <li class="ly l2">
+        <span class="ln">Layer 02<em>5:00 PM</em></span>
+        <div class="lc">
+          <h3>WMA Analysis</h3>
+          <p>Weighted moving averages 9 / 34 / 89 read over 150 days of
+          history. Trend confirmation, with fresh-cross alerts.</p>
+        </div>
+      </li>
+      <li class="ly l3">
+        <span class="ln">Layer 03<em>5:15 PM</em></span>
+        <div class="lc">
+          <h3>Tech Analysis</h3>
+          <p>A score out of 100 combining WMA, MACD 12/26/9, RSI 14, volume
+          surge and Bollinger Bands.</p>
+        </div>
+      </li>
+      <li class="ly l4">
+        <span class="ln">Layer 04<em>5:30 PM</em></span>
+        <div class="lc">
+          <h3>Combined Signal</h3>
+          <p>Triple confirmation. Only stocks where Picker ≥ 30,
+          WMA reads STRONG BUY and Tech ≥ 70 all agree at once.</p>
+        </div>
+      </li>
+      <li class="ly l5">
+        <span class="ln">Layer 05<em>5:30 PM</em></span>
+        <div class="lc">
+          <h3>BD Signal</h3>
+          <p>A Bangladesh-tuned score out of 100 — DSEX mood, ATR stop level,
+          sector weighting, consecutive up days and a circuit check.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="along">
+      <span class="ln">Alongside</span>
+      <div class="lc">
+        <h3>Smart Money</h3>
+        <p>Reads volume and block trades on its own track, so unusual
+        accumulation is visible even where the layered score is quiet.</p>
       </div>
     </div>
-    <div class="astrip">
-      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
-      <div><b>5</b><span>tools, run in sequence from 4:35 PM</span></div>
-      <div><b>1</b><span>pick published in full every day, free</span></div>
-      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
+
+    <div class="chain" aria-label="How the layers narrow the field">
+      <span>Multiple signals</span>
+      <i aria-hidden="true"></i>
+      <span>Layered confirmation</span>
+      <i aria-hidden="true"></i>
+      <span>Filtered setups</span>
+      <i aria-hidden="true"></i>
+      <b>Entry · Target · Risk</b>
     </div>
-    <p class="anote">Rule-based arithmetic over past price and volume. It is
-    wrong regularly — the track record is published in full, good days and bad,
-    and nothing here predicts that a price will reach any level.</p>
+  </div>
+</section>
+
+<!-- ── THE PROBLEM ──────────────────────────────────────────────────────── -->
+<section class="problem">
+  <div class="wrap">
+    <span class="pk">The problem</span>
+    <h2>The market gives you too much information, and too much noise.</h2>
+    <p>Hundreds of stocks trade on the Dhaka Stock Exchange, and every one of
+    them produces a price, a volume, a chart and an opinion after the close.
+    Almost none of that is a decision. Nothing in it tells you which name is
+    worth an hour of your evening — or where you would get in, where you
+    would take profit, and where you would be wrong.</p>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="hd"><h2>How it works</h2></div>
+    <p class="lede">Four steps, in the same order, every trading evening.</p>
+    <ol class="steps four">
+      <li><span class="n">01</span>
+        <h3>Scan</h3>
+        <p>Hundreds of stocks are processed after the close — every listed
+        name, not a watchlist someone chose in advance.</p></li>
+      <li><span class="n">02</span>
+        <h3>Analyse</h3>
+        <p>Multiple market readings are evaluated on each one: momentum,
+        moving averages, MACD, RSI, volume, Bollinger Bands, DSEX mood.</p></li>
+      <li><span class="n">03</span>
+        <h3>Filter</h3>
+        <p>Only setups that meet the defined rules move forward. Everything
+        that does not clear the thresholds is dropped, silently.</p></li>
+      <li><span class="n">04</span>
+        <h3>Plan</h3>
+        <p>What survives is written as a setup you can act on or ignore:
+        <b>entry · target · risk</b>.</p></li>
+    </ol>
+    <p class="decide">You decide what to do with it.</p>
   </div>
 </section>
 
 <div class="wrap">
   <section class="tools-sec" id="tools">
     <div class="hd">
-      <h2>What the six engines found today</h2>
+      <h2>What made the shortlist today</h2>
       <span class="note" id="tl-note"></span>
     </div>
-    <p class="lede">Not a count of what you're missing — the actual rows, with
-    the numbers that decide a trade, priced on your capital. Only the name is
-    withheld, and it is withheld on the server: it is not in this page at all.</p>
+    <p class="lede">Not a count of what you are missing — the actual rows the
+    Signal Stack produced this evening, with the numbers that decide a setup,
+    priced on your capital. Only the name is withheld, and it is withheld on
+    the server: it is not in this page at all.</p>
 
     <div class="tabs" id="tl-tabs"></div>
     <div class="toolbox">
       <div class="tool-hd" id="tl-hd"></div>
-      <div id="tl-rows"><div class="load">Loading today's engine output…</div></div>
+      <div id="tl-rows"><div class="load">Loading today's shortlist…</div></div>
       <div class="cta" id="tl-cta">
         <div class="m"><b>The names are the product</b>
         <span>Every row above is a real stock that cleared a real filter this
@@ -952,34 +1217,44 @@ footer .disc{max-width:76ch;line-height:1.65}
   </section>
 </div>
 
-<section class="how" id="how">
+<!-- ── TRUST ────────────────────────────────────────────────────────────── -->
+<section class="about" id="about">
   <div class="wrap">
-    <div class="hd"><h2>How the numbers are produced</h2></div>
-    <p class="lede">Every trading day after the close, five tools run in sequence
-    — each adding a layer of confirmation before a stock reaches the final
-    list. Smart Money runs alongside them on volume and block trades.</p>
-    <ol class="steps">
-      <li><span class="n">01</span><span class="tm">4:35 PM</span>
-        <h3>Daily Picker</h3>
-        <p>Momentum scan — ranks every listed stock by price action, volume
-        surge, category, PE and spread. Score out of 45.</p></li>
-      <li><span class="n">02</span><span class="tm">5:00 PM</span>
-        <h3>WMA Analysis</h3>
-        <p>WMA 9/34/89 crossover signals from 150 days of history. Trend
-        confirmation, with fresh-cross alerts.</p></li>
-      <li><span class="n">03</span><span class="tm">5:15 PM</span>
-        <h3>Tech Analysis</h3>
-        <p>Full score out of 100 combining WMA, MACD 12/26/9, RSI 14, volume
-        surge and Bollinger Bands.</p></li>
-      <li><span class="n">04</span><span class="tm">5:30 PM</span>
-        <h3>Combined Signal</h3>
-        <p>Triple confirmation — only stocks where Picker ≥ 30,
-        WMA = STRONG BUY and Tech ≥ 70 all agree.</p></li>
-      <li><span class="n">05</span><span class="tm">5:30 PM</span>
-        <h3>BD Signal</h3>
-        <p>BD-optimised score out of 100 — DSEX mood, ATR stop loss, sector
-        bonus, consecutive up days and a circuit check.</p></li>
-    </ol>
+    <div class="hd"><h2>What this is, and what it is not</h2></div>
+    <p class="lede">The numbers are only worth something if you know exactly
+    how they were arrived at. So here is the whole of it.</p>
+    <div class="qa">
+      <div class="q">
+        <span class="qk">Rule-based</span>
+        <p><b>Arithmetic over past price and volume, and nothing else.</b>
+        The same rules run on every stock, every evening, with no discretion
+        and no hand-picked exceptions. Nothing here predicts a price.</p>
+      </div>
+      <div class="q">
+        <span class="qk">Conditional</span>
+        <p><b>Every taka figure on this site is an "if", not a forecast.</b>
+        It is what a position would come to <i>if</i> the price reached those
+        levels — before brokerage, tax and slippage, and with no promise that
+        any level is reached at all.</p>
+      </div>
+      <div class="q">
+        <span class="qk">What it costs</span>
+        <p><b>Nothing to start.</b> Any ticker you name is free, forever.
+        The shortlist itself is <span id="c-cost">priced below</span>, and the
+        trial needs no card.</p>
+      </div>
+    </div>
+    <div class="astrip">
+      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
+      <div><b>5</b><span>layers, run in sequence from 4:35 PM</span></div>
+      <div><b>1</b><span>setup published in full every day, free</span></div>
+      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
+    </div>
+    <p class="anote">The Signal Stack is wrong regularly, and the track record
+    is published in full — the good days and the bad ones. It is not advice,
+    not a recommendation, and not a prediction that any price will be reached.
+    What it gives you is a structured starting point; the decision stays
+    yours.</p>
   </div>
 </section>
 
@@ -992,8 +1267,8 @@ footer .disc{max-width:76ch;line-height:1.65}
       <div class="jl">
         <h2 id="join-h">Create your free account</h2>
         <p id="join-p">Free gets you the market view and a scored verdict on any
-        ticker you name. The trial opens every engine, every name and every
-        level — no card needed.</p>
+        ticker you name. The trial opens the whole Signal Stack — every name
+        and every level — with no card needed.</p>
 
         <div class="periods" id="periods"></div>
         <ul class="tiers" id="tiers">
@@ -1046,6 +1321,19 @@ footer .disc{max-width:76ch;line-height:1.65}
 
 </div>
 
+<!-- ── FINAL CTA ────────────────────────────────────────────────────────── -->
+<section class="fcta">
+  <div class="wrap">
+    <h2>Give DSE Pulse a ticker, and see what it sees.</h2>
+    <p>One name, the full plan — entry, target and risk, on the money you
+    actually have. Free, and no account needed to try it.</p>
+    <div class="fbtns">
+      <button type="button" class="fgo" id="fcta-try">Find the signal</button>
+      <a class="falt" href="/shell.html" id="cta-final">Start free — 7 days of Pro</a>
+    </div>
+  </div>
+</section>
+
 <div class="wrap">
   <footer>
     <div class="frow">
@@ -1096,9 +1384,9 @@ footer .disc{max-width:76ch;line-height:1.65}
   <div class="mbox">
     <button type="button" class="mx" id="auth-x" aria-label="Close">×</button>
     <h3 id="auth-t">The name is the locked part</h3>
-    <p>Entry, target and stop are open on every box above. Which stock they
-    belong to is what an account opens — along with every other row each engine
-    produced today.</p>
+    <p>Entry, target and risk are open on every box above. Which stock they
+    belong to is what an account opens — along with every other row the Signal
+    Stack produced today.</p>
     <div class="mrow">
       <a class="mbtn primary" href="#join" id="auth-new">Create a free account</a>
       <a class="mbtn" href="/shell.html" id="auth-in">I already have an account</a>
@@ -1422,12 +1710,12 @@ footer .disc{max-width:76ch;line-height:1.65}
     });
 
     var rows = ts.reduce(function (n, x) { return n + (Number(x.total) || 0); }, 0);
-    el("tl-note").textContent = ts.length + " engines · " + rows +
+    el("tl-note").textContent = ts.length + " tools · " + rows +
       " scored rows behind the wall";
     paintTool();
     paintBoxes();
   }).catch(function () {
-    var msg = '<div class="load">Today’s engine output could not be loaded. ' +
+    var msg = '<div class="load">Today’s Signal Stack could not be loaded. ' +
       "Please try again shortly.</div>";
     el("tl-rows").innerHTML = msg;
     el("boxes").innerHTML = msg;
@@ -1666,6 +1954,21 @@ footer .disc{max-width:76ch;line-height:1.65}
   Array.prototype.forEach.call(document.querySelectorAll(".eg button"), function (b) {
     b.addEventListener("click", function () { ask(b.dataset.c); });
   });
+
+  //  The closing CTA asks for the same thing the page opened with. It does not
+  //  navigate — it takes the visitor back to the box they already saw and puts
+  //  the cursor in it, which is the whole of the ask.
+  (function () {
+    var t = el("fcta-try");
+    if (!t) return;
+    t.addEventListener("click", function () {
+      var top = el("top"), box = el("code");
+      if (top && top.scrollIntoView) top.scrollIntoView({ behavior: "smooth" });
+      //  focus after the scroll has been asked for, so the browser does not
+      //  jump the page a second time to satisfy the focus
+      setTimeout(function () { if (box) { try { box.focus(); } catch (e) {} } }, 420);
+    });
+  })();
 
 
   /* ── the lock opens the door, it does not just say "locked" ─────────── */
@@ -1967,6 +2270,34 @@ footer .disc{max-width:76ch;line-height:1.65}
     return (p === "pro" || p === "premium") ? p.toUpperCase() : "";
   }
 
+  //  Tell the CSS how tall the subscriber banner actually is, so the first
+  //  screen can subtract it. Measured rather than hard-coded, because the
+  //  strip wraps to two rows on a narrow window and to one on a wide one.
+  //  Every step is guarded. This runs for cosmetic reasons only — if any of it
+  //  is unavailable the page is still correct, just 85px taller for a
+  //  subscriber, and a layout nicety must never be able to throw inside
+  //  paint_entitled and take the entitlement painting down with it.
+  function setBannerVar() {
+    try {
+      var b = el("youbanner");
+      var on = !!(b && b.className);
+      try {
+        document.body.classList[on ? "add" : "remove"]("has-banner");
+      } catch (e) {}
+      var h = 0;
+      if (on && typeof b.getBoundingClientRect === "function") {
+        h = b.getBoundingClientRect().height || 0;
+        //  the strip's own top margin counts too — it is space above .screen —
+        //  and it is read rather than assumed, because .has-banner changes it
+        try { h += parseFloat(getComputedStyle(b).marginTop) || 0; }
+        catch (e) { h += 14; }
+      }
+      document.documentElement.style.setProperty("--bannerh",
+        Math.round(h) + "px");
+    } catch (e) {}
+  }
+  window.addEventListener("resize", function () { setTimeout(setBannerVar, 120); });
+
   function setCTA(id, text, href) {
     var a = el(id);
     if (!a) return;
@@ -1997,6 +2328,8 @@ footer .disc{max-width:76ch;line-height:1.65}
       b.className = ""; b.innerHTML = "";
       setCTA("cta-screen", "Start free — 7 days of Pro", "/shell.html");
       setCTA("cta-tools",  "Start free — 7 days of Pro", "/shell.html");
+      setCTA("cta-final",  "Start free — 7 days of Pro", "/shell.html");
+      setBannerVar();
       //  An invitation has already retitled this column, and it is still the
       //  right title — do not put it back.
       if (el("join-h") && !signedIn() && !INVITED)
@@ -2018,7 +2351,7 @@ footer .disc{max-width:76ch;line-height:1.65}
     if (!sub) {
       head   = "Your free trial is running.";
       meta   = "";
-      longer = "Every engine, every name and every level is open in the dashboard.";
+      longer = "The whole Signal Stack — every name and every level — is open in the dashboard.";
     } else {
       head   = "Your " + plan + " subscription is active.";
       meta   = until ? "Paid to " + until
@@ -2037,12 +2370,16 @@ footer .disc{max-width:76ch;line-height:1.65}
 
     setCTA("cta-screen", "Open your dashboard →", DASH_PLAN);
     setCTA("cta-tools",  "Open your dashboard →", DASH_PLAN);
+    setCTA("cta-final",  "Open your dashboard →", DASH_PLAN);
+    //  after the strip has been laid out, not before it has any height
+    if (window.requestAnimationFrame) requestAnimationFrame(setBannerVar);
+    else setTimeout(setBannerVar, 0);
     if (el("join-h")) el("join-h").textContent = "Your account";
     if (el("join-p")) {
       el("join-p").textContent = sub
         ? "You are on " + plan + ". Everything below is here so you can change "
           + "or cancel it — nothing renews by itself."
-        : "Your trial has every engine open. The plans below are what it "
+        : "Your trial has the whole Signal Stack open. The plans below are what it "
           + "becomes when it ends; nothing is charged until you choose one.";
     }
   }
@@ -2295,7 +2632,7 @@ footer .disc{max-width:76ch;line-height:1.65}
       if (el("join-h")) el("join-h").textContent = "What it costs after the trial";
       if (el("join-p")) {
         el("join-p").textContent =
-          "Nothing is charged today. The trial runs first, with every engine "
+          "Nothing is charged today. The trial runs first, with the whole stack "
           + "open and no card; your invitation discount comes off whichever "
           + "of these you choose afterwards.";
       }

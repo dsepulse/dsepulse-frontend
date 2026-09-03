@@ -353,7 +353,13 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
     single pixel of content was counted, and no amount of trimming inside
     could ever reach it. It only exists so the cream background fills a short
     window; minus the nav is the height that actually does that. */
-.dash-pad{background:var(--cream);min-height:calc(100vh - 65px);padding:10px 40px 24px}
+/*  Minus the nav AND an allowance for the footer. With the frame at a fixed
+    height this floor was never reached, so it cost nothing; now that the frame
+    shrinks to its content it was manufacturing ~130px of empty cream and
+    pushing the footer exactly to the fold — present, but invisible without
+    scrolling, which reads as missing. The body is the same cream, so on a
+    short page there is no seam where the block ends. */
+.dash-pad{background:var(--cream);min-height:calc(100vh - 225px);padding:10px 40px 24px}
 @media(max-width:760px){.dash-pad{padding:10px 14px 20px}}
 @media(max-width:400px){.dash-pad{padding:8px 10px 18px}}
 .dash-layout{display:flex;gap:0;align-items:flex-start}

@@ -24,7 +24,23 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .back:hover{text-decoration:underline}
 .wrap{max-width:1200px;margin:0 auto;padding:22px}
 .h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:3px}
-.h-sub{font-size:12px;color:var(--text3);margin-bottom:16px}
+.h-sub{font-size:12px;color:var(--text3);margin-bottom:12px}
+
+/* ── freshness strip ──────────────────────────────────────────────────────
+   Two different clocks run on this page and the old version showed neither.
+   The price is today's. Earnings, NAV and ownership are from whenever the
+   last fundamentals upload happened — which on 8 Sep 2026 was 80 days back.
+   Saying so is the whole point of this strip. */
+.fresh{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.fpill{display:inline-flex;align-items:baseline;gap:6px;font-size:11px;
+  padding:6px 11px;border-radius:20px;border:1px solid var(--border2);
+  background:var(--white);color:var(--text2)}
+.fpill b{font-family:var(--mono);font-weight:600;color:var(--navy)}
+.fpill.live{background:var(--green-bg);border-color:#BFE0CC;color:var(--green)}
+.fpill.live b{color:var(--green)}
+.fpill.warn{background:var(--gold-bg);border-color:var(--gold-border);color:#7A5B08}
+.fpill.warn b{color:#7A5B08}
+
 .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
 .controls input,.controls select{padding:8px 11px;font-size:13px;border:1px solid var(--border2);border-radius:6px;background:var(--white);color:var(--navy)}
 .controls input{width:180px}
@@ -40,14 +56,21 @@ thead th{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;font-
 thead th.txt{text-align:left}
 thead th:hover{background:var(--navy2)}
 thead th .arr{color:var(--gold2);margin-left:3px}
+/* the marker on a column whose value is as of the snapshot, not today */
+thead th .old{color:var(--gold2);margin-left:2px;font-size:12px}
 tbody td{padding:9px 12px;border-bottom:1px solid var(--cream2);text-align:right;font-family:var(--mono);color:var(--navy)}
 tbody td.txt{text-align:left;font-family:'Inter',sans-serif}
 tbody td.code{font-weight:700;font-family:var(--mono);color:var(--navy)}
 tbody td.name{color:var(--text2);font-weight:500;white-space:normal;min-width:160px}
 tbody tr:hover td{background:var(--gold-bg)}
+tbody td.stale{color:var(--text3)}
 .neg{color:var(--red)} .pos{color:var(--green)}
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
+.foot .key{display:block;margin-top:5px}
 .msg{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+.msg b{display:block;color:var(--navy);font-size:15px;margin-bottom:6px;font-family:var(--serif)}
+.msg a{color:var(--gold);font-weight:600;text-decoration:none}
+.msg a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -60,6 +83,8 @@ tbody tr:hover td{background:var(--gold-bg)}
   <div class="h-title">Fundamentals</div>
   <div class="h-sub">Valuation &amp; ownership for every listed stock &middot; pick your columns, sort any column</div>
 
+  <div class="fresh" id="fresh"></div>
+
   <div class="controls">
     <input type="text" id="search" placeholder="Search code or name&hellip;">
     <select id="sector"><option value="">All sectors</option></select>
@@ -70,12 +95,43 @@ tbody tr:hover td{background:var(--gold-bg)}
   <div class="colchips" id="colchips"></div>
 
   <div class="tbl-wrap"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
-  <div class="foot">Fundamentals from the latest AmarStock upload &middot; not investment advice &middot; DSE Pulse</div>
+  <div class="foot" id="foot"></div>
 </div>
 
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 <script>
-const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
+/* ===========================================================================
+   WHAT CHANGED, AND WHY
+   ---------------------------------------------------------------------------
+   1. This page no longer talks to Supabase.
+      It used to hold the production URL and the anon key in plain sight and
+      call /rest/v1/fundamentals directly. That put the whole table — 426
+      stocks of valuation and ownership — one View Source away from anybody,
+      logged in or not, on any plan, while /api/fundamentals was carefully
+      gated to premium. The gate was decorative. It now goes through the API
+      like every other tool, and auth.js attaches the signed-in token.
+
+   2. The page shows two dates, because it has two clocks.
+      LTP comes from the latest session. Earnings, NAV and ownership come from
+      the last fundamentals upload. Those are not the same day and were never
+      the same day; the old page printed "from the latest AmarStock upload"
+      and left it there. When the gap grows the strip at the top says so.
+
+   3. Market cap and dividend yield are marked, not adjusted.
+      Both were computed against the snapshot's own price and could be carried
+      forward by multiplying by the price ratio — but only by assuming how
+      they were built, and that assumption is not checkable from what the
+      table stores. So they are shown as the snapshot holds them, greyed, with
+      a ° against the heading. An old number that admits it is old beats a
+      fresh-looking one that was guessed.
+   =========================================================================== */
+const API = (window.DSEEnv && window.DSEEnv.apiBase)
+          ? window.DSEEnv.apiBase
+          : "https://dsepulse-backend-production.up.railway.app";
+
+/* Columns whose value is as of the fundamentals snapshot, not today. */
+const AS_OF_SNAPSHOT = new Set(["market_cap", "div_yield"]);
 
 const COLS=[
   {k:"code",         lbl:"Code",       t:"txt",  on:true,  lock:true},
@@ -88,6 +144,7 @@ const COLS=[
   {k:"nav",          lbl:"NAV",        t:"price",on:true},
   {k:"navps",        lbl:"NAV/Price",  t:"ratio",on:false},
   {k:"roe",          lbl:"ROE %",      t:"pct",  on:true},
+  {k:"div_yield",    lbl:"Div Yield %",t:"pct",  on:false},
   {k:"market_cap",   lbl:"Mkt Cap",    t:"big",  on:false},
   {k:"paid_up",      lbl:"Paid-up",    t:"big",  on:false},
   {k:"free_float",   lbl:"Free Float %",t:"pct", on:false},
@@ -104,24 +161,98 @@ const N=v=>(v===null||v===undefined||v==="")?null:Number(v);
 const isTxt=t=>t==="txt"||t==="name";
 function fmt(v,t){
   const n=N(v);
-  if(t==="txt"||t==="name") return v?String(v):"\u2014";
-  if(n===null) return "\u2014";
-  if(t==="price") return "\u09f3"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(t==="txt"||t==="name") return v?String(v):"—";
+  if(n===null||isNaN(n)) return "—";
+  if(t==="price") return "৳"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   if(t==="ratio") return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   if(t==="pct")   return n.toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
   if(t==="big")   return n.toLocaleString("en-US",{maximumFractionDigits:0});
   return String(v);
 }
 
+/* 2026-06-20 -> "20 Jun 2026". Never invents a date it was not given. */
+function niceDate(s){
+  if(!s) return null;
+  const d=new Date(String(s).slice(0,10)+"T00:00:00");
+  if(isNaN(d)) return String(s).slice(0,10);
+  return d.getDate()+" "+d.toLocaleString("en-US",{month:"short"})+" "+d.getFullYear();
+}
+
+function panel(html){ document.getElementById("tbody").innerHTML=
+  '<tr><td colspan="20" class="msg">'+html+'</td></tr>'; }
+
 async function load(){
+  let r;
   try{
-    const r=await fetch(SB_URL+"/rest/v1/fundamentals?select=*",{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}});
-    ALL = r.ok ? await r.json() : [];
-  }catch(e){ ALL=[]; }
-  if(!ALL.length){ document.getElementById("tbody").innerHTML='<tr><td colspan="20" class="msg">No fundamentals loaded yet. If you just uploaded, give it a moment and refresh.</td></tr>'; return; }
+    r = await fetch(API+"/api/fundamentals");
+  }catch(e){
+    panel("<b>Could not reach DSE Pulse</b>Check your connection and refresh.");
+    return;
+  }
+
+  if(r.status===401 || r.status===403){
+    /* The gate speaks for itself — say which plan opens this, not "forbidden". */
+    let need="a paid plan";
+    try{ const d=await r.json();
+         const det=(d && d.detail) || {};
+         if(det.needs) need="the "+det.needs+" plan"; }catch(e){}
+    panel("<b>Fundamentals is a premium tool</b>"+
+          "Valuation and ownership for all 426 listed stocks is included with "+
+          need+". <a href='/#join'>See plans</a>");
+    return;
+  }
+  if(!r.ok){
+    panel("<b>Fundamentals is unavailable right now</b>"+
+          "The server returned an error. Please try again shortly.");
+    return;
+  }
+
+  try{ ALL = await r.json(); }catch(e){ ALL=[]; }
+  if(!Array.isArray(ALL)) ALL=[];
+
+  if(!ALL.length){
+    panel("<b>No fundamentals loaded yet</b>"+
+          "If an upload has just run, give it a moment and refresh.");
+    return;
+  }
   const secs=Array.from(new Set(ALL.map(x=>x.sector).filter(Boolean))).sort();
   document.getElementById("sector").innerHTML='<option value="">All sectors</option>'+secs.map(s=>'<option>'+s+'</option>').join("");
-  buildChips(); render();
+  freshness(); buildChips(); render();
+}
+
+/* The two clocks, stated plainly. */
+function freshness(){
+  const s=ALL[0]||{};
+  const bits=[];
+
+  const pd=niceDate(s.price_date);
+  if(pd){
+    const live = s.price_source==="live";
+    bits.push('<span class="fpill '+(live?'live':'warn')+'">'+
+      (live?'Prices':'Prices &middot; no live session')+' <b>'+pd+'</b></span>');
+  }
+
+  const fd=niceDate(s.fundamentals_as_of);
+  if(fd){
+    const age=s.fundamentals_age_days;
+    const old=!!s.fundamentals_stale;
+    bits.push('<span class="fpill '+(old?'warn':'')+'">'+
+      'Earnings, NAV &amp; ownership <b>'+fd+'</b>'+
+      (age!==null&&age!==undefined ? ' &middot; '+age+' day'+(age===1?'':'s')+' old' : '')+
+      '</span>');
+  }
+  document.getElementById("fresh").innerHTML=bits.join("");
+
+  const marked=(s.stale_fields||[])
+      .map(k=>{const c=COLS.find(x=>x.k===k); return c?c.lbl:k;});
+  document.getElementById("foot").innerHTML=
+    'Fundamentals from the last AmarStock upload'+(fd?' &middot; '+fd:'')+
+    ' &middot; prices from the latest session &middot; not investment advice &middot; DSE Pulse'+
+    (marked.length
+      ? '<span class="key">&deg; '+marked.join(' and ')+
+        ' are as of the upload date, not today &mdash; they are shown exactly as '+
+        'uploaded rather than adjusted to the current price.</span>'
+      : '');
 }
 
 function buildChips(){
@@ -156,12 +287,14 @@ function render(){
     return (va-vb)*sortDir;
   });
   document.getElementById("thead").innerHTML=cols.map(c=>{
-    const arr=sortKey===c.k?'<span class="arr">'+(sortDir>0?"\u25B2":"\u25BC")+'</span>':'';
-    return '<th class="'+(isTxt(c.t)?'txt':'')+'" data-k="'+c.k+'">'+c.lbl+arr+'</th>';
+    const arr=sortKey===c.k?'<span class="arr">'+(sortDir>0?"▲":"▼")+'</span>':'';
+    const old=AS_OF_SNAPSHOT.has(c.k)?'<span class="old" title="as of the upload date, not today">°</span>':'';
+    return '<th class="'+(isTxt(c.t)?'txt':'')+'" data-k="'+c.k+'">'+c.lbl+old+arr+'</th>';
   }).join("");
   document.querySelectorAll("#thead th").forEach(el=>{ el.onclick=function(){ setSort(el.getAttribute("data-k")); }; });
   document.getElementById("tbody").innerHTML=rows.map(x=>'<tr>'+cols.map(c=>{
     let cls=isTxt(c.t)?'txt':''; if(c.k==="code")cls='code'; if(c.k==="name")cls='name';
+    if(AS_OF_SNAPSHOT.has(c.k)) cls+=' stale';
     let extra=''; if(c.t==="pct"||c.k==="roe"){ const n=N(x[c.k]); if(n!==null)extra=n>=0?'pos':'neg'; }
     return '<td class="'+cls+' '+extra+'">'+fmt(x[c.k],c.t)+'</td>';
   }).join("")+'</tr>').join("");

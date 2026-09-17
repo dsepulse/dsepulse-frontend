@@ -76,14 +76,53 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div id="body"><div class="empty">Loading track record&hellip;</div></div>
   <div class="foot" id="note"></div>
 </div>
+<script src="/env.js"></script>
+<script>/* DSE Pulse env guard — must stay INLINE. An external file would share the
+   very failure this exists to catch. Runs only if env.js did not. */
+window.DSEEnv = window.DSEEnv || (function () {
+  var h = ""; try { h = String(location.hostname || "").toLowerCase(); } catch (e) {}
+  //  Identical rule to env.js: an unrecognised hostname is PRODUCTION, never dev.
+  //  NOTE: env.js currently tests h.indexOf(".netlify.app") !== -1, a SUBSTRING
+  //  match, so a hostile hostname like "dev--x.netlify.app.attacker.net"
+  //  satisfies it. Impact is limited — it aims a rogue copy at DEVELOPMENT, never
+  //  at production — but the check is wrong. This uses a suffix test, and env.js
+  //  should be corrected the same way.
+  var dev = (h === "localhost" || h === "127.0.0.1" || h === "" ||
+             h.indexOf("dev.") === 0 ||
+             (h.indexOf("--") !== -1 && /\.netlify\.app$/.test(h)));
+  var api = dev ? "https://dsepulse-backend-development.up.railway.app"
+                : "https://dsepulse-backend-production.up.railway.app";
+  try { console.warn("[DSE Pulse] env.js did not load — resolved " +
+        (dev ? "development" : "production") + " inline"); } catch (e) {}
+  //  A failed env.js used to be silent, which is how a dev page could quietly
+  //  start talking to production. Now it is visible on the page itself.
+  try {
+    var paint = function () {
+      if (!document.body || document.getElementById("dse-env-fallback")) return;
+      var b = document.createElement("div");
+      b.id = "dse-env-fallback";
+      b.textContent = dev ? "DEV · env.js failed" : "env.js failed";
+      b.style.cssText = "position:fixed;left:0;bottom:0;z-index:2147483647;" +
+        "background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;" +
+        "padding:5px 8px;border-top-right-radius:4px;letter-spacing:.06em;" +
+        "pointer-events:none";
+      document.body.appendChild(b);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", paint);
+    } else { paint(); }
+  } catch (e) {}
+  return { name: dev ? "development" : "production", apiBase: api,
+           apiHost: api.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+           isDev: dev, fallback: true };
+})();</script>
+<script src="/auth.js"></script>
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 /* stock_52w read (Supabase anon, read-only). Track Record shows only the last 15
    trading days, so today's rolling 52-week range is a fair proxy for the range as
    of pick date — the high/low barely shifts over 15 days. Used to show where each
    pick entered within its 52-week range (breakout vs reversal character). */
-const SB_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
 let DATA=null, CUR=0, RANGE52={};
 function retColor(r){ return r>0?'var(--green)':r<0?'var(--red)':'var(--text2)'; }
 function fmtRet(r){ return r==null?'&mdash;':(r>0?'+':'')+r.toFixed(2)+'%'; }
@@ -95,7 +134,7 @@ async function loadRanges(){
     (DATA.tools||[]).forEach(t=>(t.days||[]).forEach(d=>(d.picks||[]).forEach(p=>{ if(p.code)codes.add(String(p.code).toUpperCase()); })));
     if(!codes.size)return;
     const list=[...codes].join(',');
-    const r=await fetch(`${SB_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${list})`,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
+    const r=await fetch(API+'/api/stock52?codes='+encodeURIComponent(list));
     if(!r.ok)return;
     const rows=await r.json();
     (rows||[]).forEach(x=>{ RANGE52[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });

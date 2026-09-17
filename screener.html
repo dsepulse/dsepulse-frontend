@@ -76,9 +76,11 @@ input[type=range]{width:100%}
 
   <div class="foot">Informational only &middot; not investment advice &middot; DSE Pulse</div>
 </div>
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
 
 <script>
-const API="https://dsepulse-backend-production.up.railway.app";
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 const sigBg={"STRONG BUY":"var(--green-bg)","BUY":"#F0FDF4","NEUTRAL":"var(--gold-bg)","SELL":"var(--red-bg)"};
 const sigTxt={"STRONG BUY":"var(--green)","BUY":"var(--green)","NEUTRAL":"var(--gold)","SELL":"var(--red)"};
 let SCR_DATA=null;

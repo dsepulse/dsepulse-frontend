@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DSE Pulse &middot; Today's market scan (light)</title>
+<meta name="description" content="Every listed stock on the Dhaka Stock Exchange, analysed each trading day and ranked where the checks agree.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --panel:#FFFFFF; --panel2:#F7F8FA; --sunk:#F2F4F7;
+  --line:#E3E7EC; --line2:#CFD6DE;
+  --ink:#1A1F27; --ink1:#0B0F14; --ink2:#5A6572; --ink3:#8A94A1;
+  --amber:#0B57A4; --amber-dim:#B9CFE6;
+  --up:#0B7A45; --up-dim:#B7DEC8; --down:#C8232C;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Chivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
+
+/* ---------------------------------------------------------------- nav */
+header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.93);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.navrow{display:flex;align-items:center;gap:28px;height:62px}
+.logo{font-size:19px;font-weight:900;letter-spacing:-.02em;color:var(--ink1)}
+.logo span{color:var(--amber)}
+.navlinks{display:flex;gap:22px}
+.navlinks a{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink3)}
+.navlinks a:hover{color:var(--ink)}
+.navcta{margin-left:auto;display:flex;gap:9px;align-items:center}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);border:1px solid var(--line2);
+  padding:4px 9px;border-radius:4px}
+.btn{font:inherit;font-size:12.5px;font-weight:700;padding:9px 17px;border-radius:6px;
+  cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--ink);
+  white-space:nowrap}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#fff}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary:hover{filter:brightness(1.06);border-color:var(--amber)}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.sm{font-size:11.5px;padding:7px 13px}
+
+/* --------------------------------------------------------------- hero */
+.hero{position:relative;isolation:isolate;overflow:hidden;
+  border-bottom:1px solid var(--line)}
+#tape{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,.97) 0%,
+    rgba(255,255,255,.90) 46%,rgba(255,255,255,.40) 100%)}
+.heroin{position:relative;z-index:2;padding:56px 0 40px}
+.kick{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px}
+.kick i{width:6px;height:6px;border-radius:50%;background:var(--up);display:block}
+h1{font-size:clamp(32px,4.4vw,55px);line-height:1.03;font-weight:900;
+  letter-spacing:-.035em;color:var(--ink1);margin:0 0 15px;max-width:16ch;
+  text-wrap:balance}
+h1 em{font-style:normal;color:var(--amber)}
+.lede{color:var(--ink2);max-width:54ch;margin:0 0 26px;font-size:15.5px}
+.herocta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
+
+.strip{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;
+  overflow:hidden;background:rgba(255,255,255,.9);backdrop-filter:blur(6px)}
+.strip div{flex:1;min-width:120px;padding:13px 18px;border-right:1px solid var(--line)}
+.strip div:last-child{border-right:0}
+.strip small{display:block;font-family:var(--mono);font-size:8.5px;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink3)}
+.strip b{display:block;font-family:var(--mono);font-size:16px;color:var(--ink1);
+  margin-top:5px;font-variant-numeric:tabular-nums;font-weight:500}
+.up{color:var(--up)} .down{color:var(--down)}
+
+/* ------------------------------------------------------------ sections */
+section{padding:52px 0}
+.sechead{max-width:64ch;margin-bottom:24px}
+.eyebrow{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.eyebrow i{display:block;width:22px;height:1px;background:var(--line2)}
+.eyebrow b{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink3);font-weight:500}
+h2{font-size:clamp(22px,2.7vw,30px);line-height:1.14;font-weight:900;
+  letter-spacing:-.028em;color:var(--ink1);margin:0 0 9px;text-wrap:balance}
+.sechead p{margin:0;color:var(--ink2)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:21px 22px}
+.split{display:grid;grid-template-columns:1.3fr .7fr;gap:14px;align-items:start}
+
+.gapno{font-family:var(--mono);font-size:23px;color:var(--ink1);font-weight:500;
+  margin:5px 0 4px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.gapsub{font-family:var(--mono);font-size:11px;color:var(--ink3);margin:0}
+.meter{height:7px;background:var(--sunk);border:1px solid var(--line);
+  border-radius:5px;overflow:hidden;margin:15px 0 15px}
+.meter i{display:block;height:100%;width:0;background:var(--amber);
+  transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nums div{background:var(--sunk);border:1px solid var(--line);border-radius:7px;
+  padding:10px 12px}
+.nums b{display:block;font-family:var(--mono);font-size:18px;color:var(--ink1);
+  font-variant-numeric:tabular-nums;font-weight:500}
+.nums small{display:block;font-family:var(--mono);font-size:8px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.note{margin-top:16px;border-left:2px solid var(--amber-dim);
+  background:#F1F6FB;padding:12px 15px;border-radius:0 7px 7px 0}
+.note b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:3px;
+  font-weight:700}
+.note span{font-size:12.5px;color:var(--ink2)}
+
+.ladder div{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);
+  font-size:12.5px;color:var(--ink2)}
+.ladder div:last-child{border-bottom:0}
+.ladder b{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink3);min-width:66px;padding-top:2px}
+.ladder .now{color:var(--ink1)}
+.ladder .now b{color:var(--amber)}
+
+/* ------------------------------------------------------ opportunities */
+.ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:13px}
+.op{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:19px 20px;position:relative;min-height:172px;display:flex;
+  flex-direction:column}
+.op .rk{font-family:var(--mono);font-size:9px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink3)}
+.op .sc{position:absolute;right:18px;top:17px;width:46px;height:46px;
+  border-radius:50%;display:grid;place-items:center;font-family:var(--mono);
+  font-size:16px;font-weight:700;color:var(--up);border:1px solid var(--up-dim);
+  background:#EEF7F2;font-variant-numeric:tabular-nums}
+.op .verdict{font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--up);margin-top:15px}
+.op .code{font-size:25px;font-weight:900;color:var(--ink1);margin:5px 0 1px;
+  letter-spacing:-.025em}
+.op .sect{font-size:11.5px;color:var(--ink3)}
+.op .mets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto;
+  padding-top:16px}
+.op .mets div{background:var(--sunk);border:1px solid var(--line);border-radius:7px;
+  padding:8px 9px}
+.op .mets small{display:block;font-family:var(--mono);font-size:8px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.op .mets b{display:block;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  margin-top:3px;font-variant-numeric:tabular-nums;font-weight:500}
+
+.op.lk{background:var(--panel2);border-color:var(--line2)}
+.op.lk .sc{color:var(--amber);border-color:var(--amber-dim);
+  background:#F1F6FB}
+.op.lk .verdict{color:var(--amber)}
+.op.lk .code{font-family:var(--mono);font-size:19px;color:#B6BFC9;font-weight:500;
+  letter-spacing:.04em}
+.pl{display:flex;gap:5px;flex-wrap:wrap;margin-top:13px}
+.pl span{font-family:var(--mono);font-size:8px;letter-spacing:.11em;
+  text-transform:uppercase;border:1px solid var(--line2);color:var(--ink3);
+  padding:4px 7px;border-radius:3px}
+.op.lk .lknote{font-size:12.5px;color:var(--ink2);margin:3px 0 0;line-height:1.5}
+
+/* ------------------------------------------------------------ reasons */
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px}
+.why .card b{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.why .card h3{font-size:17px;margin:0 0 8px;color:var(--ink1);font-weight:700;
+  letter-spacing:-.015em}
+.why .card p{margin:0;font-size:13px;color:var(--ink2)}
+
+/* ------------------------------------------------------- track record */
+.trrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+.tr{background:var(--sunk);border:1px solid var(--line);border-radius:8px;
+  padding:13px 14px}
+.tr b{display:block;font-family:var(--mono);font-size:19px;color:var(--ink1);
+  font-variant-numeric:tabular-nums;font-weight:500}
+.tr small{display:block;font-family:var(--mono);font-size:8px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);margin-top:4px}
+.honest{margin:16px 0 0;font-size:13px;color:var(--ink2);max-width:74ch}
+
+/* ----------------------------------------------------------- pricing */
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:14px}
+.plan{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:23px 22px;position:relative;display:flex;flex-direction:column}
+.plan.feat{border-color:var(--amber-dim)}
+.pop{position:absolute;top:-9px;left:22px;background:var(--amber);color:var(--bg);
+  font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:4px 9px;border-radius:3px}
+.tier{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.price{font-size:34px;font-weight:900;color:var(--ink1);line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.price sup{font-size:17px;position:relative;top:-12px;font-weight:700}
+.per{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin:9px 0 17px}
+.feats{list-style:none;margin:0 0 19px;padding:0;flex:1}
+.feats li{font-size:12.5px;color:var(--ink2);padding:4px 0 4px 20px;position:relative;
+  line-height:1.45}
+.feats li::before{position:absolute;left:0;top:4px;font-family:var(--mono);
+  font-size:10px;font-weight:700}
+.feats li.y::before{content:"+";color:var(--up)}
+.feats li.n::before{content:"\2013";color:var(--ink3)}
+.feats li.n{color:var(--ink3)}
+
+/* ---------------------------------------------------------- referral */
+.refgrid{display:grid;grid-template-columns:1.35fr .65fr;gap:14px;align-items:start}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:9px;
+  margin-top:15px}
+.stp{background:var(--sunk);border:1px solid var(--line);border-radius:8px;
+  padding:12px 13px;font-size:12px;color:var(--ink2);line-height:1.45}
+.stp b{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;
+  color:var(--ink3);margin-bottom:6px;text-transform:uppercase}
+.big{font-size:46px;font-weight:900;color:var(--amber);line-height:1;margin:12px 0 10px;
+  letter-spacing:-.03em}
+
+footer{border-top:1px solid var(--line);padding:32px 0 54px;margin-top:34px;
+  color:var(--ink3);font-size:12px}
+.flogo{font-size:17px;font-weight:900;color:var(--ink);margin-bottom:6px}
+.flogo span{color:var(--amber)}
+.loading{color:var(--ink3);font-family:var(--mono);font-size:12px}
+/* -------------------------------------------------------- trust band */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--panel2)}
+.trustin{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:26px;padding:26px 0}
+.tcol .th{font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.pays{display:flex;gap:7px;flex-wrap:wrap}
+.pay{font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  border:1px solid var(--line2);color:var(--ink2);padding:6px 10px;border-radius:5px;
+  background:var(--sunk)}
+.tstat{display:flex;gap:22px;flex-wrap:wrap}
+.tstat div b{display:block;font-family:var(--mono);font-size:18px;color:var(--ink1);
+  font-variant-numeric:tabular-nums;font-weight:500}
+.tstat div small{display:block;font-family:var(--mono);font-size:8px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.tcol p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+
+/* ------------------------------------------------------ full footer */
+.footgrid{display:grid;grid-template-columns:1.35fr .9fr .9fr 1.1fr;gap:26px;
+  padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:20px}
+@media(max-width:820px){.footgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.footgrid{grid-template-columns:1fr}}
+.footgrid h4{font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);margin:0 0 11px;font-weight:500}
+.footgrid ul{list-style:none;margin:0;padding:0}
+.footgrid li{margin:0 0 7px}
+.footgrid a{font-size:12.5px;color:var(--ink2)}
+.footgrid a:hover{color:var(--ink)}
+.fabout{font-size:12.5px;color:var(--ink2);margin:0 0 12px;line-height:1.6}
+.fcontact{font-size:12.5px;color:var(--ink2);line-height:1.7}
+.fcontact b{color:var(--ink);font-weight:500;display:block;margin-bottom:2px;
+  font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+  font-family:var(--mono)}
+.legal{font-size:11.5px;color:var(--ink3);line-height:1.65;max-width:92ch}
+.legal strong{color:var(--ink2);font-weight:600}
+
+/* ------------------------------------------------------------- lookup */
+.herogrid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start}
+@media(max-width:900px){.herogrid{grid-template-columns:1fr;gap:26px}}
+.look{background:#FFFFFF;border:1px solid var(--line2);box-shadow:0 2px 10px rgba(11,15,20,.06);border-radius:12px;
+  padding:22px 22px 20px;backdrop-filter:blur(8px)}
+.look .lh{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:9px}
+.look h2{font-size:19px;margin:0 0 5px;font-weight:900;letter-spacing:-.02em;
+  color:var(--ink1)}
+.look p.ls{margin:0 0 15px;font-size:13px;color:var(--ink2)}
+.lookrow{display:flex;gap:8px}
+.lookrow input{flex:1;min-width:0;font:inherit;font-size:14px;padding:11px 13px;
+  border-radius:7px;background:var(--sunk);border:1px solid var(--line);
+  color:var(--ink);text-transform:uppercase;font-family:var(--mono)}
+.lookrow input::placeholder{font-family:var(--sans);text-transform:none;
+  color:var(--ink3)}
+.lookrow input:focus{outline:0;border-color:var(--ink3)}
+.lookout{margin-top:15px}
+.lookmsg{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.res{border:1px solid var(--line);border-radius:9px;background:var(--sunk);
+  padding:15px 16px}
+.resrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rescode{font-size:23px;font-weight:900;color:var(--ink1);letter-spacing:-.025em}
+.resv{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;padding:5px 9px;border-radius:4px;border:1px solid}
+.resv.buy{color:var(--up);border-color:var(--up-dim);background:#EEF7F2}
+.resv.watch{color:var(--amber);border-color:var(--amber-dim);
+  background:#F1F6FB}
+.resv.avoid{color:var(--down);border-color:#5C2325;background:#FDF0F0}
+.resscore{margin-left:auto;font-family:var(--mono);font-size:20px;color:var(--ink1);
+  font-variant-numeric:tabular-nums}
+.resscore small{font-size:11px;color:var(--ink3)}
+.resmets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:13px}
+.resmets div{background:var(--panel);border:1px solid var(--line);border-radius:7px;
+  padding:8px 9px}
+.resmets small{display:block;font-family:var(--mono);font-size:8px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.resmets b{display:block;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  margin-top:3px;font-variant-numeric:tabular-nums;font-weight:500}
+.resfoot{margin:12px 0 0;font-size:11.5px;color:var(--ink3)}
+
+/* --------------------------------------------------------- scorecard */
+.scoreband{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--panel)}
+.sbin{display:grid;grid-template-columns:.9fr 1.1fr;gap:30px;padding:34px 0;
+  align-items:center}
+@media(max-width:900px){.sbin{grid-template-columns:1fr;gap:20px}}
+.sbin h2{margin:0 0 8px}
+.sbin p{margin:0;color:var(--ink2);font-size:14px}
+.freepick{border:1px solid var(--amber-dim);border-radius:11px;background:var(--panel2);
+  padding:19px 20px;position:relative}
+.freepick .fh{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:11px}
+
+/* ------------------------------------------------------------- modal */
+.modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(11,15,20,.42);
+  backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modalbox{width:min(400px,100%);background:var(--panel);border:1px solid var(--line2);
+  border-radius:13px;padding:26px 26px 22px;position:relative}
+.mclose{position:absolute;right:14px;top:12px;background:none;border:0;
+  color:var(--ink3);font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
+.mclose:hover{color:var(--ink)}
+.mtabs{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);
+  border-radius:8px;padding:3px;margin-bottom:18px}
+.mtab{flex:1;font:inherit;font-size:12px;font-weight:700;padding:8px;border:0;
+  border-radius:6px;background:transparent;color:var(--ink3);cursor:pointer}
+.mtab.on{background:var(--panel2);color:var(--ink1)}
+.modalbox h3{font-size:20px;font-weight:900;color:var(--ink1);margin:0 0 6px;
+  letter-spacing:-.02em}
+.msub{font-size:13px;color:var(--ink2);margin:0 0 18px}
+.fld{display:block;margin-bottom:12px}
+.fld span{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.fld input{width:100%;font:inherit;font-size:14px;padding:10px 12px;border-radius:7px;
+  background:var(--sunk);border:1px solid var(--line);color:var(--ink)}
+.fld input:focus{outline:0;border-color:var(--ink3)}
+.merr{min-height:17px;margin:2px 0 10px;font-size:12.5px;color:var(--down)}
+.mfoot{margin:14px 0 0;font-size:12.5px;color:var(--ink3);text-align:center}
+.mfoot a{color:var(--amber)}
+
+@media(max-width:820px){
+  .split,.refgrid{grid-template-columns:1fr}
+  .navlinks{display:none}
+  .heroin{padding:38px 0 30px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap navrow">
+    <div class="logo">DSE<span>Pulse</span></div>
+    <nav class="navlinks">
+      <a href="#scan">Today's scan</a><a href="#ranked">How ranking works</a>
+      <a href="#scorecard">Scorecard</a><a href="#plans">Plans</a>
+    </nav>
+    <div class="navcta">
+      <span class="chip" id="accessChip">&mdash;</span>
+      <button class="btn sm" id="btnSignin">Sign in</button>
+      <button class="btn sm primary" id="btnStart">Create account</button>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <canvas id="tape" aria-hidden="true"></canvas>
+  <div class="scrim"></div>
+  <div class="wrap heroin">
+    <div class="herogrid">
+      <div>
+        <div class="kick"><i></i><span id="kickText">Reading today's scan…</span></div>
+        <h1 id="heroLine">Every listed stock, analysed after every close.</h1>
+        <p class="lede">DSE Pulse scores all 400-odd DSE stocks each evening —
+        WMA 9/34/89, MACD, RSI and an ATR stop — and ranks the ones where the
+        checks agree.</p>
+        <div class="herocta">
+          <button class="btn primary" onclick="document.getElementById('scorecard').scrollIntoView()">See our scorecard</button>
+          <button class="btn" onclick="document.getElementById('scan').scrollIntoView()">Today's scan</button>
+        </div>
+      </div>
+
+      <div class="look">
+        <div class="lh">Try it — no account needed</div>
+        <h2>Check any stock you already own.</h2>
+        <p class="ls">Type a DSE code. You get the same score our engines
+        produced tonight, in full.</p>
+        <form class="lookrow" id="lookForm">
+          <input id="lookInput" maxlength="14" required
+                 placeholder="Stock code — e.g. BEXIMCO" aria-label="Stock code">
+          <button class="btn primary" type="submit" id="lookGo">Check</button>
+        </form>
+        <div class="lookout" id="lookOut">
+          <p class="lookmsg">Free, unlimited, and no email required.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip" style="margin-top:32px">
+      <div><small>DSEX</small><b id="mDsex">—</b></div>
+      <div><small>Analysed</small><b id="mScanned">—</b></div>
+      <div><small>Positive</small><b id="mPositive">—</b></div>
+      <div><small>Scored 80+</small><b id="mConv">—</b></div>
+      <div><small>Visible to you</small><b id="mVisible">—</b></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="scoreband">
+  <div class="wrap sbin" id="scorecard">
+    <div>
+      <div class="eyebrow"><i></i><b>Our own scorecard</b></div>
+      <h2>We publish the losses too.</h2>
+      <p>Every pick we have ever issued is on the record — the ones that worked,
+      the ones that stopped out, and the twelve sessions our pipeline missed in
+      August, marked as missing rather than filled in.</p>
+      <div class="trrow" id="trrow" style="margin-top:18px">
+        <p class="loading">Loading…</p>
+      </div>
+      <p class="honest" id="trNote"></p>
+      <a href="/trackrecord.html"><button class="btn" style="margin-top:12px">Every pick, resolved and open</button></a>
+    </div>
+    <div class="freepick" id="freepick">
+      <div class="fh">Tonight's strongest setup · free, every day</div>
+      <div id="freepickBody"><p class="loading">Reading today's scan…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="trust">
+  <div class="wrap trustin">
+    <div class="tcol">
+      <div class="th">Payment</div>
+      <div class="pays"><span class="pay">bKash</span><span class="pay">Nagad</span>
+        <span class="pay">Rocket</span><span class="pay">Visa</span>
+        <span class="pay">Mastercard</span></div>
+      <p style="margin-top:10px">Processed by SSLCommerz. We never see or store
+      your card or wallet details.</p>
+    </div>
+    <div class="tcol">
+      <div class="th">Coverage</div>
+      <div class="tstat">
+        <div><b id="tStocks">—</b><small>DSE stocks</small></div>
+        <div><b>6</b><small>Engines</small></div>
+        <div><b id="tHistory">—</b><small>Days of history</small></div>
+      </div>
+    </div>
+    <div class="tcol">
+      <div class="th">Runs</div>
+      <p>Every trading day after the 2:30 PM close. Results are published the
+      same evening, and the run date is stamped on every figure.</p>
+    </div>
+    <div class="tcol">
+      <div class="th">Cancel</div>
+      <p>Monthly, no lock-in. Cancel any time before renewal and you keep access
+      to the end of the period you paid for.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="scan">
+  <div class="sechead">
+    <div class="eyebrow"><i></i><b>Today's visibility</b></div>
+    <h2 id="gapTitle">And here is what you are not seeing.</h2>
+    <p>Every figure on this page is from today's run. Nothing here is illustrative.</p>
+  </div>
+  <div class="split">
+    <div class="card">
+      <div class="eyebrow"><i></i><b>Access gap</b></div>
+      <div class="gapno" id="gapNo">—</div>
+      <p class="gapsub" id="gapSub">Reading today's scan…</p>
+      <div class="meter"><i id="gapMeter"></i></div>
+      <div class="nums">
+        <div><b id="nScanned">—</b><small>Analysed</small></div>
+        <div><b id="nPositive">—</b><small>Positive</small></div>
+        <div><b id="nVisible">—</b><small>Visible</small></div>
+      </div>
+      <div class="note" id="gapNote" style="display:none">
+        <b id="gapNoteT"></b><span id="gapNoteS"></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="eyebrow"><i></i><b>What each level shows</b></div>
+      <div class="ladder" id="ladder">
+        <div data-l="guest"><b>Guest</b><span>The strongest setup of the day.</span></div>
+        <div data-l="free"><b>Free</b><span>Two setups, and analysis on any stock you look up.</span></div>
+        <div data-l="premium"><b>Premium</b><span>Three setups with entry, target and stop.</span></div>
+        <div data-l="pro"><b>Pro</b><span>Ten setups, every tool, block transactions.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead">
+    <div class="eyebrow"><i></i><b>Ranked today</b></div>
+    <h2>What is withheld is not sent to this page.</h2>
+    <p>A locked setup arrives here as a rank and a score. Its name, entry and
+    target never leave the server.</p>
+  </div>
+  <div class="ops" id="ops"><p class="loading">Loading today's scan…</p></div>
+</section>
+
+<section id="ranked">
+  <div class="sechead">
+    <div class="eyebrow"><i></i><b>How ranking works</b></div>
+    <h2>The reasons are open. The answer is the subscription.</h2>
+  </div>
+  <div class="why">
+    <div class="card"><b>Structure</b><h3>Price behaviour changed</h3>
+      <p>The stock left the range it had been holding, on volume that supports
+      the move rather than contradicting it.</p></div>
+    <div class="card"><b>Momentum</b><h3>Strength confirmed</h3>
+      <p>Weighted moving averages and RSI agree on direction, and the technical
+      score reflects both rather than one.</p></div>
+    <div class="card"><b>Convergence</b><h3>Independent checks aligned</h3>
+      <p>High conviction means the picker, the moving-average read and the
+      technical score all point the same way. Disagreement drops the rank.</p></div>
+  </div>
+</section>
+
+
+
+<section id="plans">
+  <div class="sechead">
+    <div class="eyebrow"><i></i><b>Membership</b></div>
+    <h2>Start free. Upgrade when it earns its place.</h2>
+  </div>
+  <div class="plans">
+    <div class="plan">
+      <div class="tier">Free</div>
+      <div class="price"><sup>&#2547;</sup>0</div>
+      <div class="per">Always free · no card needed</div>
+      <ul class="feats">
+        <li class="y">Analyse any stock</li>
+        <li class="y">90-day chart, WMA 9/34/89</li>
+        <li class="y">BD Signal score /100</li>
+        <li class="y">Buy zone and stop loss</li>
+        <li class="y">Sector ranking</li>
+        <li class="n">Daily ranked setups</li>
+        <li class="n">Targets and timeframe</li>
+        <li class="n">Block transactions</li>
+      </ul>
+      <button class="btn" id="planFree">Create free account</button>
+    </div>
+    <div class="plan feat">
+      <div class="pop">Most popular</div>
+      <div class="tier">Premium</div>
+      <div class="price"><sup>&#2547;</sup>499</div>
+      <div class="per">Per month · 7-day free trial</div>
+      <ul class="feats">
+        <li class="y">Everything in Free</li>
+        <li class="y">Top 3 daily setups</li>
+        <li class="y">Entry, target L1/L2, stop loss</li>
+        <li class="y">ATR-based stop loss</li>
+        <li class="y">Timeframe per setup</li>
+        <li class="y">Holdings tracker</li>
+        <li class="n">Top 10 setups</li>
+        <li class="n">Block transactions</li>
+      </ul>
+      <button class="btn primary" id="planPremium">Start 7-day trial</button>
+    </div>
+    <div class="plan">
+      <div class="tier">Pro</div>
+      <div class="price"><sup>&#2547;</sup>999</div>
+      <div class="per">Per month · 7-day free trial</div>
+      <ul class="feats">
+        <li class="y">Everything in Premium</li>
+        <li class="y">Top 10 daily setups</li>
+        <li class="y">WMA, Tech and Combined tools</li>
+        <li class="y">Block transactions feed</li>
+        <li class="y">Full sector analysis</li>
+        <li class="y">Portfolio P&amp;L tracking</li>
+        <li class="y">Price alerts</li>
+        <li class="y">Priority support</li>
+      </ul>
+      <button class="btn" id="planPro">Start 7-day trial</button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead">
+    <div class="eyebrow"><i></i><b>Refer and save</b></div>
+    <h2>Bring a trader. Both of you save.</h2>
+    <p>Your friend saves immediately. Your reward activates once their payment is
+    verified — not when they sign up.</p>
+  </div>
+  <div class="refgrid">
+    <div class="card">
+      <div class="eyebrow"><i></i><b>How it works</b></div>
+      <div class="steps">
+        <div class="stp"><b>01 Invite</b>Share your link.</div>
+        <div class="stp"><b>02 They save</b>20% off their first paid month.</div>
+        <div class="stp"><b>03 Verified</b>Their payment clears.</div>
+        <div class="stp"><b>04 You save</b>20% off your next renewal.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="eyebrow"><i></i><b>Reward limit</b></div>
+      <div class="big">50%</div>
+      <p style="margin:0;font-size:13px;color:var(--ink2)">Referral rewards
+      accumulate up to a maximum 50% discount on one eligible subscription
+      transaction.</p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footgrid">
+      <div>
+        <div class="flogo">DSE<span>Pulse</span></div>
+        <p class="fabout">Independent market analysis for the Dhaka Stock
+        Exchange. Six engines score every listed stock after each close. We
+        publish our own track record in full, including the picks that lost.</p>
+        <div class="fcontact">
+          <b>Contact</b>
+          <a href="mailto:support@dsepulse.com">support@dsepulse.com</a><br>
+          <!-- TODO Firoz: replace with the registered address and phone.
+               A visible address and a working number is the single strongest
+               trust signal on a Bangladeshi paid site. -->
+          <span id="fAddr">Dhaka, Bangladesh</span>
+        </div>
+      </div>
+      <div>
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/picks.html">Today's picks</a></li>
+          <li><a href="/mastersignal.html">Master signal</a></li>
+          <li><a href="/smartmoney.html">Smart money</a></li>
+          <li><a href="/combined.html">Combined signal</a></li>
+          <li><a href="/sectors.html">Sector ranking</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/trackrecord.html">Track record</a></li>
+          <li><a href="#plans">Pricing</a></li>
+          <li><a href="#scorecard">How we score</a></li>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Before you subscribe</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Terms of service</a></li>
+          <li><a href="/disclaimer.html">Refund policy</a></li>
+          <li><a href="/disclaimer.html">Privacy policy</a></li>
+          <li><a href="/disclaimer.html">Risk disclosure</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal">
+      <strong>DSE Pulse is not a licensed investment adviser</strong> and is not
+      registered with the Bangladesh Securities and Exchange Commission. Nothing
+      on this site is a recommendation to buy or sell any security. Every score,
+      signal and setup is the output of a mechanical model applied to public
+      market data, published for information only. Trading carries risk of loss,
+      including total loss of capital. Past performance — including the record we
+      publish — does not predict future results. Make your own decisions, and
+      consider taking licensed advice.
+    </p>
+    <p class="legal" style="margin-top:12px">© 2026 DSE Pulse · dsepulse.com</p>
+  </div>
+</footer>
+
+
+<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+  <div class="modalbox">
+    <button class="mclose" id="amClose" aria-label="Close">&times;</button>
+    <div class="mtabs">
+      <button class="mtab on" data-m="login">Sign in</button>
+      <button class="mtab" data-m="register">Create account</button>
+    </div>
+    <h3 id="amTitle">Sign in</h3>
+    <p class="msub" id="amSub">Your access level decides how much of each day's
+      scan you see.</p>
+    <form id="amForm" autocomplete="on">
+      <label class="fld" id="amNameWrap" style="display:none">
+        <span>Name</span>
+        <input id="amName" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <label class="fld"><span>Email</span>
+        <input id="amEmail" type="email" autocomplete="email" required
+               placeholder="you@example.com"></label>
+      <label class="fld"><span>Password</span>
+        <input id="amPass" type="password" required minlength="6"
+               autocomplete="current-password" placeholder="••••••••"></label>
+      <p class="merr" id="amErr" role="alert"></p>
+      <button class="btn primary" id="amGo" type="submit" style="width:100%">Sign in</button>
+    </form>
+    <p class="mfoot" id="amFoot">New here? <a href="#" id="amSwap">Create a free account</a></p>
+  </div>
+</div>
+
+<script src="/env.js"></script>
+<script src="/auth.js"></script>
+<script>
+(function(){
+  var API = (window.DSEEnv ? window.DSEEnv.apiBase
+                           : "https://dsepulse-backend-production.up.railway.app");
+  var LADDER = ["guest","free","premium","pro"];
+  var LABEL  = {guest:"Guest", free:"Free", premium:"Premium", pro:"Pro"};
+  var pad2 = function(n){ return (n<10?"0":"") + n; };
+  var money = function(v){ return "৳" + Number(v||0).toFixed(2); };
+  var esc = function(s){ return String(s==null?"":s).replace(/[<>&"]/g,
+    function(c){ return {"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]; }); };
+  var $ = function(id){ return document.getElementById(id); };
+
+  function get(p){ return fetch(API+p).then(function(r){ return r.ok?r.json():null; })
+                        .catch(function(){ return null; }); }
+
+  /* ── the index line behind the headline ───────────────────────────────
+     market_summary stores a close and nothing else — no open, high or low
+     exists anywhere in the schema — so this is a real line, not invented
+     candles. Draw what the data supports. */
+  function drawTape(series){
+    var cv = $("tape"); if(!cv || !series || series.length < 3) return;
+    var ctx = cv.getContext("2d");
+    var reduce = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var vals = series.map(function(p){ return p.dsex; });
+
+    function paint(n){
+      var w = cv.clientWidth, h = cv.clientHeight,
+          dpr = Math.min(window.devicePixelRatio||1, 2);
+      if(!w || !h) return;
+      cv.width = w*dpr; cv.height = h*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,w,h);
+
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      var pad = (hi-lo)*0.35 || 1; lo -= pad; hi += pad*0.4;
+      var x = function(i){ return i/(vals.length-1)*w; };
+      var y = function(v){ return h - (v-lo)/(hi-lo)*h; };
+
+      /* faint horizontal rules, the only chrome the chart gets */
+      ctx.strokeStyle = "rgba(26,31,39,.06)"; ctx.lineWidth = 1;
+      for(var g=1; g<4; g++){
+        var gy = Math.round(h*g/4)+.5;
+        ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke();
+      }
+
+      var upTrend = vals[vals.length-1] >= vals[0];
+      var col = upTrend ? "11,122,69" : "200,35,44";
+
+      /* area */
+      var grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, "rgba("+col+",.14)");
+      grad.addColorStop(1, "rgba("+col+",0)");
+      ctx.beginPath(); ctx.moveTo(x(0), y(vals[0]));
+      for(var i=1;i<n;i++) ctx.lineTo(x(i), y(vals[i]));
+      ctx.lineTo(x(n-1), h); ctx.lineTo(x(0), h); ctx.closePath();
+      ctx.fillStyle = grad; ctx.fill();
+
+      /* daily ticks — the tape texture, one mark per session */
+      ctx.strokeStyle = "rgba("+col+",.30)"; ctx.lineWidth = 1;
+      for(var t=0;t<n;t++){
+        var tx = Math.round(x(t))+.5, ty = y(vals[t]);
+        ctx.beginPath(); ctx.moveTo(tx, ty-3); ctx.lineTo(tx, ty+3); ctx.stroke();
+      }
+
+      /* the line itself */
+      ctx.beginPath(); ctx.moveTo(x(0), y(vals[0]));
+      for(var j=1;j<n;j++) ctx.lineTo(x(j), y(vals[j]));
+      ctx.strokeStyle = "rgba("+col+",.85)"; ctx.lineWidth = 1.5; ctx.stroke();
+
+      /* today */
+      if(n === vals.length){
+        var lx = x(n-1), ly = y(vals[n-1]);
+        ctx.fillStyle = "rgba("+col+",1)";
+        ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba("+col+",.28)";
+        ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI*2); ctx.stroke();
+      }
+    }
+
+    if(reduce){ paint(vals.length); }
+    else{
+      var k = 2;
+      (function step(){
+        paint(Math.min(k, vals.length));
+        if(k < vals.length){ k += Math.max(1, Math.round(vals.length/45));
+                             requestAnimationFrame(step); }
+      })();
+    }
+    window.addEventListener("resize", function(){ paint(vals.length); });
+  }
+
+  /* ── today's scan ─────────────────────────────────────────────────── */
+  function renderScan(s){
+    var ops = $("ops");
+    if(!s || !s.date){
+      ops.innerHTML = '<p class="loading">Today\'s scan has not been published '
+        + 'yet — it runs after the close.</p>';
+      $("kickText").textContent = "Awaiting today's scan";
+      $("gapSub").textContent = "No scan published yet.";
+      return;
+    }
+    var total = s.high_conviction||0, vis = s.visible||0,
+        pct = total ? Math.round(vis/total*100) : 0, missing = total - vis;
+
+    $("kickText").textContent = "Scan complete · " + s.date
+      + " · end-of-day data, not live prices";
+    $("accessChip").textContent = LABEL[s.access] || s.access;
+    $("mScanned").textContent  = s.scanned;
+    $("mPositive").textContent = s.positive;
+    $("mConv").textContent     = total;
+    $("mVisible").textContent  = vis;
+    $("nScanned").textContent  = s.scanned;
+    if($("tStocks")) $("tStocks").textContent = s.scanned;
+    $("nPositive").textContent = s.positive;
+    $("nVisible").textContent  = vis;
+
+    var bar = s.conviction_min || 80;
+    $("heroLine").innerHTML = s.scanned + " stocks analysed. <em>" + total
+      + " scored " + bar + " or better.</em> You can see " + vis + ".";
+    $("gapNo").textContent  = vis + " of " + total + " high-conviction setups visible";
+    $("gapSub").textContent = "Scan of " + s.date + " · " + pct + "% at your access level";
+    $("gapTitle").textContent = missing > 0
+      ? "You are seeing " + pct + "% of today's ranked setups."
+      : "You are seeing every ranked setup from today's scan.";
+    setTimeout(function(){ $("gapMeter").style.width = pct + "%"; }, 60);
+
+    if(missing > 0){
+      $("gapNote").style.display = "";
+      $("gapNoteT").textContent = missing + " further high-conviction setup"
+        + (missing===1?"":"s") + " outside your access.";
+      $("gapNoteS").textContent = s.access === "guest"
+        ? "A free account widens what you see."
+        : "Premium and Pro widen how much of each day's scan you see.";
+    }
+
+    var idx = LADDER.indexOf(s.access);
+    [].forEach.call(document.querySelectorAll("#ladder div"), function(d){
+      if(LADDER.indexOf(d.dataset.l) === idx) d.classList.add("now");
+    });
+
+    /* Entry, target and stop are a paid field — they are simply absent from a
+       free tier's payload. Render what arrived rather than blanks. */
+    function metrics(o, scoreShownElsewhere){
+      var cell = function(k,v){ return '<div><small>'+k+'</small><b>'+v+'</b></div>'; };
+      if(o.entry != null){
+        return cell("Entry", money(o.entry)) + cell("Target", money(o.target))
+             + cell("Stop", money(o.sl));
+      }
+      return cell("Last", money(o.ltp))
+           + (scoreShownElsewhere
+                ? cell("Change", (o.pct>0?"+":"") + Number(o.pct||0).toFixed(2) + "%")
+                : cell("Score", o.score + "/100"))
+           + cell("RSI", Number(o.rsi||0).toFixed(1));
+    }
+
+    var html = (s.opportunities||[]).map(function(o){
+      return '<article class="op"><div class="rk">Ranked · ' + pad2(o.rank) + '</div>'
+        + '<div class="sc">' + o.score + '</div>'
+        + '<div class="verdict">' + esc(o.signal) + '</div>'
+        + '<div class="code">' + esc(o.code) + '</div>'
+        + '<div class="sect">' + (o.cat ? "Category " + esc(o.cat) + " · " : "")
+        + (o.pct != null ? (o.pct>0?"+":"") + Number(o.pct).toFixed(2) + "%" : "") + '</div>'
+        + '<div class="mets">' + metrics(o) + '</div></article>';
+    }).join("");
+
+    html += (s.locked||[]).slice(0,3).map(function(l){
+      return '<article class="op lk"><div class="rk">Ranked · ' + pad2(l.rank) + '</div>'
+        + '<div class="sc">' + l.score + '</div>'
+        + '<div class="verdict">High conviction</div>'
+        + '<div class="code">████████</div>'
+        + '<p class="lknote">Checks agree at ' + l.score + '/100. Withheld at your '
+        + 'access level.</p>'
+        + '<div class="pl"><span>Name withheld</span><span>Entry withheld</span>'
+        + '<span>Target withheld</span></div></article>';
+    }).join("");
+
+    ops.innerHTML = html || '<p class="loading">No setups cleared the bar in '
+      + 'today\'s scan. That happens, and we would rather say so.</p>';
+
+    /* the giveaway: tonight's strongest setup, named, for anyone */
+    var fp = $("freepickBody"), top = (s.opportunities||[])[0];
+    if(fp){
+      fp.innerHTML = top
+        ? '<div class="resrow"><span class="rescode">' + esc(top.code) + '</span>'
+          + '<span class="resv buy">' + esc(top.signal) + '</span>'
+          + '<span class="resscore">' + top.score + '<small>/100</small></span></div>'
+          + '<div class="resmets">' + metrics(top, true) + '</div>'
+          + '<p class="resfoot">Scan of ' + esc(s.date) + '. The strongest setup is '
+          + 'published free every trading day, name and all.</p>'
+        : '<p class="lookmsg">No setup cleared the bar tonight.</p>';
+    }
+  }
+
+  /* ── track record, stated rather than curated ─────────────────────── */
+  function renderTrack(t){
+    var row = $("trrow");
+    var agg = t && t.aggregates && (t.aggregates.picks || t.aggregates.master);
+    if(!agg && t && Array.isArray(t.tools)){
+      var pk = t.tools.filter(function(x){ return x.key === "picks"; })[0];
+      agg = pk && pk.agg;
+    }
+    if(!agg){ row.innerHTML = '<p class="loading">Track record unavailable.</p>'; return; }
+
+    var n = agg.resolved || agg.samples || 0;
+    var cells = [
+      ["Resolved", n],
+      ["Win rate", agg.win_rate != null ? agg.win_rate + "%" : "—"],
+      ["Avg result", agg.avg_ret != null
+        ? (agg.avg_ret>0?"+":"") + Number(agg.avg_ret).toFixed(2) + "%" : "—"],
+      ["Profit factor", agg.profit_factor != null
+        ? Number(agg.profit_factor).toFixed(2) : "—"]
+    ];
+    row.innerHTML = cells.map(function(c){
+      return '<div class="tr"><b>' + esc(c[1]) + '</b><small>' + c[0] + '</small></div>';
+    }).join("");
+
+    $("trNote").textContent = "Based on " + n + " resolved pick" + (n===1?"":"s")
+      + " — a young sample, and small samples move a great deal. Every figure is "
+      + "mark-to-market on picks issued live on the day. Nothing has been added "
+      + "after the fact, and the twelve sessions our pipeline missed in August are "
+      + "shown as missing rather than filled in.";
+  }
+
+
+
+  /* ── free lookup: the whole engine, on any stock, with no account ──────
+     This is the page's opening move. A stranger has no reason yet to care what
+     is behind the paywall; they do care what our engine says about the stock
+     they already hold. Nothing here is withheld — the score is the score. */
+  var VERDICT_CLASS = function(v){
+    v = String(v||"").toUpperCase();
+    if(v.indexOf("BUY") >= 0) return "buy";
+    if(v.indexOf("AVOID") >= 0 || v.indexOf("SELL") >= 0) return "avoid";
+    return "watch";
+  };
+
+  function renderLookup(d, code){
+    var out = $("lookOut");
+    if(!d || d.status === "unknown_code"){
+      out.innerHTML = '<p class="lookmsg">No listed stock matches “'
+        + esc(code) + '”. Try a code such as BEXIMCO, GP or SQURPHARMA.</p>';
+      return;
+    }
+    if(d.status === "no_data"){
+      out.innerHTML = '<p class="lookmsg">' + esc(code) + ' has no usable price '
+        + 'history yet, so we will not score it. We would rather say that than '
+        + 'guess.</p>';
+      return;
+    }
+    var v = d.verdict || d.signal || "WATCH";
+    var score = d.score != null ? Math.round(d.score) : null;
+    out.innerHTML =
+      '<div class="res">'
+      + '<div class="resrow"><span class="rescode">' + esc(d.code) + '</span>'
+      + '<span class="resv ' + VERDICT_CLASS(v) + '">' + esc(v) + '</span>'
+      + (score != null ? '<span class="resscore">' + score
+          + '<small>/100</small></span>' : '')
+      + '</div>'
+      + '<div class="resmets">'
+      +   '<div><small>Last</small><b>' + money(d.ltp) + '</b></div>'
+      +   '<div><small>RSI</small><b>' + Number(d.rsi||0).toFixed(1) + '</b></div>'
+      +   '<div><small>Agreement</small><b>'
+      +      esc((d.confluence||"—").split(" ")[0]) + '</b></div>'
+      + '</div>'
+      + '<p class="resfoot">' + esc(d.indicators || "") 
+      + (d.data_quality === "synthetic"
+          ? ' · thin price history, treat with care' : '')
+      + '</p></div>';
+  }
+
+  $("lookForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var code = ($("lookInput").value || "").trim().toUpperCase()
+                 .replace(/[^A-Z0-9]/g, "");
+    if(!code) return;
+    $("lookGo").disabled = true; $("lookGo").textContent = "…";
+    $("lookOut").innerHTML = '<p class="lookmsg">Scoring ' + esc(code) + '…</p>';
+    get("/api/analyse/" + encodeURIComponent(code)).then(function(d){
+      $("lookGo").disabled = false; $("lookGo").textContent = "Check";
+      renderLookup(d, code);
+    });
+  });
+
+  /* ── sign in / register, without leaving the page ──────────────────────
+     The old landing page lives at "/", and bouncing a visitor there mid-signup
+     hands them a different design halfway through. This keeps them here and
+     re-reads the scan afterwards, so the gap updates in place. */
+  var AM = {
+    box:   $("authModal"),
+    mode:  "login",
+    open:  function(mode){
+      AM.mode = mode || "login";
+      AM.box.classList.add("on");
+      AM.sync();
+      setTimeout(function(){ $("amEmail").focus(); }, 30);
+    },
+    close: function(){ AM.box.classList.remove("on"); $("amErr").textContent = ""; },
+    sync:  function(){
+      var reg = AM.mode === "register";
+      $("amTitle").textContent = reg ? "Create your free account" : "Sign in";
+      $("amSub").textContent = reg
+        ? "Free accounts see more of each day's scan. No card required."
+        : "Your access level decides how much of each day's scan you see.";
+      $("amGo").textContent = reg ? "Create account" : "Sign in";
+      $("amNameWrap").style.display = reg ? "" : "none";
+      $("amName").required = reg;
+      $("amPass").setAttribute("autocomplete", reg ? "new-password" : "current-password");
+      $("amFoot").innerHTML = reg
+        ? 'Already have an account? <a href="#" id="amSwap">Sign in</a>'
+        : 'New here? <a href="#" id="amSwap">Create a free account</a>';
+      $("amSwap").addEventListener("click", function(e){
+        e.preventDefault(); AM.mode = reg ? "login" : "register"; AM.sync(); });
+      [].forEach.call(document.querySelectorAll(".mtab"), function(t){
+        t.classList.toggle("on", t.dataset.m === AM.mode); });
+      $("amErr").textContent = "";
+    }
+  };
+
+  [].forEach.call(document.querySelectorAll(".mtab"), function(t){
+    t.addEventListener("click", function(){ AM.mode = t.dataset.m; AM.sync(); });
+  });
+  $("amClose").addEventListener("click", AM.close);
+  AM.box.addEventListener("click", function(e){ if(e.target === AM.box) AM.close(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && AM.box.classList.contains("on")) AM.close(); });
+
+  $("amForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var reg = AM.mode === "register";
+    var body = {email: $("amEmail").value.trim(), password: $("amPass").value};
+    if(reg) body.name = $("amName").value.trim();
+    $("amGo").disabled = true;
+    $("amGo").textContent = reg ? "Creating…" : "Signing in…";
+    fetch(API + (reg ? "/api/auth/register" : "/api/auth/login"), {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(res){
+      $("amGo").disabled = false; AM.sync();
+      if(!res.ok || !res.j || !res.j.token){
+        $("amErr").textContent = (res.j && res.j.detail)
+          || "That did not work. Check the details and try again.";
+        return;
+      }
+      try{ window.localStorage.setItem("dse_token", res.j.token); }catch(err){}
+      AM.close();
+      /* re-read the scan so the gap, the cards and the chip update in place */
+      get("/api/market/scan").then(renderScan);
+    }).catch(function(){
+      $("amGo").disabled = false; AM.sync();
+      $("amErr").textContent = "Could not reach the server. Try again in a moment.";
+    });
+  });
+
+  $("btnSignin").addEventListener("click", function(){ AM.open("login"); });
+  ["btnStart","planFree","planPremium","planPro"].forEach(function(id){
+    var el = $(id);
+    if(el) el.addEventListener("click", function(){ AM.open("register"); });
+  });
+
+  get("/api/market/scan").then(renderScan);
+  get("/api/market/history?days=120").then(function(h){
+    if(h && h.series && h.series.length){
+      drawTape(h.series);
+      if($("tHistory")) $("tHistory").textContent = h.series.length;
+    }
+  });
+  get("/api/track-record?days=90&top=3").then(renderTrack);
+  get("/api/dashboard/overview").then(function(o){
+    var m = o && (o.market || o);
+    if(!m || m.dsex == null) return;
+    var ch = Number(m.dsex_change||0);
+    $("mDsex").innerHTML = Number(m.dsex).toLocaleString("en-US",
+      {minimumFractionDigits:1,maximumFractionDigits:1})
+      + ' <span class="' + (ch>=0?"up":"down") + '">' + (ch>=0?"▲":"▼") + " "
+      + Math.abs(ch).toFixed(2) + "%</span>";
+  });
+})();
+</script>
+</body>
+</html>

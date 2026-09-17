@@ -53,6 +53,44 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 /* NAV */
 .nav{background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
 .nav-inner{max-width:1200px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:64px}
+/* ── the dashboard header strip ───────────────────────────────────────────
+   One line: greeting, then the market summary beside it. The two used to be
+   stacked and the band came to 96px before any content. Everything the old
+   version said is still said. */
+/*  Four things sit between the top of the window and the tool: the site nav,
+    this greeting, the tab row, and the pane's own padding. None of them is
+    what the reader came for, and together they were 212px. */
+.dash-hd{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px 14px;margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid var(--border)}
+.dash-hd-l{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
+.dash-hd-greet{font-family:var(--serif);font-size:16px;font-weight:700;
+  color:var(--navy);white-space:nowrap}
+.dash-hd-sub{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
+
+/* ── the ticker is marketing, and the dashboard is past that ──────────────
+   A scrolling marquee of prices earns its place on the landing page. Inside
+   the dashboard it is 34px of a screen the customer is trying to read a
+   market view on, and every figure in it is available in the tools below. */
+body.dash-open .ticker{display:none}
+
+/*  The row above is fixed-height and never wraps, so on a 360px phone the
+    logo, four links and two buttons ran to 568px and the WHOLE dashboard
+    scrolled sideways — not just the header. Below 820px it wraps and the
+    64px link boxes stop being 64px, which is what made a wrapped row look
+    absurd. The name in the user chip gets an ellipsis rather than a width
+    of its own: an email address is as long as it likes. */
+@media (max-width:980px){ .nav-inner{padding:0 18px} .nav-link{padding:0 11px} }
+@media (max-width:820px){
+  .nav-inner{height:auto;min-height:58px;flex-wrap:wrap;gap:6px 14px;padding:9px 14px}
+  .nav-links{flex-wrap:wrap;gap:2px}
+  .nav-link{height:auto;padding:9px 10px;border-bottom:0;font-size:12.5px}
+  .nav-actions{margin-left:auto;gap:8px;flex-wrap:wrap}
+  .nav-actions .btn{padding:9px 12px;font-size:12.5px}
+  .dse-userchip{gap:8px;min-width:0;flex-wrap:wrap}
+  .dse-userchip .nm{max-width:42vw;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap}
+}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-mark{width:32px;height:32px;background:var(--navy);border-radius:6px;display:flex;align-items:center;justify-content:center}
 .logo-mark svg{width:18px;height:18px}
@@ -306,20 +344,96 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 }
 </style>
 <style>
+/*  This was an inline style, which no media query can reach. 40px of padding
+    either side is right on a desk; on a 320px phone it is 80px of the 320 —
+    a quarter of the screen spent on margin, leaving a 240px column for a
+    table. Same value on a wide screen, a quarter of it on a narrow one. */
+/*  min-height:100vh sat under a 65px site nav, so the dashboard block alone
+    guaranteed a 965px page on a 900px window — 65px of scrolling before a
+    single pixel of content was counted, and no amount of trimming inside
+    could ever reach it. It only exists so the cream background fills a short
+    window; minus the nav is the height that actually does that. */
+/*  Minus the nav AND an allowance for the footer. With the frame at a fixed
+    height this floor was never reached, so it cost nothing; now that the frame
+    shrinks to its content it was manufacturing ~130px of empty cream and
+    pushing the footer exactly to the fold — present, but invisible without
+    scrolling, which reads as missing. The body is the same cream, so on a
+    short page there is no seam where the block ends. */
+.dash-pad{background:var(--cream);min-height:calc(100vh - 225px);padding:10px 40px 24px}
+@media(max-width:760px){.dash-pad{padding:10px 14px 20px}}
+@media(max-width:400px){.dash-pad{padding:8px 10px 18px}}
 .dash-layout{display:flex;gap:0;align-items:flex-start}
 .cat-rail{width:150px;flex-shrink:0;border-right:1px solid var(--border);padding:10px 6px;background:var(--cream)}
 .cat-btn{display:flex;align-items:center;gap:8px;padding:10px 10px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:7px;border-left:2px solid transparent;user-select:none}
 .cat-btn:hover{background:var(--cream2)}
 .cat-btn.active{color:var(--navy);background:var(--gold-bg);border-left:2px solid var(--gold)}
 .dash-main{flex:1;min-width:0}
-.dash-layout .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.dash-layout .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding:0 0 9px;margin-bottom:10px;border-bottom:1px solid var(--border)}
 .dash-layout .tabs .cat-panel{display:flex;gap:6px;flex-wrap:nowrap}
-.dash-layout .tabs .tab{white-space:nowrap;flex-shrink:0;border:1px solid var(--border2);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text2);background:var(--white)}
+.dash-layout .tabs .tab{white-space:nowrap;flex-shrink:0;border:1px solid var(--border2);border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--text2);background:var(--white)}
 .dash-layout .tabs .tab:hover{border-color:var(--navy2);color:var(--navy)}
 .dash-layout .tabs .tab.active{border-color:var(--gold);background:var(--gold-bg);color:var(--navy);font-weight:700}
 .dash-content{flex:1;min-width:0;padding:0 24px}
-#tool-frame{width:100%;height:80vh;border:0;border-radius:10px;background:#fff;display:block}
-@media(max-width:760px){.dash-layout{flex-direction:column}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:16px 0 0}}
+/*  80vh was a guess made without reference to anything above or below it. At
+    900px it is 720px of frame under 212px of chrome, which overflows the
+    window by construction — the tool could be empty and the page would still
+    scroll. calc leaves exactly the room the chrome actually takes, so the
+    tool fills the screen and stops at the bottom of it. min-height keeps it
+    usable on a short window; below that the page scrolls, which is correct. */
+#tool-frame{width:100%;height:calc(100vh - 244px);min-height:380px;border:0;border-radius:10px;background:#fff;display:block}
+
+/* ── the footer, inside the dashboard ──────────────────────────────────────
+   MEASURED, because the eye is a poor judge of this. On a 1440x900 screen
+   the Overview page is 1473px tall — 573px of scrolling to see a market
+   summary. Of that 573, the FOOTER IS 498. The greeting, the tab row, the
+   navy strip and the signal card together come to about a hundred; the
+   footer is five times all four put together, and it is the one part of the
+   page nobody scrolled down there to read.
+
+   It is right on the landing page: Product, Market and Legal columns, the
+   six-engines paragraph, the social links. Inside the dashboard every one of
+   those is a second copy of something already on screen — the rail has the
+   tools, the top nav has Pricing and Home, and the reader is signed in and
+   already using the product the paragraph is selling.
+
+   Same rule as framed.js, for the same reason: the columns go, THE
+   DISCLAIMER STAYS. It is compressed to a line, never removed. Reclaiming
+   vertical space does not pay for dropping a risk warning, and that is not a
+   layout decision to make here.
+
+   Scoped to body.dash-open, so the landing page and every other view keep
+   the full footer exactly as it is. */
+body.dash-open footer.dsef > .dsef-in{display:none}
+body.dash-open footer.dsef > .dsef-disc{padding:14px 32px 12px;font-size:10.5px;
+  line-height:1.5;max-width:1400px}
+body.dash-open footer.dsef > .dsef-bar > div{padding:9px 32px}
+body.dash-open footer.dsef{font-size:13px}
+
+/* ── short windows ────────────────────────────────────────────────────────
+   A 1366x768 laptop has 132px less to work with than a 900px window, and the
+   chrome above the tool does not shrink with it — so the same layout that
+   fits comfortably on a desk monitor pushes the tool into its own scrollbar
+   on a laptop. Everything trimmed here is chrome: the greeting, the tab row,
+   and the padding around the pane. No content is touched, and above 820px
+   none of it applies. */
+@media (max-height:820px){
+  .dash-pad{padding:6px 40px 14px}
+  .dash-hd{padding-bottom:4px;margin-bottom:6px}
+  .dash-hd-greet{font-size:14px}
+  .dash-main{padding:12px 24px}
+  .dash-layout .tabs{padding:0 0 7px;margin-bottom:8px}
+  #tool-frame{height:calc(100vh - 182px)}
+}
+/*  align-items:flex-start above is right in row mode — it stops the rail
+    stretching to the full height of the content beside it. The moment the
+    container turns into a column, though, that same property stops being a
+    vertical alignment and becomes a HORIZONTAL one: .dash-main is then sized
+    to fit-content rather than to the column, and any pane whose natural width
+    exceeds the phone screen pushes the whole document sideways. Measured at
+    390px: a 310px column holding a 400px pane, 50px of sideways scroll on
+    every dashboard view. Putting stretch back for the column restores the
+    ordinary behaviour — the pane is exactly as wide as the space it is in. */
+@media(max-width:760px){.dash-layout{flex-direction:column;align-items:stretch}.cat-rail{width:auto;display:flex;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}.dash-content{padding:10px 0 0}}
 </style>
 </head>
 <body>
@@ -684,11 +798,16 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 
 <!-- DASHBOARD VIEW -->
 <div id="view-dashboard" style="display:none">
-  <div style="background:var(--cream);min-height:100vh;padding:14px 40px 28px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px">
-      <div>
-        <div id="greet-main" style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--navy)">Good evening</div>
-        <div id="dash-date-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Loading market…</div>
+  <div class="dash-pad">
+    <!--  The greeting and the market line used to stack: a 20px serif heading
+          on one row, a 10px mono strip on the next, inside a band with 14px
+          above it and 22px below. 96px of a sticky-ish header to say good
+          morning. They sit on one line now and the band is 46px; the words
+          are unchanged, and on a phone they still wrap to two rows.  -->
+    <div class="dash-hd">
+      <div class="dash-hd-l">
+        <span id="greet-main" class="dash-hd-greet">Good evening</span>
+        <span id="dash-date-sub" class="dash-hd-sub">Loading market…</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="trialBadge" style="display:none;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg);border-radius:4px"></span>
@@ -701,6 +820,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
       <div class="cat-btn" data-cat="tech" onclick="selectCat('tech')"><i class="ti ti-chart-line" aria-hidden="true"></i>Technical Analysis</div>
       <div class="cat-btn" data-cat="portfolio" onclick="selectCat('portfolio')"><i class="ti ti-briefcase" aria-hidden="true"></i>Portfolio</div>
       <div class="cat-btn" data-cat="tools" onclick="selectCat('tools')"><i class="ti ti-tool" aria-hidden="true"></i>Tools</div>
+      <div class="cat-btn" data-cat="account" onclick="selectCat('account')"><i class="ti ti-user" aria-hidden="true"></i>Account</div>
     </div>
     <div class="dash-main">
     <div class="tabs">
@@ -730,18 +850,67 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
         <div class="tab" onclick="openTool('/crosstool.html',this)">Cross-Tool</div>
         <div class="tab" onclick="openTool('/calculator.html',this)">Calculator</div>
       </div>
+      <div class="cat-panel" data-cat="account" style="display:none">
+        <div class="tab" onclick="switchDashTab('plan',this)">My plan</div>
+        <div class="tab" onclick="switchDashTab('refer',this)">Refer a friend</div>
+        <div class="tab" onclick="switchDashTab('details',this)">My details</div>
+      </div>
     </div>
     <div class="dash-content">
       <iframe id="tool-frame" style="display:none"></iframe>
     <div id="dt-holdings" style="display:none">
       <div id="hold-root"><!-- My Holdings renders here (live, per-user) --></div>
     </div>
+    <div id="dt-plan"  style="display:none"><div id="plan-root"></div></div>
+    <div id="dt-refer" style="display:none"><div id="refer-root"></div></div>
+    <div id="dt-details" style="display:none"><div id="details-root"></div></div>
     </div>
     </div>
   </div>
 </div>
 </div>
 
+<script src="/env.js"></script>
+<script>/* DSE Pulse env guard — must stay INLINE. An external file would share the
+   very failure this exists to catch. Runs only if env.js did not. */
+window.DSEEnv = window.DSEEnv || (function () {
+  var h = ""; try { h = String(location.hostname || "").toLowerCase(); } catch (e) {}
+  //  Identical rule to env.js: an unrecognised hostname is PRODUCTION, never dev.
+  //  NOTE: env.js currently tests h.indexOf(".netlify.app") !== -1, a SUBSTRING
+  //  match, so a hostile hostname like "dev--x.netlify.app.attacker.net"
+  //  satisfies it. Impact is limited — it aims a rogue copy at DEVELOPMENT, never
+  //  at production — but the check is wrong. This uses a suffix test, and env.js
+  //  should be corrected the same way.
+  var dev = (h === "localhost" || h === "127.0.0.1" || h === "" ||
+             h.indexOf("dev.") === 0 ||
+             (h.indexOf("--") !== -1 && /\.netlify\.app$/.test(h)));
+  var api = dev ? "https://dsepulse-backend-development.up.railway.app"
+                : "https://dsepulse-backend-production.up.railway.app";
+  try { console.warn("[DSE Pulse] env.js did not load — resolved " +
+        (dev ? "development" : "production") + " inline"); } catch (e) {}
+  //  A failed env.js used to be silent, which is how a dev page could quietly
+  //  start talking to production. Now it is visible on the page itself.
+  try {
+    var paint = function () {
+      if (!document.body || document.getElementById("dse-env-fallback")) return;
+      var b = document.createElement("div");
+      b.id = "dse-env-fallback";
+      b.textContent = dev ? "DEV · env.js failed" : "env.js failed";
+      b.style.cssText = "position:fixed;left:0;bottom:0;z-index:2147483647;" +
+        "background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;" +
+        "padding:5px 8px;border-top-right-radius:4px;letter-spacing:.06em;" +
+        "pointer-events:none";
+      document.body.appendChild(b);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", paint);
+    } else { paint(); }
+  } catch (e) {}
+  return { name: dev ? "development" : "production", apiBase: api,
+           apiHost: api.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+           isDev: dev, fallback: true };
+})();</script>
+<script src="/auth.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  DSE Pulse — API integration (DB-driven)
@@ -750,7 +919,7 @@ footer{background:var(--navy);padding:36px 40px;display:flex;align-items:center;
 //  back to built-in sample data so the page never looks broken.
 //  When the backend routes go live, real data appears automatically.
 // ═══════════════════════════════════════════════════════════════════
-const API = "https://dsepulse-backend-production.up.railway.app";
+const API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
 
 async function fetchJSON(path){
   try{
@@ -934,16 +1103,20 @@ function navTo(id){showView('landing');setTimeout(function(){var e=document.getE
 function showView(v){
   document.getElementById('view-landing').style.display=v==='landing'?'block':'none';
   document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
+  //  hides the ticker while the dashboard is open; see body.dash-open above
+  try{ document.body.classList.toggle('dash-open', v==='dashboard'); }catch(e){}
  if(v==='dashboard'){ applyToolGates().then(openFirstVisibleTool); }
   window.scrollTo(0,0);
 }
 
 function switchDashTab(t,el){
   var __f=document.getElementById('tool-frame'); if(__f)__f.style.display='none';
-  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
+  ['overview','picks','wma','tech','combined','bd','sectors','analyse','holdings','plan','refer','details'].forEach(id=>{const e=document.getElementById('dt-'+id);if(e)e.style.display=id===t?'block':'none';});
   document.querySelectorAll('#view-dashboard .tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors};
+  const fns={overview:buildOverview,picks:buildPicks,wma:buildWMA,tech:buildTech,combined:buildCombined,bd:buildBD,sectors:buildSectors,
+             plan:window.buildPlanPane,refer:window.buildReferPane,
+             details:window.buildDetailsPane};
   if(fns[t]){try{fns[t]();}catch(e){}}
 }
 function openTool(url,el){
@@ -1145,7 +1318,7 @@ async function buildSectors(){
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const m = (c && c.pricing && c.pricing.monthly) || {};
     const trial = (c && c.pricing && c.pricing.trial_days) || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1167,136 +1340,21 @@ async function buildSectors(){
   } catch (e) { /* leave hardcoded values if the backend can't be reached */ }
 })();
 </script>
+<!--  The pricing section is built ONCE, below.
+
+      It used to be built three times: three near-identical scripts, each
+      fetching /api/config and each inserting its own period toggle, plus a
+      fourth script on a 400ms timer trying to delete the duplicates. Because
+      each builder awaited its own fetch, the order they finished in was not
+      fixed, so the cleanup sometimes ran before the stragglers inserted and a
+      second toggle row survived on screen.
+
+      Two builders and the timer are gone. One builder, one row, no race, and
+      two fewer API calls per page load.  -->
 <script>
 (async function () {
   try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
-    const pr = (c && c.pricing) || {};
-    const trial = pr.trial_days || 7;
-    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
-    const plans = document.querySelector(".plans");
-    if (!plans) return;
-
-    const periods = {
-      monthly:   { label: "Monthly",   span: "Per month",   data: pr.monthly   || {}, save: "" },
-      quarterly: { label: "Quarterly", span: "Per quarter", data: pr.quarterly || {}, save: (pr.quarterly && pr.quarterly.label) || "" },
-      annual:    { label: "Annually",  span: "Per year",    data: pr.annual    || {}, save: (pr.annual && pr.annual.label) || "" }
-    };
-
-    let active = "monthly";
-    const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;justify-content:center;gap:8px;margin:0 0 28px;flex-wrap:wrap";
-    const buttons = {};
-    Object.keys(periods).forEach(key => {
-      const b = document.createElement("button");
-      b.textContent = periods[key].label + (periods[key].save ? " · " + periods[key].save : "");
-      b.style.cssText = "padding:8px 16px;border-radius:999px;border:1px solid #0D1F3C;background:transparent;color:#0D1F3C;cursor:pointer;font:inherit;font-size:13px;font-weight:600";
-      b.onclick = () => { active = key; render(); };
-      buttons[key] = b;
-      wrap.appendChild(b);
-    });
-    plans.parentNode.insertBefore(wrap, plans);
-
-    function render() {
-      Object.keys(buttons).forEach(k => {
-        const on = k === active;
-        buttons[k].style.background = on ? "#0D1F3C" : "transparent";
-        buttons[k].style.color = on ? "#FFFFFF" : "#0D1F3C";
-      });
-      const p = periods[active];
-      document.querySelectorAll(".plan").forEach(card => {
-        const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
-        if (tier === "free") return;
-        const amt = p.data[tier];
-        if (amt == null) return;
-        const priceEl = card.querySelector(".plan-price");
-        const periodEl = card.querySelector(".plan-period");
-        const cta = card.querySelector(".plan-cta");
-        if (priceEl) priceEl.textContent = fmt(amt);
-        if (periodEl) {
-          let txt = p.span;
-          if (active === "monthly") txt += " · " + trial + "-day free trial";
-          else if (p.save) txt += " · " + p.save;
-          periodEl.textContent = txt;
-        }
-        if (cta && /trial/i.test(cta.textContent)) cta.textContent = "Start " + trial + "-day trial free";
-      });
-    }
-    render();
-  } catch (e) {}
-})();
-</script>
-<script>
-(async function () {
-  try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
-    const pr = (c && c.pricing) || {};
-    const trial = pr.trial_days || 7;
-    const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
-    const plans = document.querySelector(".plans");
-    if (!plans) return;
-
-    const save = (periodData, months) => {
-      const mp = Number((pr.monthly || {}).premium || 0);
-      const pp = Number((periodData || {}).premium || 0);
-      if (!mp || !pp) return "";
-      const pct = Math.round((1 - pp / (mp * months)) * 100);
-      return pct > 0 ? "Save " + pct + "%" : "";
-    };
-
-    const periods = {
-      monthly:   { label: "Monthly",   span: "Per month",   data: pr.monthly   || {}, save: "" },
-      quarterly: { label: "Quarterly", span: "Per quarter", data: pr.quarterly || {}, save: save(pr.quarterly, 3) },
-      annual:    { label: "Annually",  span: "Per year",    data: pr.annual    || {}, save: save(pr.annual, 12) }
-    };
-
-    let active = "monthly";
-    const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;justify-content:center;gap:8px;margin:0 0 28px;flex-wrap:wrap";
-    const buttons = {};
-    Object.keys(periods).forEach(key => {
-      const b = document.createElement("button");
-      b.textContent = periods[key].label + (periods[key].save ? " · " + periods[key].save : "");
-      b.style.cssText = "padding:8px 16px;border-radius:999px;border:1px solid #0D1F3C;background:transparent;color:#0D1F3C;cursor:pointer;font:inherit;font-size:13px;font-weight:600";
-      b.onclick = () => { active = key; render(); };
-      buttons[key] = b;
-      wrap.appendChild(b);
-    });
-    plans.parentNode.insertBefore(wrap, plans);
-
-    function render() {
-      Object.keys(buttons).forEach(k => {
-        const on = k === active;
-        buttons[k].style.background = on ? "#0D1F3C" : "transparent";
-        buttons[k].style.color = on ? "#FFFFFF" : "#0D1F3C";
-      });
-      const p = periods[active];
-      document.querySelectorAll(".plan").forEach(card => {
-        const tier = (card.querySelector(".plan-tier")?.textContent || "").trim().toLowerCase();
-        if (tier === "free") return;
-        const amt = p.data[tier];
-        if (amt == null) return;
-        const priceEl = card.querySelector(".plan-price");
-        const periodEl = card.querySelector(".plan-period");
-        const cta = card.querySelector(".plan-cta");
-        if (priceEl) priceEl.textContent = fmt(amt);
-        if (periodEl) {
-          let txt = p.span;
-          if (active === "monthly") txt += " · " + trial + "-day free trial";
-          else if (p.save) txt += " · " + p.save;
-          periodEl.textContent = txt;
-        }
-        if (cta && /trial/i.test(cta.textContent)) cta.textContent = "Start " + trial + "-day trial free";
-      });
-    }
-    render();
-  } catch (e) {}
-})();
-</script>
-<script>
-(async function () {
-  try {
-    const c = await (await fetch("https://dsepulse-backend-production.up.railway.app/api/config")).json();
+    const c = await (await fetch((window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app")+"/api/config")).json();
     const pr = (c && c.pricing) || {};
     const trial = pr.trial_days || 7;
     const fmt = n => "৳" + Number(n || 0).toLocaleString("en-US");
@@ -1370,7 +1428,7 @@ async function buildSectors(){
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function () {
-  const API = "https://dsepulse-backend-production.up.railway.app";
+  const API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const GOOGLE_CLIENT_ID = "442638709081-3n7qagt4q3574dhlkhdkv0ndep273frp.apps.googleusercontent.com";
   const TOKEN_KEY = "dse_token", NAME_KEY = "dse_name";
   const getToken = () => localStorage.getItem(TOKEN_KEY);
@@ -1517,21 +1575,6 @@ async function buildSectors(){
 })();
 </script>
 <!-- ===== end Auth ===== -->
-<!-- ===== DSE Pulse · pricing toggle dedupe ===== -->
-<script>
-(function(){
-  function clean(){
-    var rows=[].slice.call(document.querySelectorAll('div')).filter(function(el){
-      var t=el.textContent.replace(/\s+/g,' ').trim();
-      return /^Monthly/.test(t) && /Quarterly/.test(t) && /Annually/.test(t) && t.length<140;
-    });
-    rows.slice(0,-1).forEach(function(el){ el.remove(); });
-  }
-  function boot(){ clean(); var n=0,iv=setInterval(function(){ clean(); if(++n>10) clearInterval(iv); },400); }
-  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
-})();
-</script>
-<!-- ===== end dedupe ===== -->
 <script>
 (function(){
   function setGreeting(){
@@ -1695,7 +1738,7 @@ async function buildSectors(){
 </style>
 <script>
 (function(){
-  const API="https://dsepulse-backend-production.up.railway.app";
+  const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const TKEY="dse_token";
   const tok=()=>{try{return localStorage.getItem(TKEY);}catch(e){return null;}};
   const $=id=>document.getElementById(id);
@@ -1708,14 +1751,11 @@ async function buildSectors(){
   const msFor=c=>(window.__ms&&window.__ms.for)?window.__ms.for(c):null;
 
   /* 52-week high/low for holdings cards (Supabase stock_52w, close-based rolling) */
-  const SB52_URL="https://hpzaluxjzmgedkplimim.supabase.co";
-  const SB52_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwemFsdXhqem1nZWRrcGxpbWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc3MTYsImV4cCI6MjA5NjI0MzcxNn0.8IpisuYMCkH0LgctY9yeLFlT4YZwW21swCvUU29BDZU";
   const RANGE52H={};
   async function loadRanges52(codes){
     if(!codes||!codes.length)return;
     try{
-      const r=await fetch(`${SB52_URL}/rest/v1/stock_52w?select=code,high_52w,low_52w,range52_days&code=in.(${codes.join(',')})`,
-        {headers:{apikey:SB52_KEY,Authorization:'Bearer '+SB52_KEY}});
+      const r=await fetch(API+'/api/stock52?codes='+encodeURIComponent(codes.join(',')));
       if(!r.ok)return;
       (await r.json()||[]).forEach(x=>{ RANGE52H[String(x.code).toUpperCase()]={hi:Number(x.high_52w),lo:Number(x.low_52w),days:x.range52_days}; });
     }catch(e){}
@@ -1739,7 +1779,7 @@ async function buildSectors(){
   }
 
   function gateSignin(){ return '<div class="hd-gate"><div class="hd-gate-t">Sign in to track your holdings</div><div class="hd-gate-s">Your portfolio is private to your account \u2014 only you can see it. Sign in to add the stocks you own and follow their live signals.</div><button class="hd-gate-btn" onclick="window.openAuth&&window.openAuth(\'login\')">Sign in</button></div>'; }
-  function gateTrial(msg){ return '<div class="hd-gate"><div class="hd-gate-t">Your free trial has ended</div><div class="hd-gate-s">'+esc(msg||"Upgrade to keep using Holdings.")+'</div><button class="hd-gate-btn" onclick="window.navTo?navTo(\'pricing-section\'):0">View plans</button></div>'; }
+  function gateTrial(msg){ return '<div class="hd-gate"><div class="hd-gate-t">Your free trial has ended</div><div class="hd-gate-s">'+esc(msg||"Upgrade to keep using Holdings.")+'</div><button class="hd-gate-btn" onclick="window.openAccountPlan&&window.openAccountPlan()">See plans</button></div>'; }
 
   // Recommendation for a stock you ALREADY hold. Fuses the six engines + conviction
   // with your trade levels. If the engines reject a name you hold, it says exit/reduce
@@ -2017,7 +2057,7 @@ function catOf(tabEl){
 
 function applyToolGates(){
   if(isPreview()) showPreviewBadge();
-  var API="https://dsepulse-backend-production.up.railway.app";
+  var API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   var tok=null; try{ tok=localStorage.getItem("dse_token"); }catch(e){}
   var planP = tok
     ? fetch(API+"/api/auth/me",{headers:{Authorization:"Bearer "+tok}})
@@ -2070,6 +2110,23 @@ function openFirstVisibleTool(){
     '/calculator.html'];
   try{
     var hash=location.hash.replace('#','');
+    /*  #plan and #account open the customer's own plan, not a market tool.
+        Without this, every "Open dashboard" link on the landing page — the one
+        a subscriber clicks straight after paying — landed on the market
+        overview, because the code below falls through to "open the first
+        visible tab" and the first visible tab is a market tool.
+
+        This does the rail-and-tab click DIRECTLY rather than calling
+        window.openAccountPlan(), which starts by calling showView('dashboard')
+        — and showView('dashboard') is what called this function. Going through
+        it would loop forever.  */
+    if(hash==='plan'||hash==='account'){
+      var rail=document.querySelector('.cat-btn[data-cat="account"]');
+      if(rail) rail.click();
+      var ptab=document.querySelector('.cat-panel[data-cat="account"] .tab');
+      if(ptab) ptab.click();
+      return;
+    }
     if(hash){
       var last='/'+hash+'.html';
       if(VALID.indexOf(last)>=0){
@@ -2089,6 +2146,825 @@ function openFirstVisibleTool(){
     if(m){ openTool(m[1], tabs[i]); return; }
   }
 }
+</script>
+<!-- ══ ACCOUNT: the plan, and the Referral Center ═══════════════════════════
+     Two panes behind the Account rail item. Both are signed-in only, which is
+     the point: the landing page sells to strangers and carries none of this.
+
+     Every figure here is READ from the server. The page never works out what a
+     discount is worth, never adds up what a referral earned, and never decides
+     whether one applies — a client that calculates money is a client that can
+     be argued with. It renders what /api/referral and /api/subscription say.
+-->
+<style>
+  /*  760px left a third of the pane empty on a laptop while the card
+      inside it was cramped. The strip has room for a fourth fact now,
+      and the plan cards below it are no longer squeezed. */
+  .ac{max-width:980px;font-family:var(--sans,inherit)}
+  .ac-card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+    padding:22px 24px;margin-bottom:14px}
+  .ac-card h3{margin:0 0 4px;font-family:var(--serif);font-size:19px;color:var(--navy)}
+  .ac-card p{margin:0 0 16px;font-size:13.5px;color:var(--text2);line-height:1.6;max-width:56ch}
+  .ac-k{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--text3);display:block;margin-bottom:9px}
+  .ac-row{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:baseline;margin-bottom:16px}
+  .ac-row div{min-width:0}
+  .ac-row b{display:block;font:700 20px/1 var(--mono);font-variant-numeric:tabular-nums;
+    color:var(--navy);margin-bottom:5px}
+  .ac-row span{font-size:11.5px;color:var(--text3)}
+
+  /* ── the plan strip ───────────────────────────────────────────────────
+     Three facts and the action that goes with them, on one line. Stacked,
+     they used a third of a 760px card and left the rest empty while a
+     two-line sentence ran underneath doing the explaining; on one line the
+     card is a third the height and there is room to add to it later.
+
+     It wraps rather than shrinks. At the point where the three facts and a
+     button no longer fit — a phone, or the dashboard pane on a tablet —
+     the button drops to its own line and goes back to the left edge, since
+     an action floated right under nothing looks like a mistake. The
+     breakpoint is 1000px of WINDOW, not of card: the dashboard rail takes
+     about 325px, so the pane is only ~700px wide when the window is 1024.
+
+     The class is .ac-strip and NOT .ac-plan, which is what I called it first:
+     .ac-plan already exists further down this file for the pricing cards
+     inside .ac-plans. Two rules, same name, same specificity — the later one
+     wins and the earlier one vanishes without a word. Mine was the earlier
+     one, and the strip rendered as a stack of full-width rows. */
+  .ac-strip{display:flex;flex-wrap:wrap;align-items:center;gap:16px 32px;
+    background:var(--cream);border:1px solid var(--border);border-radius:10px;
+    padding:15px 20px;margin-bottom:12px}
+  .ac-strip .sf{min-width:0}
+  .ac-strip .sf b{display:block;font:700 19px/1.15 var(--mono);
+    font-variant-numeric:tabular-nums;color:var(--navy);margin-bottom:5px;
+    word-break:break-word}
+  .ac-strip .sf span{display:block;font:600 10px/1.2 var(--mono);letter-spacing:.11em;
+    text-transform:uppercase;color:var(--text3)}
+  .ac-strip .act{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .ac-strip .act .ac-btn{margin:0}
+  @media (max-width:1000px){
+    .ac-strip{gap:14px 24px}
+    .ac-strip .act{margin-left:0;flex-basis:100%}
+    .ac-strip .act .ac-btn{flex:1 1 auto}
+  }
+  /*  On a phone the dashboard rail leaves the pane about 236px, and at 19px
+      the plan and the day count could not share a line — every fact took a
+      row of its own. Two points smaller and tighter gaps buys back the ~20px
+      that makes the difference. */
+  @media (max-width:560px){
+    .ac-strip{gap:12px 18px;padding:13px 14px}
+    .ac-strip .sf b{font-size:17px}
+    .ac-card{padding:16px 15px}
+  }
+  /* ── My details ───────────────────────────────────────────────────────
+     A form, so it is laid out like one: label above field, fields in a grid
+     that becomes one column when there is no room for two. */
+  .ac-form{display:grid;gap:14px 18px;grid-template-columns:1fr;margin-bottom:4px}
+  @media (min-width:900px){ .ac-form.two{grid-template-columns:1fr 1fr} }
+  /*  On the details pane the fields sit inside a card that may itself be
+      half the pane, so the window width says nothing useful about the room
+      a field has. Ask the container instead. */
+  @supports (container-type:inline-size){
+    #dt-details .ac-card{container-type:inline-size}
+    #dt-details .ac-form.two{grid-template-columns:1fr}
+    @container (min-width:430px){ #dt-details .ac-form.two{grid-template-columns:1fr 1fr} }
+    /*  and on the narrowest phone even two fact columns is too many */
+    @container (max-width:290px){ #dt-details .ac-ro{grid-template-columns:1fr} }
+  }
+  .ac-f label{display:block;font:600 10px/1 var(--mono);letter-spacing:.11em;
+    text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+  .ac-f input{width:100%;font:400 14px/1.3 var(--sans);padding:10px 12px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);
+    color:var(--text)}
+  .ac-f input:focus{outline:0;border-color:var(--navy)}
+  .ac-f input:disabled{background:var(--cream);color:var(--text3);
+    cursor:not-allowed}
+  .ac-f .hint{margin:6px 0 0;font-size:11.5px;color:var(--text3);line-height:1.5}
+  .ac-ro{display:flex;gap:10px 26px;flex-wrap:wrap;margin:0 0 16px;
+    padding:12px 14px;background:var(--cream);border:1px solid var(--border);
+    border-radius:9px}
+  .ac-ro div{min-width:0}
+  .ac-ro b{display:block;font:600 13px/1.3 var(--mono);color:var(--navy);
+    word-break:break-all}
+  .ac-ro span{font:600 9.5px/1.2 var(--mono);letter-spacing:.11em;
+    text-transform:uppercase;color:var(--text3)}
+
+  /* the sentence that used to be a paragraph */
+  .ac-fine{margin:0 0 12px;font-size:12.5px;line-height:1.6;color:var(--text3);
+    max-width:70ch}
+  .ac-fine b{color:var(--text2);font-weight:600}
+  .ac-link{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
+  .ac-link input{flex:1 1 auto;min-width:0;font:600 12.5px/1 var(--mono);padding:12px;
+    border-radius:8px;border:1.5px solid var(--border);background:var(--white);color:var(--text)}
+  .ac-link button{font:600 13px/1 var(--sans);padding:12px 16px;border-radius:8px;border:0;
+    background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap}
+  .ac-note{margin:0;font-size:12.5px;color:var(--text3);min-height:1px}
+  .ac-note.ok{color:var(--green)}
+  /*  .ac-note.err was set in JS on three different panes and had no rule,
+      so every failure message rendered in the same grey as 'Saving…' —
+      the two states a customer most needs told apart looked identical. */
+  .ac-note.err{color:var(--red)}
+
+  /* ── My details, compacted ────────────────────────────────────────────
+     Four editable fields and three password boxes were filling two full
+     screens. Nothing in it was wrong; there was simply no reason for any
+     of it to be that big. What the height was actually spent on: two
+     cards at full width stacked one under the other, when together they
+     are narrower than the pane; a 22px pad; a heading followed by an
+     all-caps label repeating the heading; and two sentences set at
+     13.5/1.6, the size of body copy, when they are hints.
+
+     So: the cards sit side by side the moment the pane can hold two
+     columns, the label goes, the padding and the type come down a step,
+     and the read-only strip stops being a 2x2 block. The rules are
+     scoped to this pane — My plan and Refer a friend are untouched. */
+  #details-root .ac2{display:grid;gap:14px;align-items:start;
+    /*  min() so the track can go narrower than 330px rather than forcing the
+        grid wider than the pane — a bare minmax(330px,1fr) pushes a 320px
+        phone sideways. */
+    grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr))}
+  #dt-details .ac-card{padding:17px 19px;margin-bottom:0}
+  #dt-details .ac-card h3{margin:0 0 11px;font-size:17px}
+  /*  Four facts in a flex row wrap 3-then-1, which reads as a mistake. Two
+      even columns, so the fourth has company. */
+  #dt-details .ac-ro{display:grid;grid-template-columns:1fr 1fr;
+    gap:9px 18px;padding:10px 12px;margin:0 0 13px}
+  #dt-details .ac-ro b{font-size:12.5px}
+  #dt-details .ac-form{gap:10px 14px}
+  #dt-details .ac-f label{margin-bottom:4px}
+  #dt-details .ac-f input{padding:8px 11px;font-size:13.5px}
+  #dt-details .ac-fine{font-size:12px;line-height:1.5;margin:11px 0 11px}
+  #dt-details .ac-note{margin-top:9px}
+  /*  Two buttons on one line, wrapping rather than overflowing. */
+  #dt-details .ac-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  /*  "I have forgotten it" is not a second Change password — it is the way
+      out for someone who cannot use the form above, and it should read as
+      the quieter of the two. */
+  #dt-details .ac-btn.quiet{border:0;background:none;padding:11px 2px;
+    color:var(--navy);text-decoration:underline;text-underline-offset:3px}
+  #dt-details .ac-btn.quiet:hover{color:var(--gold-ink,var(--navy))}
+  #dt-details .ac-btn.quiet:disabled{color:var(--text3);text-decoration:none;
+    cursor:default}
+
+  /*  The plan block is the My plan pane, rendered here. It sits under the two
+      identity cards at full width — its pricing cards need the room, and half
+      of it is a horizontal strip. The compaction rules above are written for
+      the identity cards, so put back the gaps its own stacked cards need. */
+  #details-plan{margin-top:14px}
+  #details-plan .ac-card{margin-bottom:14px}
+  #details-plan .ac-card:last-child{margin-bottom:0}
+  #details-plan .ac{max-width:none}
+  .ac-have{background:var(--green-bg,#ECFDF5);border:1px solid var(--green-border,#A7F3D0);
+    border-radius:9px;padding:13px 15px;font-size:13.5px;line-height:1.55;margin-bottom:14px}
+  .ac-have b{color:var(--green)}
+  .ac-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .ac-steps li{display:flex;gap:10px;align-items:flex-start;font-size:13px;
+    color:var(--text2);line-height:1.55}
+  .ac-steps li b{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--navy);
+    color:#fff;font:600 10px/20px var(--mono);text-align:center}
+  .ac-btn{font:600 13px/1 var(--sans);padding:11px 16px;border-radius:8px;cursor:pointer;
+    border:1.5px solid var(--border);background:var(--white);color:var(--text2)}
+  .ac-btn:hover{border-color:var(--navy)}
+  .ac-btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+  .ac-per{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 16px}
+  .ac-per .ac-pb{font:600 12.5px/1 var(--sans,system-ui);padding:10px 14px;
+    border-radius:8px;border:1.5px solid var(--border);background:var(--white);
+    color:var(--text2);cursor:pointer;display:flex;gap:7px;align-items:baseline}
+  .ac-per .ac-pb em{font:600 10px/1 var(--mono,ui-monospace);font-style:normal;
+    color:var(--green,#0E6B45)}
+  .ac-per .ac-pb.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .ac-per .ac-pb.on em{color:#C9A227}
+  .ac-plans{display:grid;gap:10px;grid-template-columns:1fr}
+  @media(min-width:560px){.ac-plans{grid-template-columns:1fr 1fr}}
+  .ac-plan{border:1px solid var(--border);border-radius:10px;padding:16px 17px;
+    background:var(--white);display:grid;gap:9px;align-content:start}
+  .ac-plan b{font:600 10px/1 var(--mono,ui-monospace);letter-spacing:.13em;
+    color:var(--text3)}
+  .ac-plan i{font:700 23px/1 var(--mono,ui-monospace);font-style:normal;
+    color:var(--navy);font-variant-numeric:tabular-nums}
+  .ac-share{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .ac-share .ac-btn{text-decoration:none;display:inline-block}
+  .ac-fine{margin:14px 0 0;font-size:12px;line-height:1.55;color:var(--text3);
+    padding-top:12px;border-top:1px solid var(--border)}
+</style>
+<script>
+(function () {
+  var API = (window.DSEEnv ? window.DSEEnv.apiBase
+             : "https://dsepulse-backend-production.up.railway.app");
+  function tok(){ try { return localStorage.getItem("dse_token") || ""; } catch(e){ return ""; } }
+  function esc(v){ return String(v == null ? "" : v)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+  async function get(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ "Content-Type": "application/json",
+                                   "Authorization": "Bearer " + tok() }, opts.headers || {});
+    var r, j = null;
+    try { r = await fetch(API + path, opts); } catch (e) { return { ok:false, data:null }; }
+    try { j = await r.json(); } catch (e) {}
+    return { ok: r.ok, status: r.status, data: j };
+  }
+
+  /*  POST with the caller's token, returning {ok,status,data} like get() does.
+      NOT the global post() defined further up this file: that one belongs to
+      the landing page's sign-in code, sends no Authorization header, and
+      THROWS on a non-2xx instead of returning a result. Calling it from here
+      would 401 and then reject unhandled, which looks like a dead button. */
+  async function send(path, body) {
+    return get(path, { method: "POST", body: JSON.stringify(body || {}) });
+  }
+
+  function gate(what) {
+    return '<div class="ac"><div class="ac-card"><h3>Sign in</h3>' +
+           '<p>' + esc(what) + '</p>' +
+           '<button class="ac-btn primary" onclick="window.openAuth&&window.openAuth(\'login\')">' +
+           'Sign in</button></div></div>';
+  }
+
+  /* ── My plan ─────────────────────────────────────────────────────────── */
+  //  Cancelling does NOT end access. It stops the renewal and leaves the
+  //  period already paid for intact — which is what "cancel anytime" has to
+  //  mean if the promise on the pricing page is to be true.
+
+  /*  One way in to the plan pane, so every "see plans" in the product lands
+      somewhere that can actually take a payment. Before this, the holdings
+      gate sent an expired trial to the landing page's pricing section, whose
+      three buttons do nothing but reopen the dashboard.  */
+  window.openAccountPlan = function () {
+    try {
+      if (window.showView) window.showView("dashboard");
+      var rail = document.querySelector('.cat-btn[data-cat="account"]');
+      if (rail) rail.click();
+      var tab = document.querySelector('.cat-panel[data-cat="account"] .tab');
+      if (tab) tab.click();
+    } catch (e) {}
+  };
+
+  /*  My details — the customer's own record.
+
+      Two forms, deliberately separate. Changing a name and changing a password
+      are different acts with different consequences, and putting them behind
+      one Save button means somebody who wanted to fix a typo in their phone
+      number has to think about their password.  */
+  window.buildDetailsPane = async function () {
+    var host = document.getElementById("details-root");
+    if (!host) return;
+    if (!tok()) { host.innerHTML = gate("Your details are private to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your details…</p></div></div>';
+
+    var r = await get("/api/auth/me");
+    if (!r.ok || !r.data) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>My details</h3>' +
+        '<p>Could not load your details just now. Please try again shortly.</p></div></div>';
+      return;
+    }
+    var d = r.data;
+    var since = d.member_since ? String(d.member_since).slice(0, 10) : "—";
+
+    host.innerHTML =
+      '<div class="ac"><div class="ac2">' +
+
+      '<div class="ac-card"><h3>My details</h3>' +
+        /*  The referral code and the account reference were here and are not
+            any more. The code already lives on Refer a friend WITH the share
+            link, the explanation and the count of who signed up; here it was
+            eight characters with nothing to do with them. The reference was
+            for quoting to support, and there is no contact address published
+            yet to quote it to — an identifier a customer cannot act on is
+            furniture. Both come back the day they have somewhere to go.  */
+        '<div class="ac-ro">' +
+          '<div><b>' + esc(d.email || "—") + '</b><span>email · sign-in</span></div>' +
+          '<div><b>' + esc(since) + '</b><span>member since</span></div>' +
+        '</div>' +
+
+        '<div class="ac-form two">' +
+          '<div class="ac-f"><label for="ac-name">Name</label>' +
+            '<input id="ac-name" maxlength="80" value="' + esc(d.name || "") + '"></div>' +
+          '<div class="ac-f"><label for="ac-phone">Phone</label>' +
+            '<input id="ac-phone" maxlength="20" placeholder="01XXXXXXXXX" value="' +
+            esc(d.phone || "") + '"></div>' +
+        '</div>' +
+        '<p class="ac-fine">Your email is how you sign in and where receipts ' +
+          'go, so it cannot be changed here. Contact us if it needs ' +
+          'correcting.</p>' +
+        '<button class="ac-btn primary" id="ac-save">Save changes</button>' +
+        '<p class="ac-note" id="ac-dmsg"></p>' +
+      '</div>' +
+
+      '<div class="ac-card"><h3>Change password</h3>' +
+        '<div class="ac-form">' +
+          '<div class="ac-f"><label for="ac-pw0">Current password</label>' +
+            '<input id="ac-pw0" type="password" autocomplete="current-password"></div>' +
+          '<div class="ac-f"><label for="ac-pw1">New password</label>' +
+            '<input id="ac-pw1" type="password" autocomplete="new-password" ' +
+            'maxlength="72" placeholder="At least 8 characters"></div>' +
+          '<div class="ac-f"><label for="ac-pw2">New password again</label>' +
+            '<input id="ac-pw2" type="password" autocomplete="new-password" ' +
+            'maxlength="72"></div>' +
+        '</div>' +
+        '<p class="ac-fine">Anyone signed in on another device stays signed in ' +
+          'until that session expires.</p>' +
+        '<div class="ac-acts">' +
+          '<button class="ac-btn" id="ac-pwgo">Change password</button>' +
+          //  The way out for the person who cannot fill in the first box.
+          //  It goes to the address on the account, which is on screen just
+          //  above — nothing is typed, so nothing can be mistyped.
+          '<button class="ac-btn quiet" id="ac-forgot">' +
+            'I have forgotten my password</button>' +
+        '</div>' +
+        '<p class="ac-note" id="ac-pmsg"></p>' +
+      '</div>' +
+
+      '</div>' +
+      //  Filled by the same builder the My plan tab uses. Not a copy of it —
+      //  a copy is two things to keep in step, and the one that drifts is
+      //  always the one showing a price.
+      '<div id="details-plan"></div>' +
+      '</div>';
+
+    /* ── save name and phone ─────────────────────────────────────────── */
+    var save = document.getElementById("ac-save");
+    var dmsg = document.getElementById("ac-dmsg");
+    save.onclick = async function () {
+      var name  = document.getElementById("ac-name").value.trim();
+      var phone = document.getElementById("ac-phone").value.trim();
+      dmsg.className = "ac-note";
+      if (!name) { dmsg.textContent = "Please enter your name."; return; }
+      save.disabled = true; dmsg.textContent = "Saving…";
+      var res = await send("/api/account/profile", { name: name, phone: phone });
+      save.disabled = false;
+      if (res.ok) {
+        dmsg.className = "ac-note ok";
+        dmsg.textContent = "Saved.";
+        //  the greeting in the header carries the name; keep it honest
+        try {
+          var g = document.getElementById("greet-main");
+          if (g && window.__dseGreet) g.textContent = window.__dseGreet;
+        } catch (e) {}
+      } else {
+        dmsg.className = "ac-note err";
+        dmsg.textContent = (res.data && res.data.detail) || "Could not save.";
+      }
+    };
+
+    /* ── change password ─────────────────────────────────────────────── */
+    var go   = document.getElementById("ac-pwgo");
+    var pmsg = document.getElementById("ac-pmsg");
+    go.onclick = async function () {
+      var a = document.getElementById("ac-pw0").value;
+      var b = document.getElementById("ac-pw1").value;
+      var c = document.getElementById("ac-pw2").value;
+      pmsg.className = "ac-note";
+      if (!a)        { pmsg.textContent = "Enter your current password."; return; }
+      if (b.length < 8) { pmsg.textContent = "The new password must be at least 8 characters."; return; }
+      //  Caught here rather than at the server: a typo in the confirmation is
+      //  the commonest way to change a password to something you do not know.
+      if (b !== c)   { pmsg.textContent = "The two new passwords do not match."; return; }
+      go.disabled = true; pmsg.textContent = "Changing…";
+      var res = await send("/api/account/password",
+                           { current_password: a, new_password: b });
+      go.disabled = false;
+      if (res.ok) {
+        pmsg.className = "ac-note ok";
+        pmsg.textContent = "Your password has been changed.";
+        document.getElementById("ac-pw0").value = "";
+        document.getElementById("ac-pw1").value = "";
+        document.getElementById("ac-pw2").value = "";
+      } else {
+        pmsg.className = "ac-note err";
+        pmsg.textContent = (res.data && res.data.detail) || "Could not change it.";
+      }
+    };
+
+    /* ── forgotten it ────────────────────────────────────────────────────
+       The form above is deliberately unusable without the current password
+       — a token left in a borrowed browser is otherwise enough to take the
+       account outright. That is the right rule, and it leaves exactly one
+       person stranded: the one who is signed in on a device that remembered
+       the password for them and does not know it any more. Sending them to
+       the sign-out screen to use "forgot password" is a strange thing to
+       ask of somebody who is already signed in.
+
+       So this reuses the reset flow that already exists — no new endpoint,
+       no new email template. The address is the one on the account, read
+       from the record and never typed, so it cannot be mistyped or pointed
+       somewhere else. The link lasts an hour and stops working the moment
+       the password changes, so a second click does not leave two live
+       links; and one send per visit is plenty, so the button retires
+       afterwards rather than letting anyone mail themselves in a loop. */
+    var forgot = document.getElementById("ac-forgot");
+    forgot.onclick = async function () {
+      var to = d.email || "";
+      if (!to) { pmsg.className = "ac-note err";
+                 pmsg.textContent = "No email is on this account."; return; }
+      forgot.disabled = true;
+      pmsg.className = "ac-note"; pmsg.textContent = "Sending…";
+      var res = await send("/api/auth/forgot", { email: to });
+      if (res.ok) {
+        pmsg.className = "ac-note ok";
+        pmsg.textContent = "A reset link is on its way to " + to +
+          ". It works for one hour, and once.";
+        forgot.textContent = "Link sent";
+      } else {
+        forgot.disabled = false;
+        pmsg.className = "ac-note err";
+        pmsg.textContent = (res.data && res.data.detail) ||
+          "Could not send the link just now.";
+      }
+    };
+
+    /*  The plan, and the way to pay for it, at the foot of this pane. Awaited
+        last so a slow /api/config never holds up the details above it. */
+    try { await window.buildPlanPane("details-plan"); } catch (e) {}
+  };
+
+  /*  ROOT, not a hard-coded id, because this pane is now built in two places:
+      the My plan tab, and again at the foot of My details so a customer who
+      went looking for their own record can renew without going hunting for
+      another tab.
+
+      The markup carries ids — ac-cancel, ac-plans, ac-buymsg — and the same
+      id cannot exist twice in one document: getElementById returns the first
+      match, so every button in the second copy would silently drive the
+      first. Rather than prefixing every id, only ONE copy is ever live. The
+      pane being looked at builds itself and empties the other. Both are
+      rebuilt from the server on every tab switch anyway, so nothing is lost
+      by throwing one away.  */
+  var PLAN_ROOTS = ["plan-root", "details-plan"];
+  window.buildPlanPane = async function (rootId) {
+    var ROOT = rootId || "plan-root";
+    var host = document.getElementById(ROOT);
+    if (!host) return;
+    PLAN_ROOTS.forEach(function (id) {
+      if (id === ROOT) return;
+      var other = document.getElementById(id);
+      if (other) other.innerHTML = "";
+    });
+    if (!tok()) { host.innerHTML = gate("Your plan and billing are private to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your plan…</p></div></div>';
+
+    var r  = await get("/api/subscription");
+    if (!r.ok || !r.data) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
+                       '<p>Could not load your plan just now. Please try again shortly.</p></div></div>';
+      return;
+    }
+    //  Prices come from the server, never from this page. /api/config is the
+    //  same row the admin Pricing card writes.
+    var cf  = await get("/api/config");
+    var rf  = await get("/api/referral");
+    var d   = r.data, sub = d.subscription || null;
+    var raw = String(d.plan || "free");
+    var eff = String(d.effective_plan || raw);
+    var cancelled = !!(sub && (sub.cancelled || sub.cancelled_at));
+    var until = sub && sub.expires_at ? String(sub.expires_at).slice(0, 10) : null;
+
+    //  A trial is Pro access on a free plan. Showing "PRO" here and "you are on
+    //  the free plan" underneath — which is what this pane used to do — is a
+    //  contradiction the customer has to resolve for us.
+    var onTrial = (raw === "free" && eff !== "free" && !sub);
+    var label   = onTrial ? "FREE TRIAL" : eff.toUpperCase();
+
+    //  The action belongs ON the strip, beside the facts it acts on, not
+    //  stranded under a paragraph. Which action it is depends on the state,
+    //  so it is built first and handed to the strip.
+    var act = "";
+    if (cancelled) {
+      act = '<button class="ac-btn primary" id="ac-resume">Resume subscription</button>';
+    } else if (sub) {
+      act = '<button class="ac-btn" id="ac-cancel">Cancel renewal</button>';
+    }
+
+    var facts =
+      '<div class="sf"><b>' + esc(label) + '</b><span>' +
+        (onTrial ? "full access" : "plan") + '</span></div>' +
+      (sub && sub.days_left != null
+         ? '<div class="sf"><b>' + esc(sub.days_left) + '</b><span>days left</span></div>' : '') +
+      (until ? '<div class="sf"><b>' + esc(until) + '</b><span>' +
+               (cancelled ? 'access ends' : 'renews on') + '</span></div>' : '');
+
+    var head =
+      '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
+      '<span class="ac-k">Current</span>' +
+      '<div class="ac-strip">' + facts +
+        (act ? '<div class="act">' + act + "</div>" : "") +
+      "</div>";
+
+    //  One line under the strip, not a paragraph beside it. Everything these
+    //  said is still said — cancelling does not cut access short, and the
+    //  date it runs to is named — in about half the words.
+    if (onTrial) {
+      head += '<p class="ac-fine">Your trial gives you everything. When it ends you ' +
+              'keep the free tools — choose a plan below to keep the rest.</p>';
+    } else if (!sub) {
+      head += '<p class="ac-fine">You are on the free plan. Choose a plan below to ' +
+              'unlock the full engine output.</p>';
+    } else if (cancelled) {
+      head += '<p class="ac-fine"><b>This will not renew.</b> You keep everything you ' +
+              'have paid for until ' + esc(until || "the end of the period") +
+              ', and can turn renewal back on before then.</p>' +
+              '<p class="ac-note" id="ac-msg"></p>';
+    } else {
+      head += '<p class="ac-fine"><b>Cancel anytime.</b> It stops the renewal, not your ' +
+              'access — you keep ' + esc(label) + ' until ' + esc(until || "it expires") +
+              '.</p><p class="ac-note" id="ac-msg"></p>';
+    }
+    head += "</div>";
+
+    /* ── buy / renew, without leaving the dashboard ────────────────────────
+       This used to send people to the landing page's pricing section, which
+       has no payment button on it at all — its three buttons just reopen the
+       dashboard. So a trial user on day six had no way to pay from the one
+       screen they actually use. They are here; the checkout should be too. */
+    var PR = (cf.ok && cf.data && cf.data.pricing) || null;
+    if (PR) {
+      var periods = [["monthly", "Monthly"], ["quarterly", "Quarterly"],
+                     ["annual", "Annual"]].filter(function (p) { return PR[p[0]]; });
+      var ent = (rf.ok && rf.data && rf.data.usable_pct) || 0;
+
+      head +=
+        '<div class="ac-card"><h3>' + (sub ? "Renew or change plan" : "Choose a plan") + "</h3>" +
+        (ent ? '<div class="ac-have"><b>' + esc(ent) + '% off is waiting.</b> It is ' +
+               'applied by the server when you check out — the exact amount is shown ' +
+               'on the payment page.</div>' : "") +
+        '<div class="ac-per" id="ac-per">' +
+          periods.map(function (p, i) {
+            var lab = (PR[p[0]] && PR[p[0]].label) || "";
+            return '<button type="button" class="ac-pb' + (i === 0 ? " on" : "") +
+                   '" data-p="' + p[0] + '">' + p[1] +
+                   (lab ? '<em>' + esc(lab) + "</em>" : "") + "</button>";
+          }).join("") +
+        "</div><div class='ac-plans' id='ac-plans'></div>" +
+        '<p class="ac-note" id="ac-buymsg"></p></div>';
+    }
+    host.innerHTML = head + "</div>";
+
+    /* ── cancel / resume ──────────────────────────────────────────────── */
+    var cancel = document.getElementById("ac-cancel");
+    var resume = document.getElementById("ac-resume");
+    var msg    = document.getElementById("ac-msg");
+    if (cancel) cancel.onclick = async function () {
+      if (!window.confirm("Stop your subscription from renewing? You keep access " +
+                          "until " + (until || "the end of the period") + ".")) return;
+      cancel.disabled = true; msg.className = "ac-note"; msg.textContent = "Cancelling…";
+      var res = await get("/api/subscription/cancel", { method: "POST", body: "{}" });
+      if (res.ok) { window.buildPlanPane(ROOT); }
+      else { cancel.disabled = false; msg.textContent =
+             (res.data && res.data.detail) || "Could not cancel just now."; }
+    };
+    if (resume) resume.onclick = async function () {
+      resume.disabled = true; msg.className = "ac-note"; msg.textContent = "Resuming…";
+      var res = await get("/api/subscription/resume", { method: "POST", body: "{}" });
+      if (res.ok) { window.buildPlanPane(ROOT); }
+      else { resume.disabled = false; msg.textContent =
+             (res.data && res.data.detail) || "Could not resume just now."; }
+    };
+
+    /* ── the plan cards ───────────────────────────────────────────────── */
+    if (!PR) return;
+    var period = (document.querySelector("#ac-per .ac-pb.on") || {}).dataset
+                 ? document.querySelector("#ac-per .ac-pb.on").dataset.p : "monthly";
+
+    function taka(n) {
+      //  Formatting only. The FIGURE is the server's — this page never works
+      //  out a discount, a saving or a total.
+      return "৳" + Number(n).toLocaleString("en-US");
+    }
+    function drawPlans() {
+      var box = document.getElementById("ac-plans");
+      if (!box) return;
+      var row = PR[period] || {};
+      box.innerHTML = ["premium", "pro"].filter(function (p) { return row[p]; })
+        .map(function (p) {
+          var mine = (eff === p && sub && !cancelled);
+          return '<div class="ac-plan"><b>' + p.toUpperCase() + "</b>" +
+            "<i>" + taka(row[p]) + "</i>" +
+            '<button class="ac-btn primary" data-plan="' + p + '">' +
+            (mine ? "Extend " + p.charAt(0).toUpperCase() + p.slice(1)
+                  : "Choose " + p.charAt(0).toUpperCase() + p.slice(1)) + "</button></div>";
+        }).join("");
+      [].slice.call(box.querySelectorAll("button[data-plan]")).forEach(function (b) {
+        b.onclick = function () { startPayment(b.dataset.plan, period, b); };
+      });
+    }
+    [].slice.call(document.querySelectorAll("#ac-per .ac-pb")).forEach(function (b) {
+      b.onclick = function () {
+        [].slice.call(document.querySelectorAll("#ac-per .ac-pb"))
+          .forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        period = b.dataset.p;
+        drawPlans();
+      };
+    });
+    drawPlans();
+
+    async function startPayment(plan, per, btn) {
+      var m = document.getElementById("ac-buymsg");
+      btn.disabled = true; btn.textContent = "Opening payment…";
+      m.className = "ac-note"; m.textContent = "";
+      var res = await get("/api/payment/init",
+                          { method: "POST", body: JSON.stringify({ plan: plan, period: per }) });
+      if (res.ok && res.data && res.data.gateway_url) {
+        //  Hand over to SSLCommerz. Nothing about the amount is decided here —
+        //  the server priced it and the gateway is told by the server.
+        window.location.href = res.data.gateway_url;
+        return;
+      }
+      btn.disabled = false;
+      drawPlans();
+      m.textContent = (res.data && res.data.detail) ||
+                      "Could not start the payment. Please try again shortly.";
+    }
+  };
+
+  /* ── Referral Center ─────────────────────────────────────────────────── */
+  //  The counts are deliberately "invited" and "paid", not "earned so far".
+  //  A referral only becomes money when the friend's payment clears, and a
+  //  screen that showed a running total for invitations would be promising
+  //  something the server has not agreed to.
+  window.buildReferPane = async function () {
+    var host = document.getElementById("refer-root");
+    if (!host) return;
+    if (!tok()) { host.innerHTML = gate("Your referral link belongs to your account."); return; }
+    host.innerHTML = '<div class="ac"><div class="ac-card"><p>Loading your link…</p></div></div>';
+
+    var r = await get("/api/referral");
+    var d = r.data;
+    if (!r.ok || !d || !d.enabled || !d.code) {
+      host.innerHTML = '<div class="ac"><div class="ac-card"><h3>Refer a friend</h3>' +
+        '<p>' + (d && d.enabled === false
+                 ? "Referrals are not open at the moment."
+                 : "Could not load your referral link just now.") + '</p></div></div>';
+      return;
+    }
+
+    //  What they can spend right now. The server has already applied the
+    //  ceiling and decided the order — this only prints the answer, because a
+    //  page that works out a discount for itself is a page that can be argued
+    //  with.
+    var have = "";
+    if (d.usable_pct > 0) {
+      have = '<div class="ac-have"><b>' + esc(d.usable_pct) + '% off your next payment.</b> ' +
+        (d.welcome_pct ? "That includes the " + esc(d.welcome_pct) +
+                         "% welcome discount from your invitation, which is used first. " : "") +
+        'Applied automatically at checkout — there is nothing to type.' +
+        (d.next_expiry ? ' Your next reward expires ' +
+                         esc(String(d.next_expiry).slice(0, 10)) + '.' : '') +
+        '</div>';
+    }
+
+    //  Carry-forward, said plainly. "3 available, 30% usable" looks like a
+    //  contradiction unless the page explains that the cap is per purchase.
+    var carry = "";
+    if (d.rewards_available * d.unit_pct > d.max_discount_pct) {
+      carry = '<p class="ac-note">You are holding more than one purchase can use. ' +
+        'The maximum on any single payment is ' + esc(d.max_discount_pct) +
+        '%, and the rest waits for your next one.</p>';
+    }
+
+    var url  = d.link;
+    var msg  = "I use DSE Pulse for Dhaka Stock Exchange signals. Sign up with my " +
+               "link and you get " + d.referred_pct + "% off your first subscription: ";
+    var wa   = "https://wa.me/?text=" + encodeURIComponent(msg + url);
+    var fb   = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url);
+
+    host.innerHTML =
+      '<div class="ac">' +
+      '<div class="ac-card"><h3>Refer a friend</h3>' +
+      '<p>' + esc(d.terms || "") + '</p>' + have + carry +
+      '<span class="ac-k">Your link</span>' +
+      '<div class="ac-link"><input id="ac-reflink" readonly value="' + esc(url) + '">' +
+      '<button type="button" id="ac-refcopy">Copy</button></div>' +
+      '<div class="ac-share">' +
+        '<a class="ac-btn" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        '<a class="ac-btn" href="' + esc(fb) + '" target="_blank" rel="noopener">Facebook</a>' +
+      '</div>' +
+      '<p class="ac-note" id="ac-refmsg"></p>' +
+
+      //  The four concepts, kept apart on purpose. One combined "rewards"
+      //  number would hide the difference between what has been earned and
+      //  what can actually be spent — which is exactly the thing a customer
+      //  writes in to ask about.
+      '<span class="ac-k">Your rewards</span>' +
+      '<div class="ac-row">' +
+        '<div><b>' + esc(d.successful_referrals) + '</b><span>friends who paid</span></div>' +
+        '<div><b>' + esc(d.rewards_earned)  + '</b><span>rewards earned</span></div>' +
+        '<div><b>' + esc(d.rewards_used)    + '</b><span>rewards used</span></div>' +
+        '<div><b>' + esc(d.rewards_available) + '</b><span>available now</span></div>' +
+      '</div>' +
+      (d.pending ? '<p class="ac-note">' + esc(d.pending) + ' more signed up but have ' +
+                   'not paid yet. A reward is earned when they do, not before.</p>' : '') +
+      '</div>' +
+
+      '<div class="ac-card"><h3>How it works</h3><ul class="ac-steps">' +
+      '<li><b>1</b><span>Share your link. It stays the same for as long as you ' +
+        'have an account.</span></li>' +
+      '<li><b>2</b><span>They create their account through it. The invitation is ' +
+        'attached at that moment and cannot be added later.</span></li>' +
+      '<li><b>3</b><span>They pay for their first subscription and get ' +
+        esc(d.referred_pct) + '% off it — any package.</span></li>' +
+      '<li><b>4</b><span>Once that payment clears, you earn ' + esc(d.unit_pct) +
+        '% off your own next payment. Not for the signup — for the payment.</span></li>' +
+      '<li><b>5</b><span>Rewards add up to a maximum of ' + esc(d.max_discount_pct) +
+        '% on one purchase. Anything above that waits for your next one.</span></li>' +
+      '</ul>' +
+      '<p class="ac-fine">A referral reward is a percentage discount on your own ' +
+      'subscription. It is not cash, cannot be withdrawn or transferred, and cannot ' +
+      'be used to pay for someone else’s subscription.</p>' +
+      '</div></div>';
+
+    var btn = document.getElementById("ac-refcopy");
+    if (btn) btn.onclick = function () {
+      var inp = document.getElementById("ac-reflink"), m = document.getElementById("ac-refmsg");
+      try {
+        inp.select();
+        if (navigator.clipboard) { navigator.clipboard.writeText(inp.value); }
+        else { document.execCommand("copy"); }
+        m.className = "ac-note ok"; m.textContent = "Link copied.";
+      } catch (e) {
+        m.className = "ac-note"; m.textContent = "Select the link above and copy it.";
+      }
+    };
+  };
+})();
+
+/* ── the frame sizes itself to what is in it ────────────────────────────────
+   A fixed height is a guess about content nobody has measured. Guess high and
+   the pane ends in white space; guess low and the tool gets its own scrollbar
+   inside the page's scrollbar — two bars for one document, which is the thing
+   that made Market Pulse feel like several pages.
+
+   Both documents are on the same origin, so the shell can simply ask the tool
+   how tall it is. On a desk monitor the content is shorter than the window and
+   the frame shrinks to fit; on a phone the content is taller, the frame grows,
+   and the PAGE scrolls — one scrollbar, the browser's own, in the place a
+   reader expects it.
+
+   The CSS height stays as the fallback: if anything here throws, or a page is
+   ever served from another origin, the viewport-based calc still applies and
+   nothing is worse than it was.  */
+(function () {
+  var RO = null;
+
+  function fit() {
+    var f = document.getElementById('tool-frame');
+    if (!f || f.style.display === 'none') return;
+    try {
+      var d = f.contentDocument;
+      if (!d || !d.body) return;
+      //  documentElement.scrollHeight is never LESS than the frame's own
+      //  viewport, so asking it how tall the content is returns the frame's
+      //  height back — it can only ever say "taller", never "shorter". The
+      //  body is the honest measure, plus whatever margins it carries.
+      var cs = (d.defaultView || window).getComputedStyle(d.body);
+      var h = d.body.scrollHeight + (parseFloat(cs.marginTop) || 0)
+                                  + (parseFloat(cs.marginBottom) || 0);
+      //  Fall back to the document if a page styles its body to no height.
+      if (!h || h < 80) h = d.documentElement.scrollHeight;
+      if (!h || h < 80) return;   // still painting; leave the CSS height alone
+      //  Resizing the frame resizes the document inside it, which fires the
+      //  observer again. Without a threshold that is an oscillation; with one
+      //  it settles in a step or two.
+      var cur = parseFloat(f.style.height) || 0;
+      if (Math.abs(h - cur) > 4) f.style.height = h + 'px';
+    } catch (e) {}
+  }
+
+  function watch() {
+    var f = document.getElementById('tool-frame');
+    if (!f) return;
+    fit();
+    //  Tool pages fetch their data after load, so the height at load is not
+    //  the final height. Watch the document itself rather than guessing how
+    //  long the fetch takes.
+    try {
+      if (RO) { RO.disconnect(); RO = null; }
+      var d = f.contentDocument;
+      if (d && d.documentElement && window.ResizeObserver) {
+        RO = new ResizeObserver(fit);
+        RO.observe(d.documentElement);
+      }
+    } catch (e) {}
+    //  Belt and braces for browsers without ResizeObserver, and for content
+    //  that arrives in more than one step.
+    [250, 700, 1500, 3000].forEach(function (t) { setTimeout(fit, t); });
+  }
+
+  function bind() {
+    var f = document.getElementById('tool-frame');
+    if (!f) return;
+    f.addEventListener('load', watch);
+    if (f.contentDocument && f.contentDocument.readyState === 'complete') watch();
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+
+  window.addEventListener('resize', function () { setTimeout(fit, 120); });
+  window.__dseFitFrame = fit;
+})();
+
 </script>
 </body>
 </html>

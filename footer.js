@@ -1,0 +1,356 @@
+/* DSE Pulse — the site footer, in one file
+ * ===========================================================================
+ * WHY THIS IS A SCRIPT AND NOT MARKUP IN 25 PAGES
+ *   The content below is going to change. Addresses, phone numbers, links,
+ *   wording — all of it. Twenty-five copies of a footer means twenty-five
+ *   edits every time, and the twenty-fifth is the one that gets missed and
+ *   sits there for a year saying something out of date.
+ *
+ *   So: edit CONTENT below, paste this one file, and every page changes.
+ *
+ * HOW IT GETS ONTO A PAGE
+ *   env.js loads it. Every page already loads env.js, so no page needs a new
+ *   script tag and no page needs editing to gain a footer.
+ *
+ * WHERE IT PUTS ITSELF
+ *   Always as the LAST CHILD OF <body>, and a page's own footer is removed
+ *   first so nobody ends up with two. That is how home.html and shell.html get
+ *   the shared version without being edited.
+ *
+ *   The "last child of body" part matters and is not tidiness. home.html's
+ *   footer sat inside <div class="wrap">, which is 1080px wide and centred, so
+ *   the footer's dark background stopped 1080px short of the window while the
+ *   header band above it ran edge to edge. A band across the top and a floating
+ *   slab in the middle at the bottom is the thing people notice first. Lifted
+ *   out of the wrap, the background is full width and the CONTENT inside is
+ *   held to the same 1080px as the header, so the two line up.
+ *
+ * WHERE IT DOES NOT APPEAR
+ *   - inside an iframe: the dashboard loads tool pages in one, and a footer
+ *     there would sit stranded in the middle of the screen rather than at the
+ *     bottom of anything;
+ *   - on admin.html and audit.html: internal pages, not public ones.
+ * ===========================================================================
+ */
+(function () {
+  "use strict";
+  if (window.__dseFooter) return;
+  window.__dseFooter = true;
+
+  /* ═══ CONTENT — this is the part we edit ═══════════════════════════════
+   *  Anything left as an empty string is NOT rendered. That is deliberate:
+   *  a blank value shows nothing at all rather than an empty row, a dead
+   *  link, or a placeholder that ships by accident.
+   *  --------------------------------------------------------------------- */
+  var CONTENT = {
+
+    brand: {
+      name: "DSE Pulse",
+      line: "Bangladesh Stock Intelligence · dsepulse.com",
+      //  One or two sentences. Keep it factual — this sits above a disclaimer
+      //  that says we are not advisers, so it must not read like a promise.
+      about: "The Signal Stack runs every evening after the Dhaka Stock " +
+             "Exchange closes — layered readings over 400+ listed companies, " +
+             "published as an entry, a target and a stop-loss level."
+    },
+
+    columns: [
+      { title: "Product", links: [
+        { label: "Dashboard",           href: "/shell.html" },
+        { label: "Track record",        href: "/trackrecord.html" },
+        { label: "Position calculator", href: "/calculator.html" },
+        { label: "Screener",            href: "/screener.html" }
+      ]},
+      { title: "Market", links: [
+        { label: "DSE (Dhaka Stock Exchange)", href: "https://www.dsebd.org/" },
+        { label: "BSEC (Securities Commission)", href: "https://sec.gov.bd/" },
+        { label: "CDBL (Central Depository)",  href: "https://www.cdbl.com.bd/" },
+        { label: "Bangladesh Bank",            href: "https://www.bb.org.bd/" }
+      ]},
+      { title: "Legal", links: [
+        { label: "Full disclaimer", href: "/disclaimer.html" },
+        { label: "Risk warning",    href: "/disclaimer.html#risk" },
+        { label: "Account",         href: "/shell.html" }
+      ]}
+    ],
+
+    /* ─── FILL THESE IN ────────────────────────────────────────────────────
+     *  Left empty on purpose. An invented address or phone number on a
+     *  financial site is worse than none at all, so each of these renders
+     *  only once it holds a real value.
+     *  ------------------------------------------------------------------- */
+    contact: {
+      title:   "Have a question?",
+      email:   "",          // e.g. "support@dsepulse.com"
+      phone:   "",          // e.g. "+8801XXXXXXXXX"
+      address: "",          // e.g. "Motijheel C/A, Dhaka-1000"
+      hours:   ""           // e.g. "Sunday–Thursday, 10am–6pm"
+    },
+
+    social: {
+      facebook: "https://www.facebook.com/dsepulse",
+      linkedin: "https://www.linkedin.com/company/146100974/",
+      youtube:  "",
+      whatsapp: ""
+    },
+
+    //  The legal text, carried over verbatim from home.html. Do not trim this
+    //  without checking what it is protecting.
+    disclaimer:
+      "<b>Disclaimer.</b> DSE Pulse provides algorithm-generated market data, " +
+      "technical signals, scores and analytics for informational and educational " +
+      "purposes only. DSE Pulse and its operators are not registered or licensed " +
+      "investment advisers, brokers, dealers or portfolio managers, and are not " +
+      "registered with the Bangladesh Securities and Exchange Commission. All " +
+      "signals, conviction scores and labels (including “Buy”, “Strong " +
+      "Buy”, “Watch” and “Avoid”), entry prices, targets and " +
+      "stop-loss levels are automated, rule-based calculations — not " +
+      "recommendations, offers or solicitations. Any taka figure shown is a " +
+      "conditional calculation of what a position would come to at those levels; " +
+      "it is not a forecast of gains, not a promise that any level will be " +
+      "reached, and excludes brokerage commission, taxes and slippage. Trading " +
+      "and investing in shares carries a high level of risk, including the " +
+      "possible loss of all invested capital. Market data is obtained from " +
+      "third-party and publicly available sources and may be delayed, incomplete " +
+      "or inaccurate. Past performance and back-tested results are not indicative " +
+      "of future results. You are solely responsible for your own investment " +
+      "decisions and should consult a licensed adviser. Read the " +
+      "<a href=\"/disclaimer.html\">full disclaimer</a>.",
+
+    copyright: "© 2026 DSE Pulse · Governed by the laws of Bangladesh"
+  };
+  /* ═══ END OF CONTENT ══════════════════════════════════════════════════ */
+
+  var SKIP = ["/admin.html", "/audit.html"];
+
+  function shouldSkip() {
+    try {
+      if (window.top !== window.self) return true;      // inside the dashboard
+    } catch (e) { return true; }                        // cross-origin frame
+    var p = "";
+    try { p = String(window.location.pathname || "").toLowerCase(); } catch (e) {}
+    for (var i = 0; i < SKIP.length; i++) {
+      if (p.indexOf(SKIP[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  var ICON = {
+    facebook: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>',
+    linkedin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.75-1.95C20.4 8.75 21 11 21 14v7h-4v-6.2c0-1.5 0-3.4-2.1-3.4s-2.4 1.6-2.4 3.3V21H9z"/></svg>',
+    youtube:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 12s0-3.4-.4-5a2.7 2.7 0 0 0-1.9-1.9C19 4.7 12 4.7 12 4.7s-7 0-8.7.4A2.7 2.7 0 0 0 1.4 7C1 8.6 1 12 1 12s0 3.4.4 5a2.7 2.7 0 0 0 1.9 1.9c1.7.4 8.7.4 8.7.4s7 0 8.7-.4a2.7 2.7 0 0 0 1.9-1.9c.4-1.6.4-5 .4-5zM9.8 15.3V8.7l5.7 3.3-5.7 3.3z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-.9 1.9-.2 3.1a10 10 0 0 0 4 3.9c1.7.7 2.4.6 3.1.5.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.1l-.5-.3z"/></svg>'
+  };
+  var LABEL = { facebook: "Facebook", linkedin: "LinkedIn",
+                youtube: "YouTube", whatsapp: "WhatsApp" };
+
+  //  TYPE SIZE. The page this sits under runs at 16px. The footer used to run
+  //  at 14px with a 13.5px link and an 11.5px disclaimer, which is what made
+  //  it read as an afterthought printed in the margin — the complaint was that
+  //  the letters were smaller than the body and the whole block went faint.
+  //  Everything here is now within a point or two of the page above it, and
+  //  the disclaimer in particular went from 11.5px at 4.55:1 contrast — which
+  //  passes WCAG AA by 0.05 and is still hard to read — to 13px at 7.26:1.
+  var CSS =
+  //  This footer is injected into ~20 pages that each have their own CSS, and
+  //  several of them style the `footer` element directly. shell.html has
+  //  `footer{display:flex;align-items:center;justify-content:space-between}`,
+  //  which turned the three sections below into three columns sitting side by
+  //  side — the links squeezed into a sliver on the left, the disclaimer in
+  //  the middle and the copyright as a vertical strip on the right.
+  //
+  //  So the first rule RESETS every property a host page is likely to set on
+  //  `footer`. `footer.dsef` outranks a bare `footer` selector, so no
+  //  !important is needed — but each property has to be named, and the ones
+  //  below are exactly the ones that were not.
+  'footer.dsef{all:revert;display:block;background:#10203A;color:#B9C3D2;' +
+    'font:400 15.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;' +
+    'margin:0;padding:0;border:0;box-sizing:border-box;align-items:initial;' +
+    'justify-content:initial;gap:0;flex-wrap:initial;text-align:left;' +
+    'max-width:none;width:auto}' +
+  '.dsef *,.dsef *:before,.dsef *:after{box-sizing:border-box}' +
+  '.dsef>div{width:auto;max-width:none;flex:none;float:none}' +
+  '.dsef a{color:#B9C3D2;text-decoration:none}' +
+  '.dsef a:hover{color:#fff;text-decoration:underline}' +
+  //  1400px with 20px of padding is home.html's `.band .wrap` to the pixel,
+  //  so the footer and the header bar are the same width as each other. It is
+  //  deliberately WIDER than the 1080px reading column between them: at 1080
+  //  the footer left a 370px empty margin either side on a wide screen and
+  //  still ran past 600px tall, because four columns and a disclaimer were
+  //  being squeezed into two thirds of the window.
+  '.dsef>.dsef-in{max-width:1400px;margin:0 auto;padding:34px 32px 22px;' +
+    'display:grid;gap:30px 46px;grid-template-columns:1fr}' +
+  //  Four link columns stacked one above another made this 1,400px tall on a
+  //  phone — longer than the page it sits under. Two columns from 360px up
+  //  halves that, with the brand block spanning both so its paragraph still
+  //  has a readable width. At 1000px it becomes four across and the brand
+  //  takes its own column again.
+  '@media(min-width:360px){.dsef>.dsef-in{grid-template-columns:1fr 1fr}' +
+    '.dsef>.dsef-in>.dsef-brand{grid-column:1/-1}}' +
+  '@media(min-width:1000px){.dsef>.dsef-in{grid-template-columns:1.6fr 1fr 1fr 1.2fr}' +
+    '.dsef>.dsef-in>.dsef-brand{grid-column:auto}}' +
+  '.dsef h4{font:600 11.5px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;' +
+    'text-transform:uppercase;color:#C9A227;margin:0 0 6px;padding-bottom:9px;' +
+    'border-bottom:2px solid rgba(201,162,39,.35);display:inline-block}' +
+  '.dsef ul{list-style:none;margin:12px 0 0;padding:0}' +
+  //  A 16px line is a 16px tap target. The padding takes each link to ~24px
+  //  to touch; the li spacing goes up with it so two neighbouring targets
+  //  do not overlap, which is worse than a small target — it means the tap
+  //  that misses lands on the wrong page rather than on nothing.
+  '.dsef li{margin-bottom:12px;font-size:14.5px}' +
+  '.dsef li a{padding:4px 0}' +
+  '.dsef-brand b{display:block;font:700 20px/1.2 "Playfair Display",Georgia,serif;' +
+    'color:#fff;margin-bottom:4px}' +
+  '.dsef-brand .l{display:block;font:500 13px/1.5 ui-monospace,SFMono-Regular,' +
+    'Menlo,monospace;color:#9AA6B8;margin-bottom:14px}' +
+  '.dsef-brand p{margin:0;font-size:14.5px;max-width:52ch;color:#B9C3D2}' +
+  '.dsef-social{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}' +
+  '.dsef-social a{display:inline-flex;align-items:center;justify-content:center;' +
+    'width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);' +
+    'border:1px solid rgba(255,255,255,.14)}' +
+  '.dsef-social a:hover{background:#C9A227;border-color:#C9A227;color:#10203A}' +
+  '.dsef-social svg{width:15px;height:15px;fill:currentColor}' +
+  '.dsef-c{margin:12px 0 0;font-size:14.5px}' +
+  '.dsef-c div{margin-bottom:9px;display:flex;gap:9px;align-items:flex-start}' +
+  '.dsef-c span{color:#9AA6B8;flex:0 0 auto;font-size:12px;letter-spacing:.06em;' +
+    'text-transform:uppercase;padding-top:2px;min-width:58px}' +
+  //  `.dsef>div{max-width:none}` above resets what host pages do to the
+  //  footer's children, and it OUTRANKS a bare `.dsef-disc` — which is how
+  //  the disclaimer ended up running the full width of the window while
+  //  everything above it sat in a 1080px column. Match the specificity.
+  '.dsef>.dsef-disc{max-width:1400px;margin:0 auto;padding:0 32px 22px;' +
+    'font-size:13px;line-height:1.75;color:#A3AEBF}' +
+  '.dsef-disc b{color:#C4CDD9}' +
+  '.dsef-disc a{color:#C4CDD9;text-decoration:underline}' +
+  //  Same 32px the header bar uses, dropping to the site's 20px on a phone
+  //  where there is no width to give away. Both numbers live in home.html's
+  //  `.band .wrap` too; if one moves, move the other or they stop lining up.
+  '@media(max-width:560px){.dsef>.dsef-in,.dsef>.dsef-disc,.dsef-bar div' +
+    '{padding-left:20px;padding-right:20px}}' +
+  '.dsef-bar{border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22)}' +
+  '.dsef-bar div{max-width:1400px;margin:0 auto;padding:14px 32px;' +
+    'font-size:13.5px;color:#9AA6B8;display:flex;gap:12px;flex-wrap:wrap;' +
+    'justify-content:space-between}';
+
+  function linkHTML(l) {
+    var ext = /^https?:\/\//.test(l.href || "");
+    return '<li><a href="' + esc(l.href) + '"' +
+      (ext ? ' target="_blank" rel="noopener noreferrer"' : "") +
+      ">" + esc(l.label) + "</a></li>";
+  }
+
+  function build() {
+    var C = CONTENT, h = "";
+
+    h += '<div class="dsef-in">';
+
+    h += '<div class="dsef-brand"><b>' + esc(C.brand.name) + "</b>" +
+         '<span class="l">' + esc(C.brand.line) + "</span>" +
+         (C.brand.about ? "<p>" + esc(C.brand.about) + "</p>" : "");
+    var soc = "";
+    ["facebook", "linkedin", "youtube", "whatsapp"].forEach(function (k) {
+      var url = String((C.social || {})[k] || "").trim();
+      if (!/^https:\/\//.test(url)) return;         // no URL, no dead icon
+      soc += '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"' +
+             ' aria-label="DSE Pulse on ' + LABEL[k] + '">' + ICON[k] + "</a>";
+    });
+    if (soc) h += '<div class="dsef-social">' + soc + "</div>";
+    h += "</div>";
+
+    (C.columns || []).forEach(function (col) {
+      if (!col.links || !col.links.length) return;
+      h += "<div><h4>" + esc(col.title) + "</h4><ul>" +
+           col.links.map(linkHTML).join("") + "</ul></div>";
+    });
+
+    var ct = C.contact || {}, rows = "";
+    if (ct.address) rows += "<div><span>Office</span>" + esc(ct.address) + "</div>";
+    if (ct.phone)   rows += '<div><span>Phone</span><a href="tel:' +
+                            esc(ct.phone.replace(/\s+/g, "")) + '">' +
+                            esc(ct.phone) + "</a></div>";
+    if (ct.email)   rows += '<div><span>Email</span><a href="mailto:' +
+                            esc(ct.email) + '">' + esc(ct.email) + "</a></div>";
+    if (ct.hours)   rows += "<div><span>Hours</span>" + esc(ct.hours) + "</div>";
+    //  The whole column disappears until there is something real to put in it.
+    if (rows) h += "<div><h4>" + esc(ct.title || "Contact") + '</h4>' +
+                   '<div class="dsef-c">' + rows + "</div></div>";
+
+    h += "</div>";
+
+    if (C.disclaimer) h += '<div class="dsef-disc">' + C.disclaimer + "</div>";
+    if (C.copyright)  h += '<div class="dsef-bar"><div><span>' +
+                           esc(C.copyright) + "</span></div></div>";
+    return h;
+  }
+
+  function paint() {
+    if (document.querySelector("footer.dsef")) return;
+    try {
+      if (!document.getElementById("dsef-css")) {
+        var st = document.createElement("style");
+        st.id = "dsef-css";
+        st.textContent = CSS;
+        (document.head || document.documentElement).appendChild(st);
+      }
+      var f = document.createElement("footer");
+      f.className = "dsef";
+      f.innerHTML = build();
+
+      //  Take out the page's own footer rather than adding a second one, then
+      //  put ours at the end of the body — NOT where the old one stood. Where
+      //  the old one stood is usually inside a centred column, and a footer
+      //  that only covers the middle of the window looks broken next to a
+      //  header that covers all of it.
+      var old = document.querySelector("footer:not(.dsef)");
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      document.body.appendChild(f);
+
+      /*  LAST CHILD OF BODY IS NOT THE SAME AS BELOW EVERYTHING.
+       *
+       *  Found on reset.html, which is a single centred card and therefore
+       *  centres it the ordinary way — `display:flex` on <body>. Appending to
+       *  a flex container does not put you underneath its other children; it
+       *  puts you BESIDE them. The footer became column two: a card squeezed
+       *  into the left third of the window with the disclaimer filling the
+       *  rest. Every rule in the stylesheet above resets what the PAGE sets on
+       *  `footer`; none of them can reset what the page's own <body> does to
+       *  its children.
+       *
+       *  Any centred-card page is built this way — sign in, reset, thank-you,
+       *  a payment return. This file reaches roughly twenty-five pages and I
+       *  have opened about ten, so the fix has to be the general one.
+       *
+       *  Claim a whole row instead of a column, and only when the parent is
+       *  actually a flex or grid container. On an ordinary page nothing here
+       *  runs and nothing changes — which is what makes it safe to send to
+       *  fifteen pages nobody has looked at.
+       */
+      try {
+        var bs = window.getComputedStyle(document.body);
+        var d  = String(bs.display || "");
+        if (d.indexOf("flex") > -1 || d.indexOf("grid") > -1) {
+          f.style.width = "100%";
+          f.style.flex = "1 0 100%";      // a row of its own, not a column
+          f.style.gridColumn = "1 / -1";  // and the same for a grid parent
+          f.style.alignSelf = "stretch";  // never centred or shrunk to content
+          //  A flex row that cannot wrap has nowhere to put the new row, so
+          //  the footer would still be squeezed in beside the card. This is
+          //  the one property of the page's own that gets touched, and on a
+          //  body holding a single centred card it changes nothing about the
+          //  card — it only gives the footer somewhere to go.
+          if (d.indexOf("flex") > -1 && bs.flexWrap === "nowrap")
+            document.body.style.flexWrap = "wrap";
+        }
+      } catch (e) {}
+    } catch (e) {}
+  }
+
+  if (shouldSkip()) return;
+  if (document.readyState !== "loading") paint();
+  else document.addEventListener("DOMContentLoaded", paint);
+})();

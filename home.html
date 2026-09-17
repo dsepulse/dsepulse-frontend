@@ -1,0 +1,2827 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     DSE Pulse — home                                              2026-08-28
+     ----------------------------------------------------------------------------
+     WHAT CHANGED, AND WHY
+
+     The previous version led with a rank and a score. That is what the engines
+     produce, but it is not what a Dhaka retail investor is asking. They ask:
+     where do I buy, where do I sell, where do I get out, and how much is that
+     worth on my money.
+
+     So this page leads with the PLAN — entry, target, stop — and the arithmetic
+     of that plan on a capital figure the visitor picks. The score and the board
+     rank are still there, demoted to supporting evidence.
+
+     THE COMMERCIAL SPLIT
+       Free   : full levels on a ticker the visitor NAMES. One stock, personal.
+       Paid   : the levels on the ranked board — the 24 stocks they did not name.
+       i.e. you pay for knowing WHICH ticker to search, not for the arithmetic.
+     This is enforced server-side, not in CSS: /api/market/scan omits entry,
+     target and sl entirely unless levels_included is true.
+
+     WHAT THIS PAGE MUST NEVER DO
+       - Claim a win rate, an accuracy or a return. The 15-day record cannot
+         carry one (four of five tools negative over the window).
+       - Present the target as a forecast. It is where the plan takes profit.
+         Every money figure on this page is conditional and says so.
+       - Show a ladder assembled from two different sources. build_card resolves
+         entry/t1/sl from ONE source and reports which via levels_source; the
+         extended targets l2/l3 only agree with that ladder when the source is
+         "derived", so they are shown only then.
+
+     ONE HEADLINE, ONE CAVEAT
+       /api/analyse reports the technical ENGINE's score — the same number the
+       board ranks on. The confluence reading stays a CAVEAT beneath, never a
+       competing verdict tag. "STRONG BUY" and "AVOID" must never appear as two
+       equal-weight answers to the same question.
+   ========================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DSE Pulse — Find the Signal</title>
+<meta name="description" content="Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+
+<script src="/env.js"></script>
+<script>/* DSE Pulse env guard — must stay INLINE. An external file would share the
+   very failure this exists to catch. Runs only if env.js did not. */
+window.DSEEnv = window.DSEEnv || (function () {
+  var h = ""; try { h = String(location.hostname || "").toLowerCase(); } catch (e) {}
+  var dev = (h === "localhost" || h === "127.0.0.1" || h === "" ||
+             h.indexOf("dev.") === 0 ||
+             (h.indexOf("--") !== -1 && /\.netlify\.app$/.test(h)));
+  var api = dev ? "https://dsepulse-backend-development.up.railway.app"
+                : "https://dsepulse-backend-production.up.railway.app";
+  try { console.warn("[DSE Pulse] env.js did not load — resolved " +
+        (dev ? "development" : "production") + " inline"); } catch (e) {}
+  try {
+    var paint = function () {
+      if (!document.body || document.getElementById("dse-env-fallback")) return;
+      var b = document.createElement("div");
+      b.id = "dse-env-fallback";
+      b.textContent = dev ? "DEV · env.js failed" : "env.js failed";
+      b.style.cssText = "position:fixed;left:0;bottom:0;z-index:2147483647;" +
+        "background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;" +
+        "padding:5px 8px;border-top-right-radius:4px;letter-spacing:.06em;" +
+        "pointer-events:none";
+      document.body.appendChild(b);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", paint);
+    } else { paint(); }
+  } catch (e) {}
+  return { name: dev ? "development" : "production", apiBase: api,
+           apiHost: api.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+           isDev: dev, fallback: true };
+})();</script>
+<script src="/auth.js"></script>
+
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --red:#B3261E;   --red-bg:#FBEAE8;   --red-bd:#EFC9C4;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--cream);color:var(--ink);font:400 16px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+/* ── live band ─────────────────────────────────────────────────────────── */
+.band{background:var(--navy);color:#fff}
+/*  The chrome runs wider than the reading column on purpose. The bar and the
+    footer are navigation and small print, not prose — holding them to the
+    1080px measure that suits body text left a 370px empty margin either side
+    of the footer on a wide screen and pushed it to well over 600px tall.
+    Both are set here so they stay the same width as each other; the content
+    between them is unchanged. */
+.band .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 26px;
+  padding:11px 32px;max-width:1400px}
+/*  32px is what keeps the brand off the glass on a 1440 screen, where the
+    1400px cap leaves almost no margin of its own. A phone has none to spare,
+    so it goes back to the site's 20px there. footer.js matches both. */
+@media (max-width:560px){ .band .wrap{padding-left:20px;padding-right:20px} }
+/*  The bar is sticky, so every row it wraps to is a row taken off the screen
+    for the whole visit. On a 320px phone it was wrapping to 165px — 29% of
+    the viewport, permanently. Two of the four figures go on small screens;
+    DSEX and the date are the two that answer "is this today's data", which is
+    the only question the bar is there to answer at a glance. Both survive in
+    full further down the page. */
+@media (max-width:700px){ .band .stat.opt{display:none} }
+/*  And the nav row goes too. Every link in it is an anchor to a section of
+    this same page — on a phone that is what scrolling is for — and the one
+    that is not, Pricing, is where the gold Sign up button beside it already
+    goes. Dropping it takes a whole row off a bar that never leaves the
+    screen. */
+@media (max-width:620px){ .band .bnav{display:none} }
+.band .brand{font:700 15px/1 var(--sans);letter-spacing:.02em;margin-right:auto;
+  display:flex;align-items:center;gap:8px}
+.band .brand i{width:7px;height:7px;border-radius:50%;background:var(--gold);
+  display:inline-block}
+.stat{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+.stat .l{font:500 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.5)}
+.stat .v{font:600 14px/1 var(--mono);font-variant-numeric:tabular-nums}
+.stat .v.up{color:#5FD08A}.stat .v.dn{color:#F1948A}
+.band a.sign{font:600 12px/1 var(--sans);color:var(--navy);background:var(--gold);
+  padding:8px 13px;border-radius:6px;text-decoration:none;white-space:nowrap}
+
+/* ── hero ──────────────────────────────────────────────────────────────── */
+/*  52px of air above a headline is right on a page somebody scrolls through
+    and wrong on one whose job is to show six cards at a glance. The six
+    engine cards ARE the argument; everything above them is the setup, and
+    the setup was pushing the second row past the fold on a 768px laptop and
+    on a subscriber's 900px screen, where the plan banner costs another 83px. */
+.hero{padding:30px 0 18px;text-align:center}
+.kicker{font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold-d);margin-bottom:16px}
+h1{font:700 clamp(28px,4.6vw,42px)/1.12 var(--serif);margin:0 0 11px;
+  letter-spacing:-.015em;text-wrap:balance}
+.hero p.sub{max-width:56ch;margin:0 auto;color:var(--ink2);font-size:16px}
+form.ask{display:flex;gap:9px;max-width:520px;margin:20px auto 0;flex-wrap:wrap}
+form.ask input{flex:1 1 240px;min-width:0;font:600 16px/1 var(--mono);
+  letter-spacing:.06em;text-transform:uppercase;padding:13px 16px;border-radius:9px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink)}
+form.ask input::placeholder{font-weight:400;letter-spacing:.03em;color:var(--ink3)}
+form.ask input:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(212,160,23,.16)}
+form.ask button{font:600 16px/1 var(--sans);padding:16px 26px;border-radius:9px;
+  border:0;background:var(--navy);color:#fff;cursor:pointer;font-family:inherit}
+form.ask button:hover{background:var(--navy2)}
+form.ask button:disabled{opacity:.55;cursor:default}
+.eg{margin:13px 0 0;font-size:13px;color:var(--ink3)}
+.eg button{background:none;border:0;color:var(--gold-d);font:600 13px/1 var(--mono);
+  cursor:pointer;padding:2px 4px;font-family:var(--mono)}
+.eg button:hover{text-decoration:underline}
+
+/* ── capital chips ─────────────────────────────────────────────────────── */
+.cap{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;
+  margin:20px 0 0}
+.cap .lbl{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.03em}
+.cap button{font:600 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;
+  padding:9px 13px;border-radius:20px;border:1.5px solid var(--bd);
+  background:var(--paper);color:var(--ink2);cursor:pointer}
+.cap button:hover{border-color:var(--gold-bd)}
+.cap button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);
+  color:#fff}
+.caphint{font:400 11.5px/1.45 var(--sans);color:var(--ink3);width:100%;
+  margin-top:6px}
+
+/* ── verdict card ──────────────────────────────────────────────────────── */
+#out{max-width:660px;margin:24px auto 0}
+.card{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden;text-align:left;box-shadow:0 2px 14px rgba(13,31,60,.06)}
+.card .top{padding:19px 22px 15px;display:flex;gap:16px;align-items:flex-start;
+  flex-wrap:wrap}
+.card .who{flex:1 1 auto;min-width:0}
+.card .code{font:700 24px/1.1 var(--sans);letter-spacing:.01em}
+.card .meta{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.card .px{text-align:right;font-variant-numeric:tabular-nums}
+.card .px .n{font:600 20px/1.1 var(--mono)}
+.card .px .c{font:500 12.5px/1 var(--mono);margin-top:5px}
+.up{color:var(--green)}.dn{color:var(--red)}
+
+/* the plan — three levels, in the order they are used */
+.plan{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--bd)}
+.lv{padding:15px 16px;border-right:1px solid var(--bd);text-align:center}
+.lv:last-child{border-right:0}
+.lv .k{font:600 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3)}
+.lv .p{font:700 20px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:7px}
+.lv .d{font:500 11.5px/1 var(--mono);margin-top:6px;color:var(--ink3)}
+.lv.t .p{color:var(--green)} .lv.s .p{color:var(--red)}
+.lv.t{background:linear-gradient(180deg,rgba(228,243,234,.55),rgba(228,243,234,0))}
+.lv.s{background:linear-gradient(180deg,rgba(251,234,232,.55),rgba(251,234,232,0))}
+
+/* the money */
+.money{border-top:1px solid var(--bd);background:var(--navy);color:#fff;
+  padding:18px 22px}
+.money .hl{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.money .big{font:700 clamp(26px,5.6vw,34px)/1 var(--mono);
+  font-variant-numeric:tabular-nums;color:#7BE3A8;letter-spacing:-.01em}
+.money .cond{font-size:13.5px;color:rgba(255,255,255,.72);flex:1 1 180px;min-width:0}
+.money .cond b{color:#fff;font-weight:600}
+.money .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:12px;margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)}
+.money .g .k{font:500 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.5)}
+.money .g .v{font:600 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;
+  margin-top:6px}
+.money .g .v.risk{color:#F5A9A2}
+.money .fine{margin-top:13px;font-size:11.5px;line-height:1.6;
+  color:rgba(255,255,255,.55)}
+.money .fine b{color:rgba(255,255,255,.82);font-weight:600}
+
+.trig{border-top:1px solid var(--bd);padding:11px 22px;font-size:13px;
+  color:var(--ink2);line-height:1.55}
+.trig b{font-weight:600}
+.trig.live{background:var(--green-bg)} .trig.live b{color:var(--green)}
+.trig.wait{background:var(--gold-bg)} .trig.wait b{color:var(--gold-d)}
+
+.nosetup{border-top:1px solid var(--bd);padding:16px 22px;background:var(--gold-bg);
+  font-size:14px;color:var(--ink2)}
+.nosetup b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+
+.vd{padding:14px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  border-top:1px solid var(--bd)}
+.vd .score{font:700 24px/1 var(--mono);font-variant-numeric:tabular-nums;
+  padding:9px 15px;border-radius:8px;white-space:nowrap}
+.vd .score.buy{background:var(--green-bg);color:var(--green)}
+.vd .score.watch{background:var(--gold-bg);color:var(--gold-d)}
+.vd .score.avoid{background:var(--red-bg);color:var(--red)}
+.vd .score small{display:block;font:500 9px/1 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;opacity:.7;margin-top:5px;text-align:center}
+.vd .say{flex:1 1 200px;min-width:0;font-size:14.5px;color:var(--ink2)}
+.vd .say b{color:var(--ink);font-weight:600}
+.caveat{padding:12px 22px;background:var(--cream);border-top:1px solid var(--bd);
+  font-size:13px;color:var(--ink2);display:flex;gap:9px;align-items:flex-start}
+.caveat .dot{width:6px;height:6px;border-radius:50%;background:var(--ink3);
+  flex:0 0 auto;margin-top:6px}
+.caveat b{color:var(--ink);font-weight:600}
+.bars{padding:15px 22px 6px;display:grid;gap:11px;border-top:1px solid var(--bd)}
+.bar{display:grid;grid-template-columns:104px 1fr 42px;gap:11px;align-items:center;
+  font-size:12.5px}
+.bar .bn{color:var(--ink2)}
+.bar .bt{height:7px;border-radius:4px;background:#EDEAE0;overflow:hidden}
+.bar .bf{height:100%;border-radius:4px}
+.bar .bv{text-align:right;font:500 12px/1 var(--mono);color:var(--ink3);
+  font-variant-numeric:tabular-nums}
+.rankline{padding:0 22px 16px;font-size:13.5px;color:var(--ink2)}
+.err{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:20px 22px;text-align:left;color:var(--ink2);font-size:14.5px}
+.err b{color:var(--ink);display:block;margin-bottom:5px;font-size:15px}
+.load{text-align:center;color:var(--ink3);font-size:14px;padding:22px}
+
+/* ── the board ─────────────────────────────────────────────────────────── */
+.board-sec{padding:44px 0 56px}
+.hd{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.hd h2{font:700 clamp(21px,3vw,29px)/1.2 var(--serif);margin:0}
+.hd .note{font-size:13.5px;color:var(--ink3);margin-left:auto}
+.lede{color:var(--ink2);font-size:15px;margin:0 0 18px;max-width:66ch}
+.board{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:660px}
+th{font:600 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);text-align:left;padding:12px 15px;background:var(--cream);
+  border-bottom:1px solid var(--bd);white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:11px 15px;border-bottom:1px solid var(--bd);font-size:14px}
+tr:last-child td{border-bottom:0}
+.rk{font:600 12px/1 var(--mono);color:var(--ink3);width:40px}
+.cd{font:600 14.5px/1 var(--sans)}
+.sc{font:600 14.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+.nm{font:400 13px/1 var(--mono);color:var(--ink2);font-variant-numeric:tabular-nums}
+tr.lk td{color:var(--ink3)}
+tr.lk .cd{font-family:var(--mono);letter-spacing:.24em;font-weight:500;
+  color:var(--ink3);user-select:none}
+tr.lk .sc{color:var(--ink2)}
+.pl{font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.pl i{font-style:normal;color:var(--ink3);padding:0 3px}
+.pl s{display:block;text-decoration:none;color:var(--ink3);font-size:11.5px}
+.lock{display:inline-flex;align-items:center;gap:7px;font:600 10px/1 var(--sans);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+  background:repeating-linear-gradient(135deg,#F1EDE1 0 6px,#E8E3D4 6px 12px);
+  border:1px solid var(--bd);border-radius:5px;padding:7px 10px;white-space:nowrap}
+.lock b{width:9px;height:7px;border-radius:1.5px;background:var(--ink3);
+  position:relative;flex:0 0 auto}
+.lock b::before{content:"";position:absolute;left:1.5px;top:-4px;width:6px;height:5px;
+  border:1.5px solid var(--ink3);border-bottom:0;border-radius:3px 3px 0 0}
+.cta{padding:20px 22px;background:var(--cream);border-top:1px solid var(--bd);
+  display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+.cta .m{flex:1 1 250px;min-width:0}
+.cta .m b{display:block;font:600 16px/1.35 var(--sans);margin-bottom:3px}
+.cta .m span{font-size:13.5px;color:var(--ink2)}
+.cta a{background:var(--gold);color:var(--navy);text-decoration:none;
+  font:600 14.5px/1 var(--sans);padding:13px 22px;border-radius:8px;white-space:nowrap}
+.cta a:hover{background:var(--gold-d);color:#fff}
+
+/* ── the first screen: exactly one viewport, no scroll ───────────── */
+/*  A grid whose middle row takes the remaining height, so the six boxes fill
+    whatever is left after the band, the search and the footer line — on a
+    1366x768 laptop and on a 27-inch monitor alike. Below 720px wide or 640px
+    tall six boxes cannot fit one screen honestly, so the constraint is dropped
+    and the page flows rather than squashing the numbers to nothing. */
+.screen{display:grid;grid-template-rows:auto auto 1fr auto;gap:0}
+@media (min-width:720px) and (min-height:640px){ .screen{height:100svh} }
+.top{padding:18px 20px 12px;text-align:center}
+.top h1{font:700 clamp(21px,2.9vw,34px)/1.15 var(--serif);margin:0 0 13px;
+  letter-spacing:-.015em;text-wrap:balance}
+.top form.ask{margin:0 auto;max-width:500px}
+.top form.ask input{padding:12px 15px;font-size:15px}
+.top form.ask button{padding:12px 20px;font-size:15px}
+.top .cap{margin:8px 0 0}
+.top .cap button{padding:6px 10px;font-size:12px}
+.gridwrap{min-height:0;padding-bottom:10px}
+.boxes{display:grid;gap:11px;height:100%;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+@media (min-width:900px){ .boxes{grid-template-columns:repeat(3,1fr)} }
+.screenfoot{display:flex;gap:14px;align-items:center;justify-content:center;
+  flex-wrap:wrap;padding:0 20px 16px;font-size:13px;color:var(--ink2);
+  text-align:center}
+.screenfoot span{max-width:56ch}
+.screenfoot a{background:var(--gold);color:var(--navy);text-decoration:none;
+  font:600 13.5px/1 var(--sans);padding:11px 18px;border-radius:8px;
+  white-space:nowrap}
+.screenfoot a:hover{background:var(--gold-d);color:#fff}
+
+/* ── one box: one engine, one stock ────────────────────────── */
+.bx{background:var(--paper);border:1px solid var(--bd);border-radius:11px;
+  padding:12px 13px;display:flex;flex-direction:column;gap:9px;min-height:0;
+  overflow:hidden}
+.bx .bh{display:flex;align-items:center;gap:7px}
+.bx .bh .t{font:600 9.5px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);flex:1 1 auto;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.bx .bh .tr{font:600 8.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--gold-d);background:var(--gold-bg);border:1px solid var(--gold-bd);
+  padding:3px 5px;border-radius:3px;white-space:nowrap}
+.bx .bh .tr.pro{color:#5B21B6;background:#EDE9FE;border-color:#D6CCFA}
+.bx .nm{display:flex;align-items:center;gap:9px}
+.bx .nm .bl{font:700 17px/1.15 var(--sans);letter-spacing:.05em;color:var(--ink2);
+  filter:blur(4px);user-select:none;flex:1 1 auto;min-width:0}
+.bx .nm .rl{font:700 17px/1.15 var(--sans);letter-spacing:.01em;flex:1 1 auto;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx .nm .sc3{font:700 12px/1 var(--mono);font-variant-numeric:tabular-nums;
+  background:var(--navy);color:#fff;padding:5px 7px;border-radius:4px}
+.ladder{display:grid;gap:5px;flex:1 1 auto;min-height:0;align-content:center}
+.lr{display:grid;grid-template-columns:50px 1fr auto;gap:8px;align-items:center}
+.lr .k2{font:600 8.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3)}
+.lr .p2{font:600 13px/1 var(--mono);font-variant-numeric:tabular-nums}
+.lr .d2{font:500 11px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--ink3)}
+.lr.t2 .p2,.lr.t2 .d2{color:var(--green)}
+.lr.s2 .p2,.lr.s2 .d2{color:var(--red)}
+.mask{display:inline-block;width:52px;height:11px;border-radius:3px;
+  vertical-align:-1px;
+  background:repeating-linear-gradient(135deg,#E7E2D3 0 4px,#D9D3C1 4px 8px)}
+.bfoot{border-top:1px solid var(--bd);padding-top:8px;display:flex;gap:9px;
+  align-items:baseline;flex-wrap:wrap;font:500 11.5px/1.35 var(--mono);
+  font-variant-numeric:tabular-nums;color:var(--ink3)}
+.bfoot em{font-style:normal;font:600 9px/1 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3);width:100%;margin-bottom:2px}
+.bfoot b{font-weight:600;color:var(--green)}
+.bfoot i{font-style:normal;font-weight:600;color:var(--red)}
+.bfoot s{text-decoration:none;margin-left:auto;color:var(--ink2)}
+.bx .note2{font-size:11.5px;color:var(--ink3);line-height:1.45;
+  border-top:1px solid var(--bd);padding-top:8px}
+.ev2{display:grid;gap:6px;flex:1 1 auto;min-height:0;align-content:center}
+.ev2 div{display:flex;justify-content:space-between;gap:8px;font-size:12px;
+  color:var(--ink2)}
+.ev2 div b{font:600 12.5px/1 var(--mono);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.bx.free{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,160,23,.14)}
+.bx.free .bh .tr{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.bx.free .nm .rl{color:var(--navy)}
+
+
+/* ── the plan panel: the answer lands where the boxes were ─────────── */
+/*  The result must not send the visitor to the bottom of the page. It takes
+    the same grid row the six boxes occupy and scrolls INSIDE that row, so the
+    first screen stays one screen whether you have searched or not. */
+.gridwrap{position:relative}
+.panel{display:none;height:100%;min-height:0;flex-direction:column;gap:9px}
+.panel.on{display:flex}
+.boxes.off{display:none}
+.panel #out{flex:1 1 auto;min-height:0;overflow-y:auto;max-width:none;margin:0;
+  -webkit-overflow-scrolling:touch}
+.panel .card{max-width:660px;margin:0 auto}
+.back{align-self:flex-start;font:600 12.5px/1 var(--sans);padding:8px 12px;
+  border-radius:7px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer;flex:0 0 auto}
+.back:hover{border-color:var(--gold-bd);color:var(--ink)}
+
+/* ── how it works: the real five-tool sequence ─────────────────────── */
+.steps{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.steps li{background:var(--cream);border:1px solid var(--bd);border-radius:11px;
+  padding:15px 16px}
+.steps .n{font:600 10px/1 var(--mono);color:var(--gold-d);letter-spacing:.12em}
+.steps .tm{font:600 10px/1 var(--mono);color:var(--ink3);letter-spacing:.06em;
+  margin-left:9px}
+.steps h3{font:600 15.5px/1.3 var(--sans);margin:9px 0 6px}
+.steps p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/* ── join ──────────────────────────────────────────────────────────── */
+.join{padding:44px 0 10px}
+.joinbox{display:grid;gap:0;grid-template-columns:1fr;background:var(--paper);
+  border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+@media (min-width:820px){ .joinbox{grid-template-columns:1.05fr .95fr} }
+.jl{padding:26px 26px 24px}
+.jl h2{font:700 clamp(21px,2.6vw,28px)/1.2 var(--serif);margin:0 0 9px}
+.jl p{margin:0 0 16px;color:var(--ink2);font-size:14.5px;max-width:46ch}
+.tiers{list-style:none;margin:0;padding:0;display:flex;gap:9px;flex-wrap:wrap}
+.tiers li{border:1px solid var(--bd);border-radius:9px;padding:11px 14px;
+  background:var(--cream);min-width:104px}
+.tiers li b{display:block;font:600 10px/1 var(--sans);letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.tiers li span{font:700 18px/1 var(--mono);font-variant-numeric:tabular-nums}
+.tiers li i{font-style:normal;font:500 11px/1 var(--sans);color:var(--ink3)}
+.promise{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:9px}
+.promise li{position:relative;padding-left:24px;font-size:13.5px;
+  color:var(--ink2);line-height:1.55}
+.promise li::before{content:"";position:absolute;left:2px;top:5px;width:12px;
+  height:7px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);
+  transform:rotate(-45deg)}
+.promise li b{color:var(--ink);font-weight:600}
+.fine2{margin:15px 0 0!important;font-size:12.5px;color:var(--ink3)}
+.jr{padding:26px;background:var(--cream);border-top:1px solid var(--bd);
+  display:grid;gap:12px;align-content:start}
+@media (min-width:820px){ .jr{border-top:0;border-left:1px solid var(--bd)} }
+.jr label{display:grid;gap:6px;font:600 10px/1 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3)}
+.jr .opt{font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink3);
+  opacity:.8}
+.jr input{font:400 15px/1 var(--sans);padding:12px 13px;border-radius:8px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink)}
+.jr input:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(212,160,23,.16)}
+.jr button{font:600 15px/1 var(--sans);padding:14px 20px;border-radius:8px;
+  border:0;background:var(--navy);color:#fff;cursor:pointer;margin-top:3px}
+.jr button:hover{background:var(--navy2)}
+.jr button:disabled{opacity:.55;cursor:default}
+.authtabs{display:flex;gap:6px;margin-bottom:2px}
+.authtabs button{flex:1 1 0;font:600 12.5px/1 var(--sans);padding:10px 8px;
+  border-radius:8px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer}
+.authtabs button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+#login{display:none;gap:12px}
+#login.on{display:grid}
+#reg.off{display:none}
+.jmsg{margin:0;font-size:13px;min-height:1px;color:var(--red)}
+.jmsg.ok{color:var(--green)}
+.jalt{margin:0;font-size:13px;color:var(--ink3)}
+.jalt a{color:var(--gold-d);font-weight:600}
+
+/* ── footer ────────────────────────────────────────────────────────── */
+.frow{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  margin-bottom:22px}
+.fcol{display:flex;flex-direction:column;gap:7px}
+.fcol b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:3px}
+.fcol span{color:var(--ink2)}
+.fcol a{color:var(--ink2);text-decoration:none}
+.fcol a:hover{text-decoration:underline}
+.social{display:flex;gap:9px;margin-top:6px}
+.social a{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--sans);
+  border:1px solid var(--bd);border-radius:7px;padding:8px 11px;color:var(--ink2);
+  text-decoration:none;background:var(--paper)}
+.social a:hover{border-color:var(--gold-bd);color:var(--ink);text-decoration:none}
+.social svg{width:13px;height:13px;fill:currentColor}
+.copy{margin:14px 0 0;font-size:12.5px;color:var(--ink3)}
+footer .disc a{color:var(--ink2);text-decoration:underline}
+
+
+/* ── roomier boxes ─────────────────────────────────────────────────── */
+/*  The numbers are the point now that entry, target and stop are open, so the
+    box gives them room: a wider screen container, a bigger gap, more padding
+    and a larger figure size. Six boxes still fit one viewport. */
+/*  ONE COLUMN, TOP TO BOTTOM.
+    .screen is a grid, and its three rows — the hero, the card grid and the
+    line under them — are grid items with `margin:0 auto` and no width. In a
+    grid that does NOT centre a full-width block: it shrinks each item to its
+    own content and centres that. So the headline picked one width, the cards
+    picked another and the closing line picked a third, and none of the three
+    shared an edge with each other or with the sections below.
+    width:100% is the whole fix. Every row now fills the column and stops at
+    the same 1080px the Signal Stack, How it works and the pricing block use,
+    so a single edge runs from the top of the page to the footer. */
+.screen > .wrap{width:100%;max-width:1080px;margin-left:auto;margin-right:auto}
+.boxes{gap:11px}
+.bx{padding:12px 16px;gap:8px;border-radius:13px}
+.bx .nm .bl,.bx .nm .rl{font-size:19px}
+.lr{grid-template-columns:56px 1fr auto;gap:10px}
+.lr .p2{font-size:16px}
+.lr .d2{font-size:12px}
+.ladder{gap:6px}
+.bfoot{padding-top:8px;gap:11px;font-size:12.5px}
+.ev2{gap:9px}
+.ev2 div{font-size:13px}
+.ev2 div b{font-size:13.5px}
+
+/* the blurred name is the lock: it is what the visitor clicks */
+.lockname{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;
+  background:none;border:0;padding:0;cursor:pointer;text-align:left;font:inherit}
+.lockname .bl{pointer-events:none}
+.lockname:hover .bl{filter:blur(3px)}
+.lkchip{display:inline-flex;align-items:center;gap:5px;font:600 9px/1 var(--sans);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--gold-d);
+  background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:4px;
+  padding:5px 7px;white-space:nowrap;flex:0 0 auto}
+.lkchip b{width:8px;height:6px;border-radius:1.5px;background:var(--gold-d);
+  position:relative;flex:0 0 auto}
+.lkchip b::before{content:"";position:absolute;left:1.3px;top:-3.5px;width:5.4px;
+  height:4.5px;border:1.4px solid var(--gold-d);border-bottom:0;
+  border-radius:2.6px 2.6px 0 0}
+.lockname:hover .lkchip{background:var(--gold);color:var(--navy);
+  border-color:var(--gold)}
+.lockname:hover .lkchip b,.lockname:hover .lkchip b::before{background:var(--navy);
+  border-color:var(--navy)}
+
+/* ── band nav and the two auth buttons ─────────────────────────────── */
+/*  It must wrap. Five links at 12px come to ~294px, and a 320px phone gives
+    the bar 280px to put them in — without wrap:wrap the nav simply hung over
+    the right edge and the whole page scrolled sideways. */
+.bnav{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;min-width:0}
+/*  The padding is hit area, the negative margin gives the layout back. A 12px
+    line of text is a 12px tap target, which is half what a thumb needs; this
+    makes each link ~30px to touch without moving anything or changing the
+    height of the bar, which --bandh and the hero's min-height both depend on. */
+.bnav a{font:600 12px/1 var(--sans);color:rgba(255,255,255,.72);
+  text-decoration:none;white-space:nowrap;padding:9px 3px;margin:-9px -3px}
+.bnav a:hover{color:#fff;text-decoration:underline}
+.band a.signin{font:600 12px/1 var(--sans);color:#fff;border:1px solid
+  rgba(255,255,255,.32);padding:8px 13px;border-radius:6px;text-decoration:none;
+  white-space:nowrap}
+.band a.signin:hover{border-color:#fff}
+
+/* ── about ─────────────────────────────────────────────────────────── */
+.about{padding:44px 0 8px}
+.acols{display:grid;gap:22px;margin-top:20px;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.acols h3{font:600 16px/1.35 var(--sans);margin:0 0 8px}
+.acols p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.62}
+
+/* ── the auth modal ────────────────────────────────────────────────── */
+.modal{display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(13,31,60,.55);padding:20px;
+  align-items:center;justify-content:center}
+.modal.on{display:flex}
+.mbox{background:var(--paper);border-radius:15px;max-width:470px;width:100%;
+  padding:28px 26px 24px;position:relative;
+  box-shadow:0 18px 50px rgba(13,31,60,.32)}
+.mbox h3{font:700 clamp(19px,2.4vw,24px)/1.25 var(--serif);margin:0 0 10px;
+  padding-right:26px}
+.mbox p{margin:0 0 18px;font-size:14.5px;color:var(--ink2);line-height:1.6}
+.mrow{display:grid;gap:9px;grid-template-columns:1fr}
+@media (min-width:440px){ .mrow{grid-template-columns:1fr 1fr} }
+.mbtn{display:block;text-align:center;text-decoration:none;border-radius:9px;
+  padding:14px 16px;font:600 14.5px/1 var(--sans);border:1.5px solid var(--bd);
+  color:var(--ink2);background:var(--paper)}
+.mbtn:hover{border-color:var(--gold-bd);color:var(--ink)}
+.mbtn.primary{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.mbtn.primary:hover{background:var(--gold-d);color:#fff}
+.mfine{margin:16px 0 0!important;font-size:12.5px;color:var(--ink3);
+  line-height:1.6}
+.mfine a{color:var(--gold-d);font-weight:600}
+.mx{position:absolute;top:12px;right:13px;width:30px;height:30px;border-radius:7px;
+  border:0;background:none;color:var(--ink3);font:400 22px/1 var(--sans);
+  cursor:pointer}
+.mx:hover{background:var(--cream);color:var(--ink)}
+
+
+/* ── the one-line answer to "what is this" ─────────────────────────── */
+.lede1{max-width:62ch;margin:0 auto 14px;color:var(--ink2);font-size:15px;
+  line-height:1.55}
+.lede1 b{color:var(--ink);font-weight:600}
+
+/* ── what / why / cost, read in one glance ─────────────────────────── */
+.qa{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.q{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:19px 20px}
+.qk{display:inline-block;font:600 10px/1 var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold-d);background:var(--gold-bg);
+  border:1px solid var(--gold-bd);border-radius:4px;padding:6px 8px;
+  margin-bottom:12px}
+.q p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.62}
+.q p b{color:var(--ink);font-weight:600}
+.astrip{display:grid;gap:12px;margin-top:16px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.astrip div{background:var(--navy);color:#fff;border-radius:11px;padding:15px 16px}
+.astrip b{display:block;font:700 26px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--gold);margin-bottom:7px}
+.astrip span{font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.45;
+  display:block}
+.anote{margin:16px 0 0;font-size:12.5px;color:var(--ink3);max-width:82ch;
+  line-height:1.6}
+
+/* ── social: the real marks, at their own colours ──────────────────── */
+.social a{padding:9px 12px;gap:8px;font-size:12.5px}
+.social svg{width:17px;height:17px}
+.social a.facebook svg{fill:#1877F2}
+.social a.linkedin svg{fill:#0A66C2}
+.social a:hover{background:var(--cream)}
+
+/* ── phones: two boxes a row, so the grid still reads as a grid ────── */
+@media (min-width:400px) and (max-width:719px){
+  .boxes{grid-template-columns:repeat(2,1fr);gap:9px}
+  .bx{padding:12px 12px;gap:9px;border-radius:11px}
+  .bx .bh .t{font-size:8.5px;letter-spacing:.08em}
+  .bx .bh .tr{font-size:7.5px;padding:3px 4px}
+  .bx .nm{gap:6px}
+  .bx .nm .bl,.bx .nm .rl{font-size:15px}
+  .bx .nm .sc3{font-size:10.5px;padding:4px 5px}
+  .lkchip{font-size:0;gap:0;padding:5px 6px}
+  .ladder{gap:7px}
+  .lr{grid-template-columns:38px 1fr auto;gap:6px}
+  .lr .k2{font-size:7.5px;letter-spacing:.06em}
+  .lr .p2{font-size:12.5px}
+  .lr .d2{font-size:9.5px}
+  .bfoot{gap:6px;padding-top:8px;font-size:10.5px}
+  .bfoot s{margin-left:0;width:100%}
+  .ev2{gap:7px}
+  .ev2 div{font-size:11px}
+  .ev2 div b{font-size:11.5px}
+  .bx .note2{font-size:10.5px;padding-top:7px}
+}
+
+
+/* ── the band stays put ────────────────────────────────────────────── */
+/*  It sits OUTSIDE .screen so its containing block is the document, not the
+    one-viewport grid — a sticky element can only stick inside its own
+    container, and inside .screen it would scroll away after 100svh.
+    Anchor targets get scroll-margin so a heading never lands underneath it. */
+:root{ --bandh:46px }
+.band{position:sticky;top:0;z-index:120;
+  box-shadow:0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(13,31,60,.10)}
+#top,#about,#how,#join,#tools{scroll-margin-top:calc(var(--bandh) + 12px)}
+.screen{min-height:auto}
+/*  --bannerh is 0 for everyone except a signed-in subscriber, who gets an
+    83px "your subscription is active" strip ABOVE this block. Without
+    subtracting it the first screen is still exactly one viewport tall but
+    starts 83px down the page, so the bottom row of cards falls off a 900px
+    window for the one visitor who has already paid. paint_entitled() measures
+    the strip and writes the real number here. */
+:root{ --bannerh:0px }
+@media (min-width:720px) and (min-height:640px){
+  .screen{height:auto;min-height:calc(100svh - var(--bandh) - var(--bannerh))}
+}
+.band .wrap{padding-top:9px;padding-bottom:9px}
+
+/* ── every box the same four bands, so rows line up across the grid ── */
+/*  A flex column with gaps let each box size its own parts, so the ladders in
+    one box sat higher than the ladders in the next. A fixed four-row grid —
+    header, name, body, footer — pins them to the same lines. */
+.bx{display:grid;grid-template-rows:auto auto 1fr auto;gap:11px;align-content:stretch}
+.ladder,.ev2{align-content:start}
+.ev2 div{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline}
+.src{width:100%;margin-top:6px;font:500 10px/1.4 var(--sans);color:var(--ink3);
+  letter-spacing:.02em}
+.src b{font-weight:600;color:var(--ink2)}
+
+
+/* ── checkout ──────────────────────────────────────────────────────── */
+/*  Prices are NEVER written into this stylesheet or the markup. They come from
+    /api/config, which is the same row server_price() bills from, so what is
+    advertised and what is charged cannot drift apart. */
+.periods{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 14px}
+.periods button{font:600 12.5px/1 var(--sans);padding:9px 13px;border-radius:20px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink2);
+  cursor:pointer;display:flex;align-items:center;gap:7px}
+.periods button:hover{border-color:var(--gold-bd)}
+.periods button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+.periods button em{font-style:normal;font:600 9.5px/1 var(--sans);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--green);background:var(--green-bg);
+  border-radius:3px;padding:3px 5px}
+.periods button[aria-pressed="true"] em{background:rgba(255,255,255,.16);color:#7BE3A8}
+
+.tiers{list-style:none;margin:0;padding:0;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tiers li{border:1px solid var(--bd);border-radius:11px;padding:14px 15px;
+  background:var(--cream);display:flex;flex-direction:column;gap:10px}
+.tiers li.tload{grid-column:1/-1;background:none;border:0;padding:0;
+  color:var(--ink3);font-size:13.5px}
+.tiers li b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3)}
+.tiers .amt{font:700 21px/1 var(--mono);font-variant-numeric:tabular-nums}
+.tiers .per{font:500 11px/1.35 var(--sans);color:var(--ink3);margin-top:5px}
+.tiers .buy{margin-top:auto;font:600 13px/1 var(--sans);padding:11px 12px;
+  border-radius:8px;border:1.5px solid var(--navy);background:var(--paper);
+  color:var(--navy);cursor:pointer;width:100%}
+.tiers .buy:hover{background:var(--navy);color:#fff}
+.tiers .buy.gold{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.tiers .buy.gold:hover{background:var(--gold-d);color:#fff}
+.tiers .buy:disabled{opacity:.6;cursor:default}
+.tiers li.cur{border-color:var(--green);box-shadow:0 0 0 2px rgba(19,122,77,.14)}
+.tiers .now{font:600 9px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green)}
+
+/* the signed-in panel that replaces the registration form */
+.acct{display:grid;gap:11px}
+.acct h3{font:700 19px/1.25 var(--serif);margin:0}
+.acct .row2{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;
+  color:var(--ink2);padding:9px 0;border-bottom:1px solid var(--bd)}
+.acct .row2 b{color:var(--ink);font-weight:600;font-family:var(--mono);
+  font-variant-numeric:tabular-nums}
+.acct .act{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.acct .act button,.acct .act a{font:600 13px/1 var(--sans);padding:11px 15px;
+  border-radius:8px;border:1.5px solid var(--bd);background:var(--paper);
+  color:var(--ink2);cursor:pointer;text-decoration:none}
+.acct .act button:hover,.acct .act a:hover{border-color:var(--ink3);color:var(--ink)}
+.acct .act button.danger:hover{border-color:var(--red);color:var(--red)}
+.acct .amsg{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.acct .amsg.ok{color:var(--green)}
+.acct .amsg.err{color:var(--red)}
+.acct .cx{background:var(--gold-bg);border:1px solid var(--gold-bd);
+  border-radius:9px;padding:11px 13px;font-size:12.5px;color:var(--ink2);
+  line-height:1.55}
+.acct .cx b{color:var(--ink)}
+
+/* the banner the customer comes back to */
+.pbanner{border-radius:11px;padding:14px 16px;margin-bottom:16px;font-size:14px;
+  line-height:1.55;border:1px solid var(--bd);background:var(--paper)}
+.pbanner b{display:block;font-weight:600;margin-bottom:3px;color:var(--ink)}
+.pbanner.ok{background:var(--green-bg);border-color:var(--green-bd)}
+.pbanner.ok b{color:var(--green)}
+.pbanner.bad{background:var(--red-bg);border-color:var(--red-bd)}
+.pbanner.bad b{color:var(--red)}
+.pbanner.wait{background:var(--gold-bg);border-color:var(--gold-bd)}
+.pbanner.wait b{color:var(--gold-d)}
+
+
+/* the banner someone sees when they arrive on a referral link */
+.rbanner{border-radius:11px;padding:13px 16px;margin-bottom:14px;font-size:14px;
+  line-height:1.55;background:var(--green-bg);border:1px solid var(--green-bd)}
+.rbanner b{color:var(--green);font-weight:600}
+
+/* An invitation link opens ON the form, not at the top of a page to scroll.
+   Below the two-column breakpoint the pricing column would otherwise sit
+   between the banner and the form, so for an invited visitor — and only for
+   one — the form comes first and the prices follow it. */
+@media (max-width:819px){ .join.invited .joinbox .jr{order:-1} }
+
+/* A customer is not a prospect. Nothing here unlocks data — the names are
+   withheld on the server and were never in this page — but a page that still
+   says "Start free" to someone who paid an hour ago reads as a failed payment. */
+.ybanner{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin:14px 0 0;padding:13px 16px;border-radius:12px;font-size:14px;
+  line-height:1.55;color:var(--ink2);
+  background:var(--green-bg);border:1px solid var(--green-bd)}
+.ybanner .yp{font:700 10px/1 var(--sans);letter-spacing:.12em;
+  padding:6px 9px;border-radius:5px;background:var(--green);color:#fff}
+.ybanner .yt{flex:1 1 320px;min-width:0}
+.ybanner .yt b{color:var(--ink);font-weight:600}
+.ybanner .ymeta{font:500 13px/1.5 var(--mono);color:var(--green)}
+/* On a phone the full sentence made this a 220px block at the top of the
+   screen. The plan, the date and the way through survive; the explanation
+   does not, because it is the only part the customer can do without. */
+@media (max-width:619px){ .ybanner .ylong{display:none} }
+.ybanner .yg{font:600 13px/1 var(--sans);text-decoration:none;white-space:nowrap;
+  padding:11px 16px;border-radius:8px;background:var(--navy);color:#fff}
+.ybanner .yg:hover{background:var(--gold);color:var(--navy)}
+
+/* ── what the engines found ────────────────────────────────────────────── */
+.tools-sec{padding:8px 0 56px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.tabs button{font:600 13.5px/1 var(--sans);padding:11px 15px;border-radius:8px;
+  border:1.5px solid var(--bd);background:var(--paper);color:var(--ink2);
+  cursor:pointer;display:flex;align-items:baseline;gap:8px}
+.tabs button:hover{border-color:var(--gold-bd)}
+.tabs button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+.tabs button em{font:500 11px/1 var(--mono);font-style:normal;opacity:.62}
+.toolbox{background:var(--paper);border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden}
+.tool-hd{padding:17px 22px;border-bottom:1px solid var(--bd);
+  display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.tool-hd .s{flex:1 1 260px;min-width:0;font-size:14.5px;color:var(--ink2)}
+.tool-hd .c{font:600 12px/1 var(--mono);color:var(--ink3);white-space:nowrap}
+.tool-hd .tier{font:600 9px/1 var(--sans);letter-spacing:.11em;
+  text-transform:uppercase;padding:5px 8px;border-radius:4px;
+  background:var(--gold-bg);color:var(--gold-d);border:1px solid var(--gold-bd)}
+.tool-hd .tier.pro{background:#EDE9FE;color:#5B21B6;border-color:#D6CCFA}
+
+.trow{display:grid;grid-template-columns:minmax(190px,1fr) minmax(0,2.1fr);
+  gap:16px;padding:15px 22px;border-bottom:1px solid var(--bd);align-items:center}
+.trow:last-child{border-bottom:0}
+.tid{display:flex;align-items:center;gap:11px;min-width:0}
+.tid .rk2{font:700 12px/1 var(--mono);color:var(--ink3);width:22px;flex:0 0 auto}
+.blurname{font:700 16px/1.25 var(--sans);letter-spacing:.06em;color:var(--ink2);
+  filter:blur(4.5px);user-select:none;white-space:nowrap}
+.tid .sub{font:500 10.5px/1 var(--sans);letter-spacing:.05em;color:var(--ink3);
+  text-transform:uppercase;margin-top:5px}
+.tid .col{min-width:0}
+.chip{font:600 10px/1 var(--sans);letter-spacing:.06em;padding:5px 7px;
+  border-radius:4px;background:var(--cream);color:var(--ink2);
+  border:1px solid var(--bd);white-space:nowrap}
+.chip.sc2{background:var(--navy);color:#fff;border-color:var(--navy);
+  font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.tnums{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:12px}
+.tn .k{font:600 9px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3)}
+.tn .v{font:600 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;margin-top:5px}
+.tn .v.gain{color:var(--green)} .tn .v.loss{color:var(--red)}
+.tn .v small{display:block;font:500 10.5px/1 var(--sans);color:var(--ink3);
+  margin-top:4px;letter-spacing:0}
+.evid{display:flex;gap:8px;flex-wrap:wrap}
+.evid span{font:500 12px/1 var(--sans);padding:7px 9px;border-radius:5px;
+  background:var(--cream);border:1px solid var(--bd);color:var(--ink2)}
+.evid span b{font-weight:600;color:var(--ink)}
+.nolevels{padding:13px 22px;background:var(--gold-bg);font-size:13px;
+  color:var(--ink2);border-bottom:1px solid var(--bd)}
+.nolevels b{color:var(--ink);font-weight:600}
+@media (max-width:640px){
+  .trow{grid-template-columns:1fr;gap:12px}
+}
+
+/* ── how it works ──────────────────────────────────────────────────────── */
+.how{background:var(--paper);border-top:1px solid var(--bd);
+  border-bottom:1px solid var(--bd);padding:46px 0}
+.three{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  margin-top:22px}
+.three h3{font:600 15.5px/1.35 var(--sans);margin:0 0 7px}
+.three p{margin:0;font-size:14px;color:var(--ink2)}
+.three .n{font:600 11px/1 var(--mono);color:var(--gold-d);letter-spacing:.1em;
+  display:block;margin-bottom:9px}
+
+footer{padding:34px 0 46px;font-size:13px;color:var(--ink3)}
+footer .row{display:flex;gap:8px 22px;flex-wrap:wrap;margin-bottom:14px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .disc{max-width:76ch;line-height:1.65}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media (max-width:560px){
+  .hero{padding:36px 0 20px}
+  .bar{grid-template-columns:88px 1fr 38px}
+  .lv{padding:13px 9px}
+  .lv .p{font-size:17px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE NEW STORY: stack → problem → how → shortlist → trust → pricing → CTA
+   Nothing below introduces a font, a colour or a radius the page did not
+   already use. Every value is drawn from the tokens at the top of this file,
+   so the new sections read as the same site as the old ones.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* the second line of the headline: the question, not the statement.
+   One <h1> so the document still has exactly one, but two voices — the
+   claim in ink, the question in the gold that marks everything the page
+   wants you to act on. */
+.top h1 .hq{display:block;margin-top:5px;color:var(--gold-d);
+  font:400 clamp(17px,2.2vw,25px)/1.25 var(--serif);font-style:italic;
+  letter-spacing:0}
+/*  The question costs a line the six boxes used to have. It is bought back
+    here rather than from the cards, which are the argument. */
+.top{padding:14px 20px 10px}
+.top h1{margin-bottom:9px}
+/*  A wider measure on the first screen only. 62ch is right for a paragraph
+    somebody reads; this is a one-sentence claim above six cards, and the
+    third line it wrapped to cost the bottom row of those cards on a 900px
+    subscriber screen. */
+.screen .lede1{margin-bottom:10px;max-width:74ch}
+.screen .eg{margin-top:11px}
+.screen .cap{margin-top:14px}
+body.has-banner .ybanner{margin-top:10px;padding:10px 16px}
+/*  The strip wraps to two lines on a wide screen and that second line is the
+    explanation, which a paying customer needs least. */
+body.has-banner .ybanner .ylong{display:none}
+
+/* ── fitting six cards on one screen, measured rather than guessed ─────── */
+/*  This page is authored on a machine that cannot reach Google Fonts, so
+    every height measured here is a fallback-font height — and Playfair, Inter
+    and JetBrains all set taller than the fallbacks. Numbers computed at build
+    time were wrong on the real site by about 200px, which is a whole row of
+    cards.
+    So the page measures itself instead. fitScreen() asks the browser one
+    honest question — does the first screen end above the fold? — and if it
+    does not, it turns on these three steps in order until it does. Nothing
+    here fires unless the screen is genuinely short, and step 3 never fires
+    for anyone who has the room for step 2.
+    The order is deliberate: air first, then type, and only last does any
+    information leave. */
+
+/*  1 · air. Padding and gaps, which cost the reader nothing. */
+.screen.fit-1 .top{padding-top:8px;padding-bottom:6px}
+.screen.fit-1 h1{margin-bottom:6px}
+.screen.fit-1 .lede1{margin-bottom:7px}
+.screen.fit-1 .eg{margin-top:8px}
+.screen.fit-1 .cap{margin-top:10px}
+.screen.fit-1 .boxes{gap:9px}
+.screen.fit-1 .bx{padding:10px 13px;gap:7px}
+.screen.fit-1 .ladder{gap:4px}
+.screen.fit-1 .bfoot{padding-top:6px}
+.screen.fit-1 .screenfoot{padding-bottom:11px}
+
+/*  2 · type. A notch off the headline and the supporting text — never off
+    the prices, which are the thing being read. */
+.screen.fit-2 h1{font-size:clamp(19px,2.5vw,28px)}
+.screen.fit-2 h1 .hq{font-size:clamp(15px,1.8vw,20px);margin-top:3px}
+.screen.fit-2 .lede1{font-size:14px;line-height:1.45}
+.screen.fit-2 .caphint{display:none}
+.screen.fit-2 .cap button{padding:5px 9px;font-size:11.5px}
+.screen.fit-2 .eg{font-size:12px}
+.screen.fit-2 .bx .nm .bl,.screen.fit-2 .bx .nm .rl{font-size:16px}
+.screen.fit-2 .lr .p2{font-size:14px}
+.screen.fit-2 .lr .d2{font-size:11px}
+.screen.fit-2 .bfoot{font-size:11.5px}
+.screen.fit-2 .screenfoot{font-size:12px;padding-bottom:6px}
+.screen.fit-2 .gridwrap{padding-bottom:6px}
+
+/*  3 · the only step that removes anything. The LAST traded price goes; the
+    plan — entry, target, stop — stays whole, and the entry row already
+    carries how far the entry sits from that last trade, so the number is
+    not lost, only its own row. */
+.screen.fit-3 .lr.lastrow{display:none}
+
+/* ── the stack ─────────────────────────────────────────────────────────── */
+/*  Five layers, each one narrower than the last. The narrowing IS the
+    argument — a field that starts at every listed stock and ends at a
+    handful — so it is done with width, not with decoration. Below the
+    two-column breakpoint every layer is full width, because a 340px phone
+    has no width to spend on a metaphor. */
+.stack{padding:46px 0 8px}
+.layers{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:9px}
+.ly{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:15px 18px;display:grid;gap:5px 18px;position:relative;
+  border-left:3px solid var(--gold-bd);margin:0 auto;width:100%}
+@media (min-width:860px){
+  .ly{grid-template-columns:118px 1fr;align-items:baseline}
+  .ly.l1{width:100%}
+  .ly.l2{width:96%}
+  .ly.l3{width:92%}
+  .ly.l4{width:88%}
+  .ly.l5{width:84%}
+}
+/*  The rail deepens as the field narrows: pale where everything is still in,
+    full gold at the layer that only a triple agreement gets through. */
+.ly.l2{border-left-color:#DEC57E}
+.ly.l3{border-left-color:#D4A017}
+.ly.l4{border-left-color:var(--gold-d)}
+.ly.l5{border-left-color:var(--navy2)}
+.ly .ln{font:600 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3);display:flex;align-items:baseline;gap:9px;white-space:nowrap}
+.ly .ln em{font-style:normal;font:500 10px/1 var(--mono);letter-spacing:.04em;
+  color:var(--gold-d)}
+.ly h3{font:600 15.5px/1.3 var(--sans);margin:0 0 4px}
+.ly p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/*  Smart Money is not layer six — it does not sit in the sequence, it runs
+    beside it. Saying so in the layout is more honest than numbering it. */
+.along{margin:14px auto 0;width:100%;background:var(--cream);
+  border:1px dashed var(--bd);border-radius:12px;padding:15px 18px;
+  display:grid;gap:5px 18px}
+@media (min-width:860px){
+  .along{grid-template-columns:118px 1fr;align-items:baseline;width:84%}
+}
+.along .ln{font:600 9.5px/1 var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+.along h3{font:600 15.5px/1.3 var(--sans);margin:0 0 4px}
+.along p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.55}
+
+/*  The chain reads left to right on a desktop and top to bottom on a phone,
+    which is the direction each of those actually narrows in. */
+.chain{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:10px 12px;margin:26px 0 0;padding:16px 18px;background:var(--navy);
+  border-radius:12px;text-align:center}
+.chain span{font:500 12.5px/1.3 var(--sans);color:rgba(255,255,255,.72)}
+.chain b{font:700 13.5px/1.3 var(--mono);letter-spacing:.02em;color:var(--gold);
+  background:rgba(212,160,23,.13);border:1px solid rgba(212,160,23,.34);
+  border-radius:7px;padding:8px 12px}
+.chain i{width:16px;height:1px;background:rgba(255,255,255,.32);flex:0 0 auto;
+  position:relative}
+.chain i::after{content:"";position:absolute;right:0;top:-2.5px;
+  border:3px solid transparent;border-left-color:rgba(255,255,255,.5)}
+@media (max-width:620px){
+  .chain{flex-direction:column;gap:8px}
+  .chain i{width:1px;height:18px}
+  .chain i::after{right:-3.5px;top:auto;bottom:-1px;border-width:4px;
+    border-color:transparent;border-top-color:rgba(255,255,255,.55)}
+}
+
+/* ── the problem ───────────────────────────────────────────────────────── */
+/*  One paragraph on the cream, set wide and quiet. It is the only section on
+    the page with nothing to click, which is the point: it is the pause
+    between what the product does and how it does it. */
+/*  The measure is narrow here — a paragraph, not a grid — but the LEFT EDGE
+    stays where every other section's does. A centred 760px column starts
+    160px in from the heading above it, and that reads as a mistake rather
+    than as a pause. */
+.problem{padding:44px 0 40px}
+.pk{display:inline-block;font:600 10px/1 var(--sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold-d);margin-bottom:13px}
+.problem h2{font:700 clamp(22px,3.2vw,31px)/1.25 var(--serif);margin:0 0 14px;
+  max-width:32ch;letter-spacing:-.012em;text-wrap:balance}
+.problem p{margin:0;max-width:70ch;font-size:16px;line-height:1.7;
+  color:var(--ink2)}
+
+/* ── how it works ──────────────────────────────────────────────────────── */
+.steps.four{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.steps.four h3{font:600 16px/1.3 var(--sans);margin:7px 0 6px}
+.steps.four p b{color:var(--ink);font-weight:600}
+/*  The last line of the section, and the only sentence on the page that is
+    about the reader rather than the product. It gets the gold rule that
+    everything else on the page uses to mean "this is the point". */
+.decide{margin:22px 0 0;padding-left:13px;border-left:3px solid var(--gold);
+  font:600 16px/1.5 var(--sans);color:var(--ink)}
+
+/* ── trust ─────────────────────────────────────────────────────────────── */
+.about{padding:46px 0 8px}
+.about .qa{margin-top:20px}
+.q p i{font-style:italic;color:var(--ink)}
+
+/* ── the last word ─────────────────────────────────────────────────────── */
+/*  The page opened by asking for a ticker. It closes by asking for the same
+    thing, because that is the one action that costs the visitor nothing and
+    shows them everything. Signing up is the second button, not the first. */
+/*  navy2, not navy: the injected site footer is #10203A, and two adjacent
+    blocks of the same dark blue read as one very tall footer. The lighter
+    navy makes the close of the argument its own band. */
+.fcta{background:var(--navy2);color:#fff;padding:48px 0;margin-top:44px;
+  text-align:center;border-top:1px solid rgba(212,160,23,.30)}
+.fcta h2{font:700 clamp(23px,3.4vw,33px)/1.24 var(--serif);margin:0 0 12px;
+  letter-spacing:-.012em;text-wrap:balance}
+.fcta p{margin:0 auto;max-width:54ch;font-size:15.5px;line-height:1.65;
+  color:rgba(255,255,255,.74)}
+.fbtns{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;
+  margin-top:24px}
+.fgo{font:600 15px/1 var(--sans);padding:15px 26px;border-radius:9px;border:0;
+  background:var(--gold);color:var(--navy);cursor:pointer;font-family:inherit}
+.fgo:hover{background:var(--gold-d);color:#fff}
+.falt{font:600 15px/1 var(--sans);padding:15px 24px;border-radius:9px;
+  border:1.5px solid rgba(255,255,255,.34);color:#fff;text-decoration:none}
+.falt:hover{border-color:#fff}
+.fcta :focus-visible{outline-color:#fff}
+
+/* anchors added by the new story */
+#stack,#problem{scroll-margin-top:calc(var(--bandh) + 12px)}
+
+/* ── phones ────────────────────────────────────────────────────────────── */
+@media (max-width:560px){
+  .stack{padding:36px 0 6px}
+  .problem{padding:34px 0 30px}
+  .problem p{font-size:15px}
+  .ly{padding:13px 15px}
+  .along{padding:13px 15px}
+  .fcta{padding:38px 0;margin-top:34px}
+  .fbtns{flex-direction:column}
+  .fgo,.falt{width:100%}
+}
+</style>
+
+<div class="band" id="top">
+    <div class="wrap">
+      <span class="brand"><i></i>DSE&nbsp;Pulse</span>
+      <span class="stat"><span class="l">DSEX</span><span class="v" id="b-dsex">—</span></span>
+      <span class="stat opt"><span class="l">Scanned</span><span class="v" id="b-scan">—</span></span>
+      <span class="stat opt"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
+      <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
+      <nav class="bnav">
+        <a href="#top">Home</a><a href="#stack">Tools</a><a href="#about">About</a><a
+        href="#how">How it works</a><a href="#join">Pricing</a>
+      </nav>
+      <a class="signin" href="/shell.html" id="b-signin">Sign in</a>
+      <a class="sign" href="#join" id="b-signup">Sign up</a>
+    </div>
+</div>
+
+<div class="wrap"><div id="youbanner"></div></div>
+
+<div class="screen">
+  <div class="wrap top">
+    <h1>Hundreds of stocks. One question.<span class="hq">Which one deserves
+      your attention?</span></h1>
+    <p class="lede1">DSE Pulse scans hundreds of Dhaka-listed stocks after every
+    close, turning noise into a structured plan —
+    <b>entry, target and risk</b>. Free on any ticker.</p>
+    <form class="ask" id="ask" autocomplete="off">
+      <input id="code" name="code" placeholder="Type a ticker — e.g. BATBC"
+             maxlength="20" aria-label="Stock ticker" spellcheck="false">
+      <button type="submit" id="go">Find the signal</button>
+    </form>
+    <p class="eg">Try
+      <button type="button" data-c="BATBC">BATBC</button> ·
+      <button type="button" data-c="GP">GP</button> ·
+      <button type="button" data-c="SQURPHARMA">SQURPHARMA</button> ·
+      <button type="button" data-c="BRACBANK">BRACBANK</button>
+    </p>
+    <div class="cap" id="cap">
+      <span class="lbl">If I invest</span>
+      <button type="button" data-v="10000" aria-pressed="false">৳10,000</button>
+      <button type="button" data-v="50000" aria-pressed="true">৳50,000</button>
+      <button type="button" data-v="100000" aria-pressed="false">৳1,00,000</button>
+      <button type="button" data-v="500000" aria-pressed="false">৳5,00,000</button>
+      <span class="caphint">— changes only the taka profit and loss below.
+      Entry, target and stop come from the Signal Stack and never move.</span>
+    </div>
+  </div>
+
+  <div class="wrap gridwrap">
+    <div class="boxes" id="boxes">
+      <div class="load">Loading today’s Signal Stack…</div>
+    </div>
+    <div class="panel" id="panel">
+      <button type="button" class="back" id="back">← Back to today’s shortlist</button>
+      <div id="out"></div>
+    </div>
+  </div>
+
+  <div class="wrap screenfoot">
+    <span id="sf-note">Every box is a real stock that cleared a real filter this
+    evening. One is shown in full so you can check it anywhere.</span>
+    <a href="/shell.html" id="cta-screen">Start free — 7 days of Pro</a>
+  </div>
+</div>
+
+<!-- ── THE SIGNAL STACK ─────────────────────────────────────────────────── -->
+<section class="stack" id="stack">
+  <div class="wrap">
+    <div class="hd">
+      <h2>The Signal Stack</h2>
+      <span class="note">runs every trading evening, from 4:35 PM</span>
+    </div>
+    <p class="lede">Multiple market readings. Layered confirmation.
+    One clearer shortlist.</p>
+
+    <ol class="layers">
+      <li class="ly l1">
+        <span class="ln">Layer 01<em>4:35 PM</em></span>
+        <div class="lc">
+          <h3>Daily Picker</h3>
+          <p>Momentum scan across every listed stock — price action, volume
+          surge, category, PE and spread. Score out of 45.</p>
+        </div>
+      </li>
+      <li class="ly l2">
+        <span class="ln">Layer 02<em>5:00 PM</em></span>
+        <div class="lc">
+          <h3>WMA Analysis</h3>
+          <p>Weighted moving averages 9 / 34 / 89 read over 150 days of
+          history. Trend confirmation, with fresh-cross alerts.</p>
+        </div>
+      </li>
+      <li class="ly l3">
+        <span class="ln">Layer 03<em>5:15 PM</em></span>
+        <div class="lc">
+          <h3>Tech Analysis</h3>
+          <p>A score out of 100 combining WMA, MACD 12/26/9, RSI 14, volume
+          surge and Bollinger Bands.</p>
+        </div>
+      </li>
+      <li class="ly l4">
+        <span class="ln">Layer 04<em>5:30 PM</em></span>
+        <div class="lc">
+          <h3>Combined Signal</h3>
+          <p>Triple confirmation. Only stocks where Picker ≥ 30,
+          WMA reads STRONG BUY and Tech ≥ 70 all agree at once.</p>
+        </div>
+      </li>
+      <li class="ly l5">
+        <span class="ln">Layer 05<em>5:30 PM</em></span>
+        <div class="lc">
+          <h3>BD Signal</h3>
+          <p>A Bangladesh-tuned score out of 100 — DSEX mood, ATR stop level,
+          sector weighting, consecutive up days and a circuit check.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="along">
+      <span class="ln">Alongside</span>
+      <div class="lc">
+        <h3>Smart Money</h3>
+        <p>Reads volume and block trades on its own track, so unusual
+        accumulation is visible even where the layered score is quiet.</p>
+      </div>
+    </div>
+
+    <div class="chain" aria-label="How the layers narrow the field">
+      <span>Multiple signals</span>
+      <i aria-hidden="true"></i>
+      <span>Layered confirmation</span>
+      <i aria-hidden="true"></i>
+      <span>Filtered setups</span>
+      <i aria-hidden="true"></i>
+      <b>Entry · Target · Risk</b>
+    </div>
+  </div>
+</section>
+
+<!-- ── THE PROBLEM ──────────────────────────────────────────────────────── -->
+<section class="problem">
+  <div class="wrap">
+    <span class="pk">The problem</span>
+    <h2>The market gives you too much information, and too much noise.</h2>
+    <p>Hundreds of stocks trade on the Dhaka Stock Exchange, and every one of
+    them produces a price, a volume, a chart and an opinion after the close.
+    Almost none of that is a decision. Nothing in it tells you which name is
+    worth an hour of your evening — or where you would get in, where you
+    would take profit, and where you would be wrong.</p>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="hd"><h2>How it works</h2></div>
+    <p class="lede">Four steps, in the same order, every trading evening.</p>
+    <ol class="steps four">
+      <li><span class="n">01</span>
+        <h3>Scan</h3>
+        <p>Hundreds of stocks are processed after the close — every listed
+        name, not a watchlist someone chose in advance.</p></li>
+      <li><span class="n">02</span>
+        <h3>Analyse</h3>
+        <p>Multiple market readings are evaluated on each one: momentum,
+        moving averages, MACD, RSI, volume, Bollinger Bands, DSEX mood.</p></li>
+      <li><span class="n">03</span>
+        <h3>Filter</h3>
+        <p>Only setups that meet the defined rules move forward. Everything
+        that does not clear the thresholds is dropped, silently.</p></li>
+      <li><span class="n">04</span>
+        <h3>Plan</h3>
+        <p>What survives is written as a setup you can act on or ignore:
+        <b>entry · target · risk</b>.</p></li>
+    </ol>
+    <p class="decide">You decide what to do with it.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="tools-sec" id="tools">
+    <div class="hd">
+      <h2>What made the shortlist today</h2>
+      <span class="note" id="tl-note"></span>
+    </div>
+    <p class="lede">Not a count of what you are missing — the actual rows the
+    Signal Stack produced this evening, with the numbers that decide a setup,
+    priced on your capital. Only the name is withheld, and it is withheld on
+    the server: it is not in this page at all.</p>
+
+    <div class="tabs" id="tl-tabs"></div>
+    <div class="toolbox">
+      <div class="tool-hd" id="tl-hd"></div>
+      <div id="tl-rows"><div class="load">Loading today's shortlist…</div></div>
+      <div class="cta" id="tl-cta">
+        <div class="m"><b>The names are the product</b>
+        <span>Every row above is a real stock that cleared a real filter this
+        evening. A subscription is the name, so you can act on it.</span></div>
+        <a href="/shell.html" id="cta-tools">Start free — 7 days of Pro</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── TRUST ────────────────────────────────────────────────────────────── -->
+<section class="about" id="about">
+  <div class="wrap">
+    <div class="hd"><h2>What this is, and what it is not</h2></div>
+    <p class="lede">The numbers are only worth something if you know exactly
+    how they were arrived at. So here is the whole of it.</p>
+    <div class="qa">
+      <div class="q">
+        <span class="qk">Rule-based</span>
+        <p><b>Arithmetic over past price and volume, and nothing else.</b>
+        The same rules run on every stock, every evening, with no discretion
+        and no hand-picked exceptions. Nothing here predicts a price.</p>
+      </div>
+      <div class="q">
+        <span class="qk">Conditional</span>
+        <p><b>Every taka figure on this site is an "if", not a forecast.</b>
+        It is what a position would come to <i>if</i> the price reached those
+        levels — before brokerage, tax and slippage, and with no promise that
+        any level is reached at all.</p>
+      </div>
+      <div class="q">
+        <span class="qk">What it costs</span>
+        <p><b>Nothing to start.</b> Any ticker you name is free, forever.
+        The shortlist itself is <span id="c-cost">priced below</span>, and the
+        trial needs no card.</p>
+      </div>
+    </div>
+    <div class="astrip">
+      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
+      <div><b>5</b><span>layers, run in sequence from 4:35 PM</span></div>
+      <div><b>1</b><span>setup published in full every day, free</span></div>
+      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
+    </div>
+    <p class="anote">The Signal Stack is wrong regularly, and the track record
+    is published in full — the good days and the bad ones. It is not advice,
+    not a recommendation, and not a prediction that any price will be reached.
+    What it gives you is a structured starting point; the decision stays
+    yours.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="join" id="join">
+    <div id="refbanner"></div>
+    <div id="paybanner"></div>
+
+    <div class="joinbox">
+      <div class="jl">
+        <h2 id="join-h">Create your free account</h2>
+        <p id="join-p">Free gets you the market view and a scored verdict on any
+        ticker you name. The trial opens the whole Signal Stack — every name
+        and every level — with no card needed.</p>
+
+        <div class="periods" id="periods"></div>
+        <ul class="tiers" id="tiers">
+          <li class="tload">Loading today’s prices…</li>
+        </ul>
+
+        <ul class="promise">
+          <li><b>Cancel anytime.</b> One click, no email, no notice period —
+          and you keep the plan you paid for until the end of that period.</li>
+          <li><b>No card for the trial.</b> Nothing stored, nothing charged
+          when it ends.</li>
+          <li><b>Nothing renews behind your back.</b> Every payment is a single
+          payment you make on purpose; no card is kept on file.</li>
+        </ul>
+        <p class="fine2" id="pricenote"></p>
+      </div>
+
+      <div class="jr">
+        <div id="account"></div>
+        <div class="authtabs" id="authtabs">
+          <button type="button" data-t="reg" aria-pressed="true">Create account</button>
+          <button type="button" data-t="in" aria-pressed="false">Sign in</button>
+        </div>
+        <form id="reg" autocomplete="on" novalidate>
+          <label>Name<input id="r-name" name="name" autocomplete="name"
+            placeholder="Your name" maxlength="80"></label>
+          <label>Email<input id="r-email" name="email" type="email"
+            autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
+          <label>Phone <span class="opt">optional</span><input id="r-phone"
+            name="phone" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20"></label>
+          <label>Password<input id="r-pass" name="password" type="password"
+            autocomplete="new-password" placeholder="At least 8 characters"
+            maxlength="72"></label>
+          <button type="submit" id="r-go">Get started free</button>
+          <p class="jmsg" id="r-msg"></p>
+        </form>
+        <form id="login" autocomplete="on" novalidate>
+          <label>Email<input id="l-email" name="email" type="email"
+            autocomplete="email" placeholder="you@example.com" maxlength="120"></label>
+          <label>Password<input id="l-pass" name="password" type="password"
+            autocomplete="current-password" placeholder="Your password"
+            maxlength="72"></label>
+          <button type="submit" id="l-go">Sign in</button>
+          <p class="jmsg" id="l-msg"></p>
+          <p class="jalt"><a href="/shell.html">Forgotten your password?</a></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── FINAL CTA ────────────────────────────────────────────────────────── -->
+<section class="fcta">
+  <div class="wrap">
+    <h2>Give DSE Pulse a ticker, and see what it sees.</h2>
+    <p>One name, the full plan — entry, target and risk, on the money you
+    actually have. Free, and no account needed to try it.</p>
+    <div class="fbtns">
+      <button type="button" class="fgo" id="fcta-try">Find the signal</button>
+      <a class="falt" href="/shell.html" id="cta-final">Start free — 7 days of Pro</a>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <div class="frow">
+      <div class="fcol">
+        <b>DSE Pulse</b>
+        <span>Bangladesh Stock Intelligence · dsepulse.com</span>
+        <div class="social" id="social"></div>
+      </div>
+      <div class="fcol">
+        <b>Product</b>
+        <a href="/shell.html">Dashboard</a>
+        <a href="/trackrecord.html">Track record</a>
+        <a href="/calculator.html">Position calculator</a>
+        <a href="/screener.html">Screener</a>
+      </div>
+      <div class="fcol">
+        <b>Legal</b>
+        <a href="/disclaimer.html">Full disclaimer</a>
+        <a href="/disclaimer.html#risk">Risk warning</a>
+        <a href="/shell.html">Account</a>
+      </div>
+    </div>
+    <p class="disc"><b>Disclaimer.</b> DSE Pulse provides algorithm-generated
+    market data, technical signals, scores and analytics for informational and
+    educational purposes only. DSE Pulse and its operators are not registered or
+    licensed investment advisers, brokers, dealers or portfolio managers, and are
+    not registered with the Bangladesh Securities and Exchange Commission. All
+    signals, conviction scores and labels (including “Buy”, “Strong
+    Buy”, “Watch” and “Avoid”), entry prices, targets and
+    stop-loss levels are automated, rule-based calculations — not
+    recommendations, offers or solicitations. Any taka figure shown on this page
+    is a conditional calculation of what a position would come to at those
+    levels; it is not a forecast of gains, not a promise that any level will be
+    reached, and excludes brokerage commission, taxes and slippage. Trading and
+    investing in shares carries a high level of risk, including the possible loss
+    of all invested capital. Market data is obtained from third-party and publicly
+    available sources and may be delayed, incomplete or inaccurate. Past
+    performance and back-tested results are not indicative of future results. You
+    are solely responsible for your own investment decisions and should consult a
+    licensed adviser. Read the <a href="/disclaimer.html">full disclaimer</a>.</p>
+    <p class="copy">© 2026 DSE Pulse · Governed by the laws of
+    Bangladesh</p>
+  </footer>
+</div>
+
+<div class="modal" id="auth" role="dialog" aria-modal="true"
+     aria-labelledby="auth-t">
+  <div class="mbox">
+    <button type="button" class="mx" id="auth-x" aria-label="Close">×</button>
+    <h3 id="auth-t">The name is the locked part</h3>
+    <p>Entry, target and risk are open on every box above. Which stock they
+    belong to is what an account opens — along with every other row the Signal
+    Stack produced today.</p>
+    <div class="mrow">
+      <a class="mbtn primary" href="#join" id="auth-new">Create a free account</a>
+      <a class="mbtn" href="/shell.html" id="auth-in">I already have an account</a>
+    </div>
+    <p class="mfine">Trial finished, or a subscription lapsed?
+      <a href="/shell.html">Sign in and renew</a><span id="m-price"></span>
+      <b>Cancel anytime</b>, and keep the period you paid for.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var API = (window.DSEEnv && window.DSEEnv.apiBase) ||
+            "https://dsepulse-backend-production.up.railway.app";
+
+  function el(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function num(v, d) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(d === undefined ? 2 : d) : "—";
+  }
+  //  Bangladeshi digit grouping: 1,00,000 — not 100,000. Getting this wrong is
+  //  the fastest way to look like a foreign product to a Dhaka investor.
+  function bdt(v) {
+    var n = Math.round(Number(v) || 0), sign = n < 0 ? "−" : "";
+    var s = String(Math.abs(n)), out = s;
+    if (s.length > 3) {
+      out = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + s.slice(-3);
+    }
+    return sign + "৳" + out;
+  }
+  //  DSE circuit breakers cap most daily moves near 10%. Anything beyond 30% is
+  //  a data fault, never news — the dev seed produced GP at +247% while
+  //  production had it at +0.16%. Showing that number would cost more trust than
+  //  omitting it, and this threshold cannot suppress a real DSE move.
+  function pctOK(v) {
+    var n = Number(v);
+    return isFinite(n) && Math.abs(n) <= 30;
+  }
+  function getJSON(path) {
+    return fetch(API + path).then(function (r) {
+      if (!r.ok) { var e = new Error("http " + r.status); e.status = r.status; throw e; }
+      return r.json();
+    });
+  }
+
+  /* ── the live band ──────────────────────────────────────────────────── */
+  getJSON("/api/dashboard/overview").then(function (o) {
+    var m = (o && o.market) || {};
+    if (m.dsex != null) {
+      el("b-dsex").textContent = Number(m.dsex).toFixed(1);
+      var c = Number(m.dsex_change);
+      if (isFinite(c)) {
+        el("b-dsex").className = "v " + (c > 0 ? "up" : c < 0 ? "dn" : "");
+        el("b-dsex").textContent += (c > 0 ? "  +" : "  ") + c.toFixed(2) + "%";
+      }
+    }
+    if (m.date) {
+      try {
+        el("b-date").textContent = new Date(m.date + "T00:00:00")
+          .toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+      } catch (e) { el("b-date").textContent = m.date; }
+    }
+  }).catch(function () {});
+
+  /* ── the day's scan ────────────────────────────────────────────────── */
+  //  The ranked 25-row board is gone from this page: a stranger cannot act on
+  //  a list of numbered rows, and it pushed the things they CAN act on down.
+  //  The scan is still fetched, because the live band counts come from it and
+  //  the plan card says where a searched stock sits in it.
+  var BOARD = null;
+  getJSON("/api/market/scan").then(function (s) {
+    BOARD = s;
+    el("b-scan").textContent = s.scanned != null ? s.scanned : "—";
+    el("b-pos").textContent  = s.positive != null ? s.positive : "—";
+    //  the About strip quotes the same live number, never a hard-coded one
+    el("a-scan").textContent = s.scanned != null ? s.scanned : "—";
+  }).catch(function () {});
+
+  /* ── capital ────────────────────────────────────────────────────────── */
+  var CAP = 50000, LAST = null;
+  Array.prototype.forEach.call(el("cap").querySelectorAll("button"), function (b) {
+    b.addEventListener("click", function () {
+      CAP = Number(b.dataset.v) || 50000;
+      Array.prototype.forEach.call(el("cap").querySelectorAll("button"), function (o) {
+        o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      });
+      if (LAST) render(LAST);          // re-price the plan already on screen
+      paintTool();                     // and re-price every engine row too
+      paintBoxes();                    // and every box on the first screen
+    });
+  });
+
+  /* ── the first screen: one box per engine, one stock in each ────────── */
+  //  Five boxes hide the name AND the price, because a price is a name: DSE
+  //  closes are public, so "entry ৳68.20" is one lookup away from the ticker.
+  //  What is shown instead is the SHAPE of the trade — how far the entry sits
+  //  from the close, how far the target and stop sit from the entry, and what
+  //  that comes to on the visitor's capital.
+  //
+  //  The sixth box is open on purpose. Nothing else here can be checked by a
+  //  stranger, and an unverifiable claim converts nobody; one complete pick a
+  //  day, rotating between the engines, can be taken to any other DSE site and
+  //  confirmed.
+  function pctTxt(v) {
+    var n = Number(v);
+    if (!isFinite(n)) return "";
+    return (n > 0 ? "+" : n < 0 ? "−" : "") + num(Math.abs(n), 1) + "%";
+  }
+
+  function lrow(k, price, delta, cls, masked) {
+    return '<div class="lr ' + cls + '"><span class="k2">' + k + "</span>" +
+      '<span class="p2">' +
+      (masked ? '<span class="mask" aria-label="locked"></span>' : "৳" + num(price)) +
+      "</span>" + '<span class="d2">' + delta + "</span></div>";
+  }
+
+  //  These two taka figures are the ONLY things on a box that depend on the
+  //  capital chip: profit = capital x (target - entry)/entry. Unlabelled, they
+  //  read as a property of the stock, and changing the chip then looks like the
+  //  page inventing numbers. So the row names the amount it is computed on.
+  function bmoney(tp, sp, rr) {
+    return '<div class="bfoot"><em>On ' + bdt(CAP) + "</em>" +
+      "<b>+" + bdt(CAP * Number(tp) / 100) + "</b>" +
+      "<i>−" + bdt(CAP * Number(sp) / 100) + "</i>" +
+      '<s>R/R ' + num(rr, 1) + "</s></div>";
+  }
+
+  function boxHTML(tool, fp) {
+    var free = !!(fp && fp.tool === tool.key);
+    var r = (tool.rows || [])[0];
+    if (!r && !free) {
+      return '<div class="bx"><div class="bh"><span class="t">' + esc(tool.name) +
+        '</span></div><div class="note2">Nothing cleared this filter today.' +
+        "</div></div>";
+    }
+    var score = free ? fp.score : (r && r.score);
+    var head = '<div class="bh"><span class="t">' + esc(tool.name) + "</span>" +
+      '<span class="tr ' + (tool.tier === "pro" ? "pro" : "") + '">' +
+      (free ? "open today" : esc(tool.tier)) + "</span></div>";
+
+    //  The blurred name IS the lock — it is the only thing still withheld, so
+    //  it is what a visitor clicks when they want it.
+    var name = '<div class="nm">' +
+      (free
+        ? '<span class="rl">' + esc(fp.code) + "</span>"
+        : '<button type="button" class="lockname" data-lock="1" ' +
+          'aria-label="Stock name locked — sign in or create an account">' +
+          '<span class="bl">████████</span>' +
+          '<span class="lkchip"><b></b>Name</span></button>') +
+      (score != null ? '<span class="sc3">' + num(score, 0) + "</span>" : "") +
+      "</div>";
+
+    var body, foot;
+    var L = free ? fp : (r ? r.levels : null);
+    if (L && (free || (L.entry != null && L.target != null && L.sl != null))) {
+      var gp = free ? fp.target_pct : L.target_pct;
+      var sp = free ? fp.stop_pct   : L.stop_pct;
+      var ef = free
+        ? (Number(fp.entry) - Number(fp.ltp)) / Number(fp.ltp) * 100
+        : L.entry_from_last;
+      body = '<div class="ladder">' +
+        //  NOT "Now". This is `ltp` from the engine's row, written when the
+        //  batch ran — after the close on a normal day, and at whatever moment
+        //  a manual run happened otherwise. Calling it "Now" contradicted the
+        //  "AS OF 20 Aug" in this page's own header, and during market hours it
+        //  was checkable against any live quote in ten seconds. Being caught
+        //  wrong on the one figure a stranger can verify is expensive for a
+        //  site selling analysis. "Last" is true whenever the batch ran.
+        (L.ltp != null ? lrow("Last", L.ltp, "", "lastrow", false) : "") +
+        lrow("Entry", L.entry, pctTxt(ef), "", false) +
+        lrow("Target", L.target, "+" + num(gp, 1) + "%", "t2", false) +
+        lrow("Stop", L.sl, "−" + num(sp, 1) + "%", "s2", false) +
+        "</div>";
+      foot = bmoney(gp, sp, free ? fp.rr : L.rr);
+      //  Tech Analysis and WMA Analysis store no ladder of their own; theirs
+      //  is the one another engine published for the same stock. Say so, in
+      //  the box, rather than letting it read as their own work.
+      var from = !free && r ? (r.evidence || []).filter(function (e) {
+        return e[0] === "Levels from"; })[0] : null;
+      if (from) {
+        foot += '<div class="src">levels from <b>' + esc(from[1]) + "</b></div>";
+      }
+    } else if (L && L.target_pct != null) {
+      //  the server is running with TEASER_LEVELS_OPEN=false: shape only
+      body = '<div class="ladder">' +
+        lrow("Last", 0, "", "lastrow", true) +
+        lrow("Entry", 0, pctTxt(L.entry_from_last), "", true) +
+        lrow("Target", 0, "+" + num(L.target_pct, 1) + "%", "t2", true) +
+        lrow("Stop", 0, "−" + num(L.stop_pct, 1) + "%", "s2", true) +
+        "</div>";
+      foot = bmoney(L.target_pct, L.stop_pct, L.rr);
+    } else {
+      body = '<div class="ev2">' + (r.evidence || []).slice(0, 4).map(function (e) {
+        return "<div><span>" + esc(e[0]) + "</span><b>" + esc(e[1]) + "</b></div>";
+      }).join("") + "</div>";
+      foot = '<div class="note2">Scores and ranks only — this engine does not ' +
+             "publish an entry, a target or a stop.</div>";
+    }
+    return '<div class="bx' + (free ? " free" : "") + '">' +
+           head + name + body + foot + "</div>";
+  }
+
+  function paintBoxes() {
+    if (!TEASER) return;
+    var fp = TEASER.free_pick;
+    el("boxes").innerHTML =
+      (TEASER.tools || []).map(function (t) { return boxHTML(t, fp); }).join("");
+    if (fp) {
+      el("sf-note").innerHTML =
+        "Entry, target and stop are open on every box. Only the <b>name</b> is " +
+        "held back — except today's, <b>" + esc(fp.code) + "</b> from " +
+        esc(fp.tool_name) + ", which you can check on any DSE site.";
+    }
+    //  the cards have just changed height — re-measure the first screen
+    if (window.__dseFit) fitSoon();
+  }
+
+  /* ── what the six engines found ─────────────────────────────────────── */
+  //  The server sends no ticker and no price — only how far the entry sits
+  //  from the last trade and how far the target and stop sit from the entry.
+  //  Taka is worked out here, because
+  //      profit = shares x (target - entry) = capital x (target - entry)/entry
+  //  needs no price at all. Nothing on this page could name these stocks.
+  var TEASER = null, TOOL = null;
+
+  function currentTool() {
+    if (!TEASER) return null;
+    var ts = TEASER.tools || [];
+    for (var i = 0; i < ts.length; i++) if (ts[i].key === TOOL) return ts[i];
+    return ts[0] || null;
+  }
+
+  function tn(k, v, sub, cls) {
+    return '<div class="tn"><div class="k">' + esc(k) + "</div>" +
+           '<div class="v ' + cls + '">' + v +
+           (sub ? "<small>" + sub + "</small>" : "") + "</div></div>";
+  }
+
+  function toolRow(r) {
+    var id = '<div class="tid"><span class="rk2">' + r.rank + "</span>" +
+      '<span class="col"><span class="blurname" aria-label="Stock name withheld">' +
+      "████████</span>" +
+      '<span class="sub">name locked</span></span>' +
+      (r.score != null ? '<span class="chip sc2">' + num(r.score, 0) + "</span>" : "") +
+      (r.cat ? '<span class="chip">Cat ' + esc(r.cat) + "</span>" : "") +
+      (r.signal ? '<span class="chip">' + esc(r.signal) + "</span>" : "") +
+      "</div>";
+
+    var right;
+    var L = r.levels;
+    if (L) {
+      var gain = CAP * Number(L.target_pct) / 100;
+      var loss = CAP * Number(L.stop_pct) / 100;
+      var ef = L.entry_from_last;
+      right = '<div class="tnums">' +
+        tn("Entry", ef == null ? "—"
+             : (ef > 0 ? "+" : ef < 0 ? "−" : "") + num(Math.abs(ef), 1) + "%",
+           "from the last trade", "") +
+        tn("Target", "+" + num(L.target_pct, 1) + "%",
+           "+" + bdt(gain) + " on " + bdt(CAP), "gain") +
+        tn("Stop", "−" + num(L.stop_pct, 1) + "%",
+           "−" + bdt(loss) + " if it hits", "loss") +
+        tn("Reward vs risk", num(L.rr, 1) + " : 1", "", "") +
+        "</div>";
+    } else {
+      right = '<div class="evid">' + (r.evidence || []).map(function (e) {
+        return "<span>" + esc(e[0]) + " <b>" + esc(e[1]) + "</b></span>";
+      }).join("") + "</div>";
+    }
+    return '<div class="trow">' + id + right + "</div>";
+  }
+
+  function paintTool() {
+    var t = currentTool();
+    if (!t) return;
+    TOOL = t.key;
+    Array.prototype.forEach.call(el("tl-tabs").querySelectorAll("button"),
+      function (b) {
+        b.setAttribute("aria-pressed", b.dataset.k === t.key ? "true" : "false");
+      });
+
+    el("tl-hd").innerHTML =
+      '<span class="s">' + esc(t.sells) + "</span>" +
+      '<span class="c">' + t.total + " on this list today · showing " + t.shown +
+      "</span>" +
+      '<span class="tier ' + (t.tier === "pro" ? "pro" : "") + '">' +
+      esc(t.tier) + "</span>";
+
+    var html = "";
+    if (!t.has_levels) {
+      html += '<div class="nolevels"><b>' + esc(t.name) +
+        " does not publish an entry, a target or a stop.</b> It scores and ranks, " +
+        "and we will not invent levels on its behalf. What it does hold is below — " +
+        "the levels come from Today's Picks, Combined Signal and BD Signal.</div>";
+    }
+    html += (t.rows || []).map(toolRow).join("");
+    el("tl-rows").innerHTML = html ||
+      '<div class="load">' + esc(t.name) + " produced nothing today.</div>";
+  }
+
+  getJSON("/api/teaser/tools").then(function (t) {
+    TEASER = t;
+    var ts = t.tools || [];
+    if (!ts.length) throw new Error("no tools");
+    TOOL = ts[0].key;
+
+    var tabs = el("tl-tabs");
+    tabs.innerHTML = "";
+    ts.forEach(function (tool) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.k = tool.key;
+      b.innerHTML = esc(tool.name) + "<em>" + tool.total + "</em>";
+      b.setAttribute("aria-pressed", tool.key === TOOL ? "true" : "false");
+      b.addEventListener("click", function () { TOOL = tool.key; paintTool(); });
+      tabs.appendChild(b);
+    });
+
+    var rows = ts.reduce(function (n, x) { return n + (Number(x.total) || 0); }, 0);
+    el("tl-note").textContent = ts.length + " tools · " + rows +
+      " scored rows behind the wall";
+    paintTool();
+    paintBoxes();
+  }).catch(function () {
+    var msg = '<div class="load">Today’s Signal Stack could not be loaded. ' +
+      "Please try again shortly.</div>";
+    el("tl-rows").innerHTML = msg;
+    el("boxes").innerHTML = msg;
+  });
+
+  /* ── the verdict ────────────────────────────────────────────────────── */
+  //  Colour keys off the ENGINE's score, which is the same field the ranked
+  //  board displays. The confluence reading never gets a tag of its own.
+  function bandOf(score) {
+    var n = Number(score);
+    if (!isFinite(n)) return "watch";
+    return n >= 70 ? "buy" : n >= 50 ? "watch" : "avoid";
+  }
+  var CONFLUENCE_SAY = {
+    4: "all four broader indicators agree — uncommon",
+    3: "three of four broader indicators agree",
+    2: "the broader indicators are evenly split",
+    1: "only one broader indicator agrees",
+    0: "none of the broader indicators agree today"
+  };
+
+  function rankOf(code) {
+    if (!BOARD) return null;
+    var all = (BOARD.opportunities || []).concat(BOARD.locked || []);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].code && String(all[i].code).toUpperCase() === code) {
+        return { rank: all[i].rank, total: all.length };
+      }
+    }
+    return { rank: null, total: all.length };
+  }
+
+  //  build_card resolves entry / t1 / sl from ONE source and names it in
+  //  levels_source. The extended targets l2 and l3 come from score_stock's own
+  //  ladder, so they only belong beside these three when the source is
+  //  "derived" — otherwise they are a different ladder and are not shown.
+  function moneyBlock(d) {
+    var entry = Number(d.entry), t1 = Number(d.t1), sl = Number(d.sl);
+    if (!(d.setup_valid && entry > 0 && t1 > entry && sl > 0 && sl < entry)) {
+      return '<div class="nosetup"><b>No tradeable setup today</b>' +
+        "We only publish an entry, a target and a stop when they hold together — " +
+        "the stop below the entry, the entry below the target. For " + esc(d.code) +
+        " today they do not, so there is no plan to price. That is an answer too." +
+        "</div>";
+    }
+    var shares = Math.floor(CAP / entry);
+    if (shares < 1) {
+      return '<div class="nosetup"><b>' + esc(d.code) + " costs more than that</b>" +
+        "One share is ৳" + num(entry) + ", so " + bdt(CAP) +
+        " does not buy a single one at the entry. Pick a larger figure above to " +
+        "price this plan." + "</div>";
+    }
+    var cost  = shares * entry;
+    var gain  = (t1 - entry) * shares;
+    var risk  = (entry - sl) * shares;
+    var gainP = (t1 - entry) / entry * 100;
+    var riskP = (entry - sl) / entry * 100;
+    var rr    = isFinite(Number(d.rr)) && Number(d.rr) > 0
+                  ? Number(d.rr) : (t1 - entry) / (entry - sl);
+
+    var extra = "";
+    if (d.levels_source === "derived" && Number(d.l2) > t1 && Number(d.l3) > Number(d.l2)) {
+      extra = '<div class="g"><div class="k">If it runs on</div><div class="v">' +
+        bdt((Number(d.l3) - entry) * shares) + "</div></div>";
+    }
+
+    return '<div class="money">' +
+      '<div class="hl"><span class="big">+' + bdt(gain) + "</span>" +
+      '<span class="cond">if ' + esc(d.code) + " reaches <b>৳" + num(t1) +
+      "</b> from an entry at <b>৳" + num(entry) + "</b> — " + num(gainP, 1) +
+      "% — on " + bdt(cost) + " of stock. Typical window <b>" +
+      esc(d.tf || "1–3 days") + "</b>.</span></div>" +
+      '<div class="grid">' +
+        '<div class="g"><div class="k">Shares</div><div class="v">' +
+          shares.toLocaleString("en-IN") + "</div></div>" +
+        '<div class="g"><div class="k">You put in</div><div class="v">' +
+          bdt(cost) + "</div></div>" +
+        '<div class="g"><div class="k">If the stop hits</div>' +
+          '<div class="v risk">' + bdt(-risk) + " <span style=\"opacity:.7\">(" +
+          num(riskP, 1) + "%)</span></div></div>" +
+        '<div class="g"><div class="k">Reward vs risk</div><div class="v">' +
+          num(rr, 1) + " : 1</div></div>" + extra +
+      "</div>" +
+      '<div class="fine"><b>This is arithmetic, not a forecast.</b> ৳' + num(t1) +
+      " is where this plan takes profit and ৳" + num(sl) +
+      " is where it accepts it was wrong; neither is a prediction that the price " +
+      "will get there. Figures are before brokerage commission, taxes and " +
+      "slippage, and assume the whole position fills at ৳" + num(entry) + "." +
+      "</div></div>";
+  }
+
+  //  `buy_zone` comes from score_stock's own ladder while `entry` may come from
+  //  the picks ladder — on BATBC today they read ৳244.39-৳246.83 and ৳249.45.
+  //  Printing them together would put two different ladders in one strip. Show
+  //  the zone only when its upper bound IS the entry.
+  function zoneFor(d, entry) {
+    var bz = d.buy_zone ? String(d.buy_zone) : "";
+    if (!bz) return "";
+    var parts = bz.replace(/৳/g, "").split("-");
+    var top = parts.length === 2 ? Number(parts[1]) : NaN;
+    return (isFinite(top) && Math.abs(top - entry) < 0.011) ? bz : "";
+  }
+
+  function planStrip(d) {
+    var entry = Number(d.entry), t1 = Number(d.t1), sl = Number(d.sl);
+    if (!(d.setup_valid && entry > 0 && t1 > entry && sl > 0 && sl < entry)) return "";
+    var bz = zoneFor(d, entry);
+    return '<div class="plan">' +
+      '<div class="lv e"><div class="k">Entry</div><div class="p">৳' + num(entry) +
+        '</div><div class="d">' + (bz ? esc(bz) : "buy at or below") + "</div></div>" +
+      '<div class="lv t"><div class="k">Target</div><div class="p">৳' + num(t1) +
+        '</div><div class="d">+' + num((t1 - entry) / entry * 100, 1) + "%</div></div>" +
+      '<div class="lv s"><div class="k">Stop loss</div><div class="p">৳' + num(sl) +
+        '</div><div class="d">−' + num((entry - sl) / entry * 100, 1) + "%</div></div>" +
+      "</div>";
+  }
+
+  //  An entry below the market is not a trade you can take this morning.
+  //  RELIANCINS today: entry ৳113.01, last traded ৳115.80. Pricing that as if
+  //  it were live would be the single fastest way to lose a subscriber.
+  function triggerLine(d) {
+    var entry = Number(d.entry), ltp = Number(d.ltp);
+    if (!(d.setup_valid && entry > 0 && ltp > 0)) return "";
+    var gap = (ltp - entry) / entry * 100;
+    if (gap > 0.5) {
+      return '<div class="trig wait"><b>Not live yet.</b> ' + esc(d.code) +
+        " last traded at ৳" + num(ltp) + ", which is " + num(gap, 1) +
+        "% above the entry. The figures below assume you get filled at ৳" +
+        num(entry) + " — that needs a pullback, and it may never come.</div>";
+    }
+    return '<div class="trig live"><b>Live at today’s price.</b> ৳' + num(ltp) +
+      " is at or below the ৳" + num(entry) + " entry.</div>";
+  }
+
+  function render(d) {
+    LAST = d;
+    var pc = Number(d.pct != null ? d.pct : d.chg);
+    var band = bandOf(d.score);
+    var bars = (d.bars || []).map(function (b) {
+      var got = Number(b[1]), max = Number(b[2]) || 1;
+      return '<div class="bar"><span class="bn">' + esc(b[0]) + "</span>" +
+             '<span class="bt"><span class="bf" style="width:' +
+             Math.max(2, Math.round(got / max * 100)) + "%;background:" +
+             esc(b[3] || "#0D1F3C") + '"></span></span>' +
+             '<span class="bv">' + got + "/" + max + "</span></div>";
+    }).join("");
+
+    var r = rankOf(String(d.code || "").toUpperCase());
+    var headline;
+    if (r && r.rank) {
+      headline = "<b>Ranked " + r.rank + " of " + r.total + "</b> on today's board" +
+                 (r.rank > 1 ? " — " + (r.rank - 1) + " scored higher." : ".");
+    } else if (r) {
+      headline = "<b>Not on today's ranked board.</b> " + r.total +
+                 " stocks scored above it.";
+    } else {
+      headline = "";
+    }
+
+    //  The confluence is a caveat, never a second verdict.
+    var bull = parseInt(String(d.confluence || "").charAt(0), 10);
+    var fromEngine = d.score_source === "tech_engine";
+    var caveat = "";
+    if (isFinite(bull) || !fromEngine) {
+      caveat = '<div class="caveat"><span class="dot"></span><span>' +
+        (fromEngine
+          ? "The score above is the technical engine's. "
+          : "<b>The technical engine has not scored this stock today</b>, so the " +
+            "number above is our fallback estimate from price and volume alone. ") +
+        (isFinite(bull)
+          ? "Separately, <b>" + esc(d.confluence || "") + "</b> — " +
+            (CONFLUENCE_SAY[bull] || "") + ". Two readings of the same stock; " +
+            "they will not always point the same way."
+          : "") + "</span></div>";
+    }
+
+    el("out").innerHTML =
+      '<div class="card"><div class="top">' +
+        '<div class="who"><div class="code">' + esc(d.code) + "</div>" +
+        '<div class="meta">' + esc(d.sector && d.sector !== "—" ? d.sector + " · " : "") +
+        "Category " + esc(d.cat || "—") + " · as of " + esc(d.as_of || "today") +
+        "</div></div>" +
+        '<div class="px"><div class="n">৳' + num(d.ltp) + "</div>" +
+        '<div class="c ' + (pctOK(pc) ? (pc > 0 ? "up" : pc < 0 ? "dn" : "") : "") + '">' +
+        (pctOK(pc) ? (pc > 0 ? "+" : "") + num(pc, 2) + "%" : "—") + "</div></div>" +
+      "</div>" +
+      planStrip(d) +
+      triggerLine(d) +
+      moneyBlock(d) +
+      '<div class="vd"><span class="score ' + band + '">' +
+        Math.round(Number(d.score) || 0) + "<small>score</small></span>" +
+        '<span class="say">' + headline + "</span></div>" +
+      (bars ? '<div class="bars">' + bars + "</div>" : "") +
+      caveat + "</div>";
+  }
+
+  //  The answer replaces the six boxes in the same grid row. Sending the
+  //  visitor to the bottom of the page to read it undoes the one-screen point.
+  function showPanel(on) {
+    el("panel").className = on ? "panel on" : "panel";
+    el("boxes").className = on ? "boxes off" : "boxes";
+    //  going back to the boxes means they need measuring again; opening the
+    //  result means the steps come off, because the card sizes itself
+    if (window.__dseFit) fitSoon();
+  }
+
+  function ask(code) {
+    code = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!code) return;
+    el("code").value = code;
+    el("go").disabled = true;
+    LAST = null;
+    showPanel(true);
+    el("out").innerHTML = '<div class="load">Working out the plan for ' +
+      esc(code) + "…</div>";
+    getJSON("/api/analyse/" + encodeURIComponent(code))
+      .then(function (d) {
+        if (!d || d.status === "error" || !d.code) throw new Error("no data");
+        render(d);
+      })
+      .catch(function (e) {
+        el("out").innerHTML =
+          '<div class="err"><b>' + esc(code) + " — nothing to show</b>" +
+          (e && e.status === 403
+            ? "This lookup is temporarily unavailable. Please try again shortly."
+            : "We have no analysis for that ticker today. Check the spelling, or " +
+              "try one of the examples above — it may not have traded, or it may " +
+              "not be a DSE code.") + "</div>";
+      })
+      .then(function () { el("go").disabled = false; });
+  }
+
+  el("ask").addEventListener("submit", function (e) {
+    e.preventDefault(); ask(el("code").value);
+  });
+  el("back").addEventListener("click", function () {
+    showPanel(false); LAST = null; el("out").innerHTML = ""; el("code").value = "";
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".eg button"), function (b) {
+    b.addEventListener("click", function () { ask(b.dataset.c); });
+  });
+
+  //  The closing CTA asks for the same thing the page opened with. It does not
+  //  navigate — it takes the visitor back to the box they already saw and puts
+  //  the cursor in it, which is the whole of the ask.
+  (function () {
+    var t = el("fcta-try");
+    if (!t) return;
+    t.addEventListener("click", function () {
+      var top = el("top"), box = el("code");
+      if (top && top.scrollIntoView) top.scrollIntoView({ behavior: "smooth" });
+      //  focus after the scroll has been asked for, so the browser does not
+      //  jump the page a second time to satisfy the focus
+      setTimeout(function () { if (box) { try { box.focus(); } catch (e) {} } }, 420);
+    });
+  })();
+
+
+  /* ── the lock opens the door, it does not just say "locked" ─────────── */
+  //  Every locked thing on this page leads to the same two choices: sign in if
+  //  you have an account, create one if you do not. A lapsed trial or a lapsed
+  //  subscription is the same door — signing in is where renewing happens, so
+  //  the modal says so rather than sending them somewhere else.
+  function openAuth() {
+    el("auth").className = "modal on";
+  }
+  function closeAuth() {
+    el("auth").className = "modal";
+  }
+  el("boxes").addEventListener("click", function (e) {
+    var t = e && e.target;
+    var hit = t && t.closest ? t.closest("[data-lock]") : null;
+    if (!hit) return;
+    if (e.preventDefault) e.preventDefault();
+    //  A subscriber clicking a lock is not asking to create an account. This
+    //  page cannot show them the name — it does not have it — but the page
+    //  that can is one click away, so send them there instead of selling.
+    if (ENTITLED) { window.location.href = "/shell.html#plan"; return; }
+    openAuth();
+  });
+  el("auth-x").addEventListener("click", closeAuth);
+  el("auth").addEventListener("click", function (e) {
+    //  a click on the backdrop, not inside the box, closes it
+    if (e && e.target && e.target.id === "auth") closeAuth();
+  });
+  el("auth-new").addEventListener("click", function () {
+    closeAuth();
+    try { el("r-name").focus(); } catch (x) {}
+  });
+  try {
+    document.addEventListener("keydown", function (e) {
+      if (e && (e.key === "Escape" || e.keyCode === 27)) closeAuth();
+    });
+  } catch (x) {}
+
+
+  /* ── checkout ───────────────────────────────────────────────────────── */
+  //  Every price on this page is read from /api/config, which is the row
+  //  server_price() bills from. Writing a price into the markup is how a site
+  //  ends up advertising 499 and charging 2,499 — which is exactly what the
+  //  dev database was set up to do before this was built.
+  var PRICING = null, PERIOD = "monthly", SUB = null;
+  var PERIOD_LABEL = { monthly: "Monthly", quarterly: "Quarterly", annual: "Annual" };
+  var PERIOD_NOTE  = { monthly: "billed monthly", quarterly: "for three months",
+                       annual: "for twelve months" };
+
+  function token() {
+    try { return window.localStorage.getItem("dse_token") || ""; }
+    catch (e) { return ""; }
+  }
+  function signedIn() { return !!token(); }
+
+  function authJSON(path, method, body) {
+    var opt = { method: method || "GET",
+                headers: { "Content-Type": "application/json" } };
+    var t = token();
+    if (t) opt.headers["Authorization"] = "Bearer " + t;
+    if (body) opt.body = JSON.stringify(body);
+    return fetch(API + path, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          var e = new Error(d && d.detail ? d.detail : "http " + r.status);
+          e.status = r.status; throw e;
+        }
+        return d;
+      });
+    });
+  }
+
+  //  ── the banner the customer returns to ─────────────────────────────
+  (function () {
+    var q = "";
+    try { q = String(window.location.search || ""); } catch (e) {}
+    var m = /[?&]payment=([a-z]+)/.exec(q);
+    if (!m) return;
+    var kind = m[1];
+    var b = el("paybanner");
+    if (kind === "success") {
+      b.className = "pbanner ok";
+      b.innerHTML = "<b>Payment received</b>Your subscription is active. If the " +
+        "plan below still shows the old one, give it a moment and reload — the " +
+        "gateway confirms in the background.";
+    } else if (kind === "pending") {
+      b.className = "pbanner wait";
+      b.innerHTML = "<b>Payment not confirmed yet</b>The gateway has taken the " +
+        "payment but has not confirmed it to us. Nothing is lost — it activates " +
+        "automatically once confirmed. If it has not within an hour, contact us.";
+    } else {
+      b.className = "pbanner bad";
+      b.innerHTML = "<b>Payment did not go through</b>Nothing was charged. You " +
+        "can try again below, or use a different method.";
+    }
+  })();
+
+  //  ── prices, from the server ────────────────────────────────────────
+  function paint_prices() {
+    if (!PRICING) return;
+    var per = el("periods");
+    per.innerHTML = ["monthly", "quarterly", "annual"].filter(function (k) {
+      return PRICING[k];
+    }).map(function (k) {
+      var lab = PRICING[k] && PRICING[k].label;
+      return '<button type="button" data-p="' + k + '" aria-pressed="' +
+        (k === PERIOD ? "true" : "false") + '">' + PERIOD_LABEL[k] +
+        (lab ? "<em>" + esc(lab) + "</em>" : "") + "</button>";
+    }).join("");
+    Array.prototype.forEach.call(per.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () {
+        PERIOD = b.dataset.p; paint_prices();
+      });
+    });
+
+    var row = PRICING[PERIOD] || {};
+    var mine = SUB && SUB.plan;
+    el("tiers").innerHTML = ["free", "premium", "pro"].map(function (plan) {
+      var amt = Number(row[plan] || 0);
+      var cur = mine === plan;
+      var label = plan === "free" ? "Get started free"
+                : (signedIn() ? "Choose " + plan.charAt(0).toUpperCase() + plan.slice(1)
+                              : "Start with " + plan.charAt(0).toUpperCase() + plan.slice(1));
+      return '<li class="' + (cur ? "cur" : "") + '"><b>' + plan + "</b>" +
+        (cur ? '<span class="now">your plan</span>' : "") +
+        '<span class="amt">' + (amt > 0 ? bdt(amt) : "৳0") + "</span>" +
+        '<span class="per">' + (amt > 0 ? esc(PERIOD_NOTE[PERIOD]) : "free, forever") +
+        "</span>" +
+        (cur ? "" :
+          '<button type="button" class="buy ' + (plan === "pro" ? "gold" : "") +
+          '" data-plan="' + plan + '">' + esc(label) + "</button>") +
+        "</li>";
+    }).join("");
+
+    Array.prototype.forEach.call(el("tiers").querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () { choose(b.dataset.plan, b); });
+    });
+
+    //  Every other place on the page that quotes a price reads it from the
+    //  same object, so there is exactly one source of truth for what things
+    //  cost — the row the server bills from.
+    var mm = (PRICING.monthly || {});
+    var cost = el("c-cost");
+    if (cost && mm.premium) {
+      cost.textContent = bdt(mm.premium) + " a month for Premium and " +
+        bdt(mm.pro) + " for Pro";
+    }
+    var mp = el("m-price");
+    if (mp && mm.premium) {
+      mp.textContent = " — Premium " + bdt(mm.premium) + "/month, Pro " +
+        bdt(mm.pro) + "/month" +
+        ((PRICING.quarterly && PRICING.quarterly.label)
+          ? ", " + PRICING.quarterly.label.toLowerCase() + " on quarterly" : "") +
+        ((PRICING.annual && PRICING.annual.label)
+          ? " and " + PRICING.annual.label.toLowerCase() + " on annual" : "") + ". ";
+    }
+
+    var t = PRICING.trial_days;
+    el("pricenote").textContent =
+      (t ? t + " days of Pro free to start, no card needed. " : "") +
+      "Prices in Bangladeshi taka, charged once per period.";
+  }
+
+  //  ── choosing a plan ────────────────────────────────────────────────
+  //  Signed out, the honest order is account first: /api/payment/init is
+  //  authenticated, so there is no way to pay as a stranger and no point
+  //  pretending otherwise. The intent is remembered and resumed after
+  //  registration, so the visitor does not have to find the button again.
+  var INTENT = null;
+
+  function choose(plan, btn) {
+    if (plan === "free" || !signedIn()) {
+      if (plan !== "free") INTENT = { plan: plan, period: PERIOD };
+      el("r-msg").className = "jmsg";
+      el("r-msg").textContent = plan === "free" ? "" :
+        "Create your account first — then we'll take you straight to payment.";
+      try { el("r-name").focus(); } catch (e) {}
+      return;
+    }
+    startPayment(plan, PERIOD, btn);
+  }
+
+  function startPayment(plan, period, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = "Opening payment…"; }
+    authJSON("/api/payment/init", "POST", { plan: plan, period: period })
+      .then(function (d) {
+        if (!d || !d.gateway_url) throw new Error("No payment page was returned");
+        //  Hand over to SSLCommerz. Nothing about the amount is decided here —
+        //  the server priced it and the gateway is told by the server.
+        window.location.href = d.gateway_url;
+      })
+      .catch(function (e) {
+        if (btn) { btn.disabled = false; paint_prices(); }
+        var b = el("paybanner");
+        b.className = "pbanner bad";
+        b.innerHTML = "<b>Could not start the payment</b>" +
+          esc(e && e.message ? e.message : "Please try again shortly.");
+        try { b.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (x) {}
+      });
+  }
+
+  //  ── the signed-in panel: what you have, and how to cancel it ───────
+  function paint_account() {
+    var host = el("account");
+    if (!signedIn()) { host.innerHTML = ""; showAuth("reg"); return; }
+    //  signed in: neither form belongs on the screen any more
+    el("reg").className = "off";
+    el("login").className = "";
+    el("authtabs").style.display = "none";
+    var s = SUB;
+    if (!s) { host.innerHTML = ""; return; }
+
+    var sub = s.subscription;
+    var rows = '<div class="row2"><span>Plan</span><b>' +
+      esc(String(s.effective_plan || s.plan || "free").toUpperCase()) + "</b></div>";
+    if (sub) {
+      rows += '<div class="row2"><span>Renews on</span><b>' +
+        esc(String(sub.access_until || sub.expires_at || "").slice(0, 10)) + "</b></div>" +
+        '<div class="row2"><span>Days left</span><b>' +
+        (sub.days_left == null ? "—" : sub.days_left) + "</b></div>";
+    }
+
+    var act = "";
+    if (sub && sub.cancelled) {
+      act = '<div class="cx"><b>Cancelled.</b> This will not renew. You keep ' +
+        esc(String(sub.plan || "").toUpperCase()) + " access until <b>" +
+        esc(String(sub.access_until || "").slice(0, 10)) + "</b>.</div>" +
+        '<div class="act"><button type="button" id="a-resume">Turn renewal back on</button>' +
+        '<a href="/shell.html">Open dashboard</a></div>';
+    } else if (sub) {
+      act = '<div class="act"><button type="button" class="danger" id="a-cancel">' +
+        "Cancel subscription</button>" +
+        '<a href="/shell.html">Open dashboard</a></div>';
+    } else {
+      act = '<div class="act"><a href="/shell.html">Open dashboard</a></div>';
+    }
+
+    host.innerHTML = '<div class="acct"><h3>Your subscription</h3>' + rows + act +
+      '<p class="amsg" id="a-msg"></p></div>';
+
+    var c = document.getElementById("a-cancel");
+    if (c) c.addEventListener("click", function () { cancelSub(c); });
+    var r = document.getElementById("a-resume");
+    if (r) r.addEventListener("click", function () { resumeSub(r); });
+  }
+
+  function cancelSub(btn) {
+    var msg = document.getElementById("a-msg");
+    btn.disabled = true;
+    msg.className = "amsg"; msg.textContent = "Cancelling…";
+    authJSON("/api/subscription/cancel", "POST", {})
+      .then(function (d) {
+        msg.className = "amsg ok";
+        msg.textContent = d.detail || "Cancelled.";
+        return loadSubscription();
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        msg.className = "amsg err";
+        msg.textContent = (e && e.message) || "Could not cancel — please try again.";
+      });
+  }
+
+  function resumeSub(btn) {
+    var msg = document.getElementById("a-msg");
+    btn.disabled = true;
+    msg.className = "amsg"; msg.textContent = "Turning renewal back on…";
+    authJSON("/api/subscription/resume", "POST", {})
+      .then(function (d) {
+        msg.className = "amsg ok";
+        msg.textContent = d.detail || "Renewal is back on.";
+        return loadSubscription();
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        msg.className = "amsg err";
+        msg.textContent = (e && e.message) || "Could not turn renewal back on.";
+      });
+  }
+
+  /* ── a customer is not a prospect ───────────────────────────────────── */
+  //  Someone who has just paid ৳899 comes back to this page and finds every
+  //  name still blurred and every button still reading "Start free — 7 days of
+  //  Pro". Nothing acknowledges the payment, so it reads as a payment that
+  //  failed. Support tickets are cheaper to prevent than to answer.
+  //
+  //  What this does NOT do is unlock anything. The names are withheld on the
+  //  SERVER and have never been in this page for anyone, subscriber included —
+  //  that is entitlement by omission and it is not weakened here. All that
+  //  changes is what the page says and where it points: a paid customer is
+  //  sent to the dashboard they bought, not to a signup form they already
+  //  completed.
+  var ENTITLED = false, INVITED = false;
+
+  function paidPlan() {
+    if (!signedIn() || !SUB) return "";
+    var p = String(SUB.effective_plan || SUB.plan || "free").toLowerCase();
+    return (p === "pro" || p === "premium") ? p.toUpperCase() : "";
+  }
+
+  //  Tell the CSS how tall the subscriber banner actually is, so the first
+  //  screen can subtract it. Measured rather than hard-coded, because the
+  //  strip wraps to two rows on a narrow window and to one on a wide one.
+  /* ── does the first screen fit? ask the browser, do not calculate ─────── */
+  //  The three fit-* steps are defined in the stylesheet. This turns them on
+  //  one at a time, re-measuring after each, and stops the moment the bottom
+  //  of the first screen clears the fold. It is the only honest way to do
+  //  this: the real heights depend on fonts that only the visitor's browser
+  //  has, so nothing computed anywhere else can be trusted.
+  //  --bandh was a hardcoded 46px. The sticky bar is not 46px — its height
+  //  depends on the font that loaded and on whether the nav has wrapped — and
+  //  .screen subtracts that constant from the viewport to size itself. Every
+  //  pixel the guess is wrong by is a pixel the first screen hangs over the
+  //  fold, on every screen, permanently. So it is measured.
+  function setBandVar() {
+    try {
+      var bar = document.querySelector(".band");
+      if (!bar || typeof bar.getBoundingClientRect !== "function") return;
+      var h = Math.round(bar.getBoundingClientRect().height);
+      if (h > 0 && h < 200) {
+        document.documentElement.style.setProperty("--bandh", h + "px");
+      }
+    } catch (e) {}
+  }
+
+  var FIT_STEPS = 3;
+  function fitScreen() {
+    try {
+      var scr  = document.querySelector(".screen");
+      var foot = document.querySelector(".screenfoot");
+      if (!scr || !foot) return;
+      setBandVar();
+
+      //  900px is where .boxes becomes three columns and six cards become two
+      //  rows. Below it they are three rows and no amount of shrinking puts
+      //  them on one screen — so the page is left to flow, which is what a
+      //  phone and a tablet want anyway. Squashing type in a fight that cannot
+      //  be won is pure loss.
+      var wide = window.innerWidth >= 900 && window.innerHeight >= 640;
+      //  And while a search result is open the boxes are hidden, so there is
+      //  nothing to fit and the measurement would be of the wrong thing.
+      var busy = document.getElementById("panel");
+      busy = busy && busy.classList.contains("on");
+
+      for (var i = 1; i <= FIT_STEPS; i++) scr.classList.remove("fit-" + i);
+      if (!wide || busy) return;
+
+      //  4px of tolerance: a sub-pixel overhang is not worth a whole step.
+      function over() {
+        return foot.getBoundingClientRect().bottom > window.innerHeight + 4;
+      }
+      var used = 0, trace = [Math.round(foot.getBoundingClientRect().bottom)];
+      for (var step = 1; step <= FIT_STEPS; step++) {
+        if (!over()) break;
+        scr.classList.add("fit-" + step);
+        used = step;
+        trace.push(Math.round(foot.getBoundingClientRect().bottom));
+      }
+      window.__dseFitTrace = trace;
+      //  Steps 1 and 2 stay whichever way this goes: they spend whitespace and
+      //  a point of type size, and a tighter screen is worth that even when it
+      //  does not quite reach the fold.
+      //
+      //  Step 3 is different — it takes the last traded price off every card —
+      //  so it has to earn its place. It is undone unless it actually won the
+      //  fold. On a window where the grid is already stretching to fill a
+      //  min-height, hiding a row frees no space at all (the grid absorbs it),
+      //  and on a genuinely short window nothing would have been enough. In
+      //  both cases the row comes back rather than being paid for nothing.
+      if (used === FIT_STEPS && over()) scr.classList.remove("fit-" + FIT_STEPS);
+    } catch (e) {}
+  }
+  window.__dseFit = fitScreen;
+
+  //  Re-measure whenever the thing being measured can have changed: after the
+  //  cards paint, after the subscriber strip appears, and on resize.
+  var fitT = null;
+  function fitSoon() {
+    if (fitT) clearTimeout(fitT);
+    fitT = setTimeout(fitScreen, 60);
+  }
+  window.addEventListener("resize", fitSoon);
+  window.addEventListener("load", fitSoon);
+
+  //  Every step is guarded. This runs for cosmetic reasons only — if any of it
+  //  is unavailable the page is still correct, just 85px taller for a
+  //  subscriber, and a layout nicety must never be able to throw inside
+  //  paint_entitled and take the entitlement painting down with it.
+  function setBannerVar() {
+    try {
+      var b = el("youbanner");
+      var on = !!(b && b.className);
+      try {
+        document.body.classList[on ? "add" : "remove"]("has-banner");
+      } catch (e) {}
+      var h = 0;
+      if (on && typeof b.getBoundingClientRect === "function") {
+        h = b.getBoundingClientRect().height || 0;
+        //  the strip's own top margin counts too — it is space above .screen —
+        //  and it is read rather than assumed, because .has-banner changes it
+        try { h += parseFloat(getComputedStyle(b).marginTop) || 0; }
+        catch (e) { h += 14; }
+      }
+      document.documentElement.style.setProperty("--bannerh",
+        Math.round(h) + "px");
+    } catch (e) {}
+    //  the strip is space above the first screen, so its arrival changes the fit
+    try { fitSoon(); } catch (e) {}
+  }
+  window.addEventListener("resize", function () { setTimeout(setBannerVar, 120); });
+
+  function setCTA(id, text, href) {
+    var a = el(id);
+    if (!a) return;
+    a.textContent = text;
+    if (href) a.setAttribute("href", href);
+  }
+
+  //  A customer clicking "Open dashboard" wants THEIR account, not the market
+  //  overview. shell.html opens the first visible tool unless the hash says
+  //  otherwise, so a bare /shell.html link always landed on the market — which
+  //  is the one screen a subscriber does not need pointing out to them.
+  var DASH_PLAN = "/shell.html#plan";
+
+  function paint_entitled() {
+    var plan = paidPlan();
+    ENTITLED = !!plan;
+
+    //  the top bar, for anyone signed in at all
+    var si = el("b-signin"), su = el("b-signup");
+    if (si) si.style.display = signedIn() ? "none" : "";
+    if (su) {
+      su.textContent = signedIn() ? "Dashboard" : "Sign up";
+      su.setAttribute("href", signedIn() ? DASH_PLAN : "#join");
+    }
+
+    var b = el("youbanner") || { className: "", innerHTML: "" };
+    if (!ENTITLED) {
+      b.className = ""; b.innerHTML = "";
+      setCTA("cta-screen", "Start free — 7 days of Pro", "/shell.html");
+      setCTA("cta-tools",  "Start free — 7 days of Pro", "/shell.html");
+      setCTA("cta-final",  "Start free — 7 days of Pro", "/shell.html");
+      setBannerVar();
+      //  An invitation has already retitled this column, and it is still the
+      //  right title — do not put it back.
+      if (el("join-h") && !signedIn() && !INVITED)
+        el("join-h").textContent = "Create your free account";
+      return;
+    }
+
+    //  pro with no paid row is the trial — say so, rather than calling it a
+    //  subscription the customer has not bought
+    var sub   = SUB && SUB.subscription;
+    var until = sub && sub.access_until ? String(sub.access_until).slice(0, 10) : "";
+    var left  = sub && sub.days_left != null ? String(sub.days_left) : "";
+
+    //  Three pieces, because a phone cannot afford all three. The headline and
+    //  the dates always show; the explanation is dropped below the two-column
+    //  breakpoint, where the full sentence turned this into a 220px block at
+    //  the top of a 780px screen.
+    var head, meta, longer;
+    if (!sub) {
+      head   = "Your free trial is running.";
+      meta   = "";
+      longer = "The whole Signal Stack — every name and every level — is open in the dashboard.";
+    } else {
+      head   = "Your " + plan + " subscription is active.";
+      meta   = until ? "Paid to " + until
+                       + (left ? " · " + left + " days left" : "") + "."
+                     : "";
+      longer = "The names are in your dashboard — this page holds them back " +
+               "from everyone.";
+    }
+
+    b.className = "ybanner";
+    b.innerHTML = '<span class="yp">' + esc(plan) + "</span>" +
+                  '<span class="yt"><b>' + esc(head) + "</b>" +
+                  (meta ? ' <span class="ymeta">' + esc(meta) + "</span>" : "") +
+                  ' <span class="ylong">' + esc(longer) + "</span></span>" +
+                  '<a class="yg" href="' + DASH_PLAN + '">Open dashboard</a>';
+
+    setCTA("cta-screen", "Open your dashboard →", DASH_PLAN);
+    setCTA("cta-tools",  "Open your dashboard →", DASH_PLAN);
+    setCTA("cta-final",  "Open your dashboard →", DASH_PLAN);
+    //  after the strip has been laid out, not before it has any height
+    if (window.requestAnimationFrame) requestAnimationFrame(setBannerVar);
+    else setTimeout(setBannerVar, 0);
+    if (el("join-h")) el("join-h").textContent = "Your account";
+    if (el("join-p")) {
+      el("join-p").textContent = sub
+        ? "You are on " + plan + ". Everything below is here so you can change "
+          + "or cancel it — nothing renews by itself."
+        : "Your trial has the whole Signal Stack open. The plans below are what it "
+          + "becomes when it ends; nothing is charged until you choose one.";
+    }
+  }
+
+  function loadSubscription() {
+    if (!signedIn()) { SUB = null; paint_account(); paint_prices();
+                       paint_entitled(); return; }
+    return authJSON("/api/subscription").then(function (d) {
+      SUB = d; paint_account(); paint_prices(); paint_entitled();
+    }).catch(function () { SUB = null; paint_account(); paint_entitled(); });
+  }
+
+  getJSON("/api/config").then(function (c) {
+    PRICING = (c && c.pricing) || null;
+    if (!PRICING) throw new Error("no pricing");
+    paint_prices();
+  }).catch(function () {
+    el("tiers").innerHTML =
+      '<li class="tload">Prices could not be loaded. Please reload — we will ' +
+      "not show a price we cannot confirm.</li>";
+  });
+  loadSubscription();
+
+  /* ── registration ───────────────────────────────────────────────────── */
+  //  The same endpoint /shell.html uses, so there is one account system and
+  //  one password path — this is a second door into the same room, not a
+  //  second room. On success the token is stored under the key auth.js reads
+  //  ("dse_token") and the visitor lands in the dashboard already signed in.
+  function postJSON(path, body) {
+    return fetch(API + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          var e = new Error(d && d.detail ? d.detail : "http " + r.status);
+          e.status = r.status; throw e;
+        }
+        return d;
+      });
+    });
+  }
+
+  var regEl = el("reg");
+  if (regEl && regEl.addEventListener) {
+    regEl.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var msg = el("r-msg");
+      var name = String(el("r-name").value || "").trim();
+      var mail = String(el("r-email").value || "").trim().toLowerCase();
+      var pass = String(el("r-pass").value || "");
+      var phone = String(el("r-phone").value || "").trim();
+
+      msg.className = "jmsg";
+      if (!name) { msg.textContent = "Please enter your name."; return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+        msg.textContent = "That email address does not look right."; return;
+      }
+      if (pass.length < 8) {
+        msg.textContent = "Please choose a password of at least 8 characters.";
+        return;
+      }
+
+      el("r-go").disabled = true;
+      msg.textContent = "Creating your account…";
+      postJSON("/api/auth/register",
+               { name: name, email: mail, password: pass, phone: phone,
+                 ref: referralForSignup() })
+        .then(function (d) {
+          if (d && d.token) {
+            try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
+          }
+          if (INTENT) {
+            //  they clicked a paid plan before they had an account; take them
+            //  to payment rather than making them find the button again
+            msg.className = "jmsg ok";
+            msg.textContent = "Account created — opening payment…";
+            startPayment(INTENT.plan, INTENT.period, el("r-go"));
+            return;
+          }
+          msg.className = "jmsg ok";
+          msg.textContent = "Account created — opening your dashboard…";
+          try { window.location.href = "/shell.html"; } catch (x) {}
+        })
+        .catch(function (err) {
+          msg.className = "jmsg";
+          var m = (err && err.message) ? String(err.message)
+                : "Could not create the account. Please try again shortly.";
+          msg.textContent = m;
+          //  The commonest failure here is someone who already signed up — very
+          //  often on a first attempt the gateway then refused. Put them on the
+          //  sign-in tab with their email already filled in, rather than leaving
+          //  them staring at a rejection with nowhere to go.
+          if (/already registered/i.test(m)) {
+            msg.textContent = m + " — sign in below and we'll carry on.";
+            el("l-email").value = mail;
+            showAuth("in");
+            try { el("l-pass").focus(); } catch (x) {}
+          }
+          el("r-go").disabled = false;
+        });
+    });
+  }
+
+
+  /* ── signing in, without leaving the page ───────────────────────────── */
+  //  A visitor who tried to buy, got as far as an account, then hit a gateway
+  //  error is now REGISTERED — so the registration form rejects them, and the
+  //  only way back was a link to another page. That is the worst possible
+  //  moment to send someone away. Both forms live here now, and either one
+  //  resumes the purchase they were part-way through.
+  function showAuth(which) {
+    el("reg").className   = which === "reg" ? "" : "off";
+    el("login").className = which === "in"  ? "on" : "";
+    Array.prototype.forEach.call(el("authtabs").querySelectorAll("button"),
+      function (b) {
+        b.setAttribute("aria-pressed", b.dataset.t === which ? "true" : "false");
+      });
+  }
+  Array.prototype.forEach.call(el("authtabs").querySelectorAll("button"),
+    function (b) {
+      b.addEventListener("click", function () { showAuth(b.dataset.t); });
+    });
+
+  function afterAuth(d, msg) {
+    if (d && d.token) {
+      try { window.localStorage.setItem("dse_token", d.token); } catch (x) {}
+    }
+    if (INTENT) {
+      msg.className = "jmsg ok";
+      msg.textContent = "Signed in — opening payment…";
+      startPayment(INTENT.plan, INTENT.period, null);
+      return;
+    }
+    msg.className = "jmsg ok";
+    msg.textContent = "Signed in.";
+    loadSubscription();
+  }
+
+  el("login").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg  = el("l-msg");
+    var mail = String(el("l-email").value || "").trim().toLowerCase();
+    var pass = String(el("l-pass").value || "");
+    msg.className = "jmsg";
+    if (!mail || !pass) { msg.textContent = "Enter your email and password."; return; }
+    el("l-go").disabled = true;
+    msg.textContent = "Signing in…";
+    postJSON("/api/auth/login", { email: mail, password: pass })
+      .then(function (d) { afterAuth(d, msg); })
+      .catch(function (err) {
+        msg.className = "jmsg";
+        msg.textContent = (err && err.message) || "Could not sign in.";
+        el("l-go").disabled = false;
+      });
+  });
+
+
+  /* ── referrals ──────────────────────────────────────────────────────── */
+  //  One job on this page: someone arriving on an invitation link. Capture
+  //  the code, tell them what it is worth, and carry it into registration.
+  //  Managing your OWN link belongs in the dashboard, not here — a landing
+  //  page that sells to strangers should not spend space on a panel only a
+  //  signed-in customer can use.
+  //
+  //  The code is never trusted here. The page asks the server whether it is
+  //  real before showing any figure, and the discount itself is decided
+  //  server-side at payment time from the user's own record — a code typed
+  //  into this page cannot buy anything cheaper than the server says.
+  var REF_CODE = "";
+
+  //  An invitation is not a browsing session. Someone arriving on a friend's
+  //  link came to sign up, and the join section is most of a long page away —
+  //  so the page opens ON the form rather than at the top of a scroll.
+  //
+  //  The jump happens on the SHAPE of the code, immediately, and does not wait
+  //  for the server to confirm it. Waiting would move the page under someone
+  //  who had already started reading, which is worse than not moving at all.
+  //  If the code turns out to be wrong the banner simply never appears and
+  //  they are sitting at a signup form, which is where they wanted to be.
+  //
+  //  Everything above the form is still loading at this point — teaser boxes,
+  //  prices, the market band — and each one that arrives pushes the form
+  //  further down. So the position is re-asserted for a couple of seconds, and
+  //  abandoned the instant the visitor touches the scroll themselves. Fighting
+  //  a person for control of their own scrollbar is not a thing to do twice.
+  function anchorToJoin() {
+    var j = el("join");
+    if (!j) return;
+    var stop = false;
+    function halt() { stop = true; }
+    if (window.addEventListener) {
+      ["wheel", "touchstart", "keydown", "mousedown"].forEach(function (ev) {
+        try { window.addEventListener(ev, halt, { passive: true, once: true }); }
+        catch (x) { try { window.addEventListener(ev, halt); } catch (y) {} }
+      });
+    }
+    //  The market band is position:sticky, so scrollIntoView({block:"start"})
+    //  parks the banner UNDERNEATH it and the first line of the invitation is
+    //  the part that gets covered. Scroll by hand, less the height of the bar.
+    function land() {
+      var bar = el("top");
+      var off = 14 + (bar && bar.getBoundingClientRect
+                        ? bar.getBoundingClientRect().height : 0);
+      var y = j.getBoundingClientRect().top + (window.pageYOffset || 0);
+      window.scrollTo(0, Math.max(0, y - off));
+    }
+
+    var t0 = Date.now();
+    (function tick() {
+      if (stop) return;
+      if (window.scrollTo && j.getBoundingClientRect) {
+        try { land(); } catch (x) {}
+      } else {
+        try { j.scrollIntoView({ block: "start" }); }
+        catch (x) { try { window.location.hash = "#join"; } catch (y) {} }
+      }
+      if (Date.now() - t0 < 2500) { setTimeout(tick, 120); return; }
+      //  Focus last, and only where a keyboard is already on screen. On a
+      //  phone this would throw up the soft keyboard over the very banner
+      //  that explains the discount.
+      try {
+        if ((window.innerWidth || 0) >= 820) el("r-name").focus();
+      } catch (x) {}
+    })();
+  }
+
+  (function () {
+    var q = "";
+    try { q = String(window.location.search || ""); } catch (e) { return; }
+    var m = /[?&]ref=([A-Za-z0-9]{4,16})/.exec(q);
+    if (!m) return;
+    var code = m[1].toUpperCase();
+
+    //  Two people this must not be done to: someone already signed in, who
+    //  gains nothing from an invitation and should not be thrown at a
+    //  registration form; and someone coming back from the gateway, whose
+    //  payment banner is the thing they need to read.
+    var paying = /[?&]payment=/.test(q);
+    if (!signedIn() && !paying) {
+      INVITED = true;
+      var j = el("join");
+      if (j) j.className = "join invited";
+      showAuth("reg");
+      //  The form now comes first on a phone, so the column beside it is no
+      //  longer introducing the form — it is the price list. Saying "Create
+      //  your free account" underneath the account they have just created
+      //  reads as a page that lost its place.
+      if (el("join-h")) el("join-h").textContent = "What it costs after the trial";
+      if (el("join-p")) {
+        el("join-p").textContent =
+          "Nothing is charged today. The trial runs first, with the whole stack "
+          + "open and no card; your invitation discount comes off whichever "
+          + "of these you choose afterwards.";
+      }
+      anchorToJoin();
+    }
+
+    getJSON("/api/referral/check?code=" + encodeURIComponent(code))
+      .then(function (d) {
+        if (!d || !d.valid) return;          // a mistyped link says nothing
+        REF_CODE = code;
+        var b = el("refbanner");
+        b.className = "rbanner";
+        b.innerHTML = "<b>You were invited.</b> Your first payment is " +
+          esc(String(d.referred_pct)) + "% off — applied automatically at " +
+          "checkout, there is nothing to type. Create your account to claim it.";
+      })
+      .catch(function () {});
+  })();
+
+  //  the code travels with the registration, and only with the registration
+  function referralForSignup() { return REF_CODE || ""; }
+
+  /* ── social links ───────────────────────────────────────────────────── */
+  //  Paste the two page URLs here and they appear in the footer. A link is
+  //  rendered only when its URL is set, so an empty value shows nothing rather
+  //  than a dead link.
+  //  The LinkedIn link is the PUBLIC company page. The administrator console
+  //  URL for the same page resolves only for a page admin, so putting it here
+  //  would show every other visitor a permission error.
+  var SOCIAL = {
+    facebook: "https://www.facebook.com/dsepulse",
+    linkedin: "https://www.linkedin.com/company/146100974/"
+  };
+  (function () {
+    var host = el("social");
+    if (!host) return;
+    var ICON = {
+      facebook: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>',
+      linkedin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.75-1.95C20.4 8.75 21 11 21 14v7h-4v-6.2c0-1.5 0-3.4-2.1-3.4s-2.4 1.6-2.4 3.3V21H9z"/></svg>'
+    };
+    var LABEL = { facebook: "Facebook", linkedin: "LinkedIn" };
+    var out = "";
+    ["facebook", "linkedin"].forEach(function (k) {
+      var url = String(SOCIAL[k] || "").trim();
+      if (!/^https:\/\//.test(url)) return;
+      out += '<a class="' + k + '" href="' + esc(url) + '" target="_blank" ' +
+             'rel="noopener noreferrer" aria-label="DSE Pulse on ' + LABEL[k] +
+             '">' + ICON[k] + LABEL[k] + "</a>";
+    });
+    host.innerHTML = out;
+  })();
+
+})();
+</script>

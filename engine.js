@@ -1,6 +1,6 @@
 /* DSE Pulse - shared conviction engine. Builds window.__ms (used by Smart Money, Master Signal, Holdings). */
 (function(){
-  const API="https://dsepulse-backend-production.up.railway.app";
+  const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   const FEEDS=[
     {key:"picker",  path:"/api/picks/today",   pick:d=>(d&&d.picks)||[]},
     {key:"wma",     path:"/api/wma/today",      pick:d=>Array.isArray(d)?d:[]},

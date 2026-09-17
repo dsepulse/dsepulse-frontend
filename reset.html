@@ -44,9 +44,10 @@ input:focus{outline:none;border-color:#B8860B}
     <div class="foot"><a href="index.html">&larr; Back to DSE Pulse</a></div>
   </div>
 </div>
+<script src="/env.js"></script>
 <script>
 (function(){
-  var API = "https://dsepulse-backend-production.up.railway.app";
+  var API = (window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
   function q(k){ return new URLSearchParams(location.search).get(k) || ""; }
   var token = q("token");
   var msg = document.getElementById("msg");

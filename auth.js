@@ -140,23 +140,71 @@
       var allowed = (d.allowed || []).map(function (p) { return PLAN_LABEL[p] || p; });
       var signedIn = plan !== "guest";
 
-      var title, body, primaryText, primaryHref;
+      var title, body, primaryText, primaryHref, primaryAction;
+
+      /*  WHERE SIGN-IN AND PLANS ACTUALLY LIVE
+       *  This panel used to send people to two files that do not exist, so the
+       *  panel whose whole job is to explain a refusal was itself a dead end —
+       *  a Page-not-found at exactly the moment a customer was being asked to
+       *  pay. Sign-in is shell.html's modal, which holds email, password and
+       *  Google together; plans are the join section of the site root, which
+       *  _redirects resolves on every branch.
+       *
+       *  Inside the dashboard iframe neither needs a navigation at all: the
+       *  shell can open its own modal and its own plan pane, which keeps the
+       *  customer on the screen they are already standing on. env.js's plan
+       *  panel already works this way; this one now does too.
+       */
+      function fromTop(name) {
+        try {
+          if (window.top && window.top !== window &&
+              typeof window.top[name] === "function") return window.top[name];
+        } catch (e) {}              // cross-origin frame: not our shell
+        return null;
+      }
+      function openSignIn() {
+        var f = fromTop("openAuth");
+        if (f) { try { f("login"); return true; } catch (e) {} }
+        return false;
+      }
+      function openPlans() {
+        var f = fromTop("openAccountPlan");
+        if (f) { try { f(); return true; } catch (e) {} }
+        return false;
+      }
+
       if (kind === "signin") {
-        title = "Please sign in again";
-        body  = "Your session has expired. Signing in again restores everything — " +
-                "nothing has been lost.";
-        primaryText = "Sign in"; primaryHref = "/login.html";
+        /*  A 401 WITH a token means the token stopped working. A 401 with NO
+         *  token means this person was never signed in, and telling them their
+         *  session expired is simply untrue. That wording is also what appeared
+         *  over the Google client-ID fault, where the real problem was the
+         *  app's own configuration — and the overlay sent everyone looking for
+         *  a session that had never existed.
+         */
+        if (getToken()) {
+          title = "Please sign in again";
+          body  = "Your session has expired. Signing in again restores everything — " +
+                  "nothing has been lost.";
+        } else {
+          title = "Sign in to see this";
+          body  = "This page needs an account. New accounts get a 7-day free " +
+                  "trial with everything unlocked.";
+        }
+        primaryText = "Sign in"; primaryHref = "/shell.html";
+        primaryAction = openSignIn;
       } else if (!signedIn) {
         title = tool.charAt(0).toUpperCase() + tool.slice(1) + " needs an account";
         body  = "Sign in to see it. New accounts get a " +
                 "7-day free trial with everything unlocked.";
-        primaryText = "Sign in or start free trial"; primaryHref = "/login.html";
+        primaryText = "Sign in or start free trial"; primaryHref = "/shell.html";
+        primaryAction = openSignIn;
       } else {
         title = tool.charAt(0).toUpperCase() + tool.slice(1) + " is on " +
                 (allowed.length ? allowed.join(" and ") : "a paid plan");
         body  = "You are on " + (PLAN_LABEL[plan] || plan) + ". " +
                 "Upgrading unlocks it immediately — your account keeps everything else as it is.";
-        primaryText = "See plans"; primaryHref = "/pricing.html";
+        primaryText = "See plans"; primaryHref = "/#join";
+        primaryAction = openPlans;
       }
 
       var wrap = document.createElement("div");
@@ -188,6 +236,27 @@
       var a = document.createElement("a");
       a.href = primaryHref;
       a.textContent = primaryText;
+      //  The href stays a real, working URL so middle-click and "open in new
+      //  tab" behave as they should. The handler only takes over an ordinary
+      //  left click.
+      a.addEventListener("click", function (ev) {
+        try {
+          if (ev && (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button)) return;
+          if (primaryAction && primaryAction()) {
+            if (ev.preventDefault) ev.preventDefault();
+            try { wrap.remove(); } catch (x) {}
+            panelShown = false;
+            return;
+          }
+          //  Framed, and the shell is an older build without the hook.
+          //  Navigate the TOP window: following the href from in here would
+          //  load the dashboard inside the dashboard.
+          if (window.top && window.top !== window) {
+            if (ev.preventDefault) ev.preventDefault();
+            window.top.location.href = primaryHref;
+          }
+        } catch (e) {}
+      });
       a.style.cssText =
         "background:#D4A017;color:#0D1F3C;text-decoration:none;font-weight:600;" +
         "padding:10px 16px;border-radius:7px;font-size:14px";
@@ -226,6 +295,14 @@
     try {
       if (!res || (res.status !== 403 && res.status !== 401)) return;
       if (url.indexOf(API_HOST) === -1) return;
+      /*  A refusal from the sign-in endpoints is the answer to a form somebody
+       *  just submitted: a wrong password, a Google token the backend would not
+       *  accept, an expired reset link. The page that owns the form shows that
+       *  in place, next to the field. Throwing a full-screen panel over it is
+       *  how a wrong password came to read as a broken website during the
+       *  Google client-ID incident.
+       */
+      if (url.indexOf("/api/auth/") !== -1) return;
       if (res.status === 401) {
         announce("signin-required", { endpoint: url });
         showPanel("signin", { endpoint: url });

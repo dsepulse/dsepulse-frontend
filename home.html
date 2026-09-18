@@ -465,6 +465,15 @@ tr.lk .sc{color:var(--ink2)}
 .jmsg.ok{color:var(--green)}
 .jalt{margin:0;font-size:13px;color:var(--ink3)}
 .jalt a{color:var(--gold-d);font-weight:600}
+/*  Google sign-in. Starts hidden and is revealed only once Google's own
+    script has rendered a button into it — an empty box sitting above an
+    "or use your email" rule, with nothing above the rule, is worse than
+    no button at all.  */
+.gwrap{display:grid;gap:12px}
+.gbtn{display:flex;justify-content:center;min-height:44px}
+.gor{display:flex;align-items:center;gap:10px;font:600 10px/1 var(--sans);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.gor:before,.gor:after{content:"";flex:1 1 0;height:1px;background:var(--bd)}
 
 /* ── footer ────────────────────────────────────────────────────────── */
 .frow{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
@@ -1338,6 +1347,22 @@ body.has-banner .ybanner .ylong{display:none}
 
       <div class="jr">
         <div id="account"></div>
+
+        <!--  GOOGLE SIGN-IN
+              The same account system as the two forms below it: the backend
+              matches on the EMAIL ADDRESS, so somebody who registered with a
+              password can also arrive this way, and the forty accounts that
+              only ever used Google can sign in here too.
+
+              This page had no Google button at all, which made the new
+              homepage the one door those customers could not use — they had
+              to know to go to /shell.html instead.  -->
+        <div class="gwrap" id="gwrap" style="display:none">
+          <div class="gbtn" id="dse-gbtn-home"></div>
+          <p class="jmsg" id="g-msg"></p>
+          <div class="gor"><span>or use your email</span></div>
+        </div>
+
         <div class="authtabs" id="authtabs">
           <button type="button" data-t="reg" aria-pressed="true">Create account</button>
           <button type="button" data-t="in" aria-pressed="false">Sign in</button>
@@ -1447,6 +1472,7 @@ body.has-banner .ybanner .ylong{display:none}
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function () {
   "use strict";
@@ -2229,11 +2255,12 @@ body.has-banner .ybanner .ylong{display:none}
   //  ── the signed-in panel: what you have, and how to cancel it ───────
   function paint_account() {
     var host = el("account");
-    if (!signedIn()) { host.innerHTML = ""; showAuth("reg"); return; }
+    if (!signedIn()) { host.innerHTML = ""; showAuth("reg"); showGoogle(); return; }
     //  signed in: neither form belongs on the screen any more
     el("reg").className = "off";
     el("login").className = "";
     el("authtabs").style.display = "none";
+    showGoogle();
     var s = SUB;
     if (!s) { host.innerHTML = ""; return; }
 
@@ -2675,6 +2702,70 @@ body.has-banner .ybanner .ylong{display:none}
         el("l-go").disabled = false;
       });
   });
+
+  /* ── signing in with Google ───────────────────────────── */
+  //  ONE CLIENT, ONE PROJECT: 258163974767-3v3c... in dse-pulse-498617.
+  //  shell.html hardcodes the same value, and Railway's GOOGLE_CLIENT_ID must
+  //  equal it or the backend refuses the token's "aud" and the customer is
+  //  told the app is not authorised. A client ID is public — it ships in this
+  //  HTML by design — and is not a secret; the client SECRET is not used by
+  //  this flow at all.
+  //
+  //  The origin serving this page must be listed under Authorized JavaScript
+  //  origins on that client. A Netlify deploy-preview hostname is not, and it
+  //  changes with every pull request, so the button will not render there
+  //  until that exact origin has been added.
+  var GOOGLE_CLIENT_ID =
+    "258163974767-3v3cfjb3f61cekl2rfuvlqig18kr8mvj.apps.googleusercontent.com";
+
+  var GOOGLE_READY = false;
+  function showGoogle() {
+    var w = el("gwrap");
+    if (!w) return;
+    w.style.display = (GOOGLE_READY && !signedIn()) ? "" : "none";
+  }
+
+  //  Google hands back an ID token; the backend verifies it with Google and
+  //  mints one of ours. afterAuth() then does exactly what the password forms
+  //  do, including resuming a purchase somebody was part-way through.
+  window.dseGoogle = function (resp) {
+    var msg = el("g-msg");
+    msg.className = "jmsg";
+    msg.textContent = "Signing in…";
+    postJSON("/api/auth/google", { credential: (resp && resp.credential) || "" })
+      .then(function (d) { afterAuth(d, msg); })
+      .catch(function (err) {
+        msg.className = "jmsg";
+        msg.textContent = (err && err.message) || "Could not sign in with Google.";
+      });
+  };
+
+  (function () {
+    var target = el("dse-gbtn-home"), tries = 0;
+    if (!target) return;
+    function init() {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID, callback: window.dseGoogle });
+        window.google.accounts.id.renderButton(target,
+          { theme: "outline", size: "large", text: "continue_with", width: 300 });
+        GOOGLE_READY = true;
+      } catch (e) {
+        GOOGLE_READY = false;     // blocked script, or an unauthorised origin
+      }
+      showGoogle();
+    }
+    (function wait() {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        init(); return;
+      }
+      //  ~6 seconds. Past that the script is blocked or the network is gone,
+      //  and the email forms below are already there to be used.
+      if (tries++ < 40) { setTimeout(wait, 150); return; }
+      showGoogle();
+    })();
+  })();
+
 
 
   /* ── referrals ──────────────────────────────────────────────────────── */

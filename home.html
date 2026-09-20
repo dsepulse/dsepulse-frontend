@@ -2743,6 +2743,37 @@ body.has-banner .ybanner .ylong{display:none}
   (function () {
     var target = el("dse-gbtn-home"), tries = 0;
     if (!target) return;
+    //  RENDERBUTTON DOES NOT THROW WHEN GOOGLE REFUSES THE ORIGIN.
+    //  It returns normally, then fetches the button markup, gets a 403, and
+    //  the only trace is a console line: "The given origin is not allowed for
+    //  the given client ID." The container is left empty — so trusting the
+    //  call to have worked leaves a blank box above an "or use your email"
+    //  rule with nothing above the rule, which is the exact thing hiding it
+    //  was meant to prevent. Measure what actually got drawn instead.
+    //
+    //  The container itself has a min-height, so measuring IT proves nothing.
+    //  A real Google button is a child element about 40px tall.
+    function drawn() {
+      try {
+        var kids = target.children;
+        for (var i = 0; i < kids.length; i++) {
+          if (kids[i].getBoundingClientRect().height >= 20) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    function confirmDrawn() {
+      var checks = 0;
+      (function look() {
+        if (signedIn()) return;        // hidden for a different reason
+        if (drawn()) return;
+        if (checks++ < 12) { setTimeout(look, 250); return; }   // ~3 seconds
+        GOOGLE_READY = false;
+        showGoogle();
+      })();
+    }
+
     function init() {
       try {
         window.google.accounts.id.initialize({
@@ -2754,6 +2785,7 @@ body.has-banner .ybanner .ylong{display:none}
         GOOGLE_READY = false;     // blocked script, or an unauthorised origin
       }
       showGoogle();
+      confirmDrawn();
     }
     (function wait() {
       if (window.google && window.google.accounts && window.google.accounts.id) {

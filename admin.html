@@ -54,6 +54,15 @@
   .toolrow2{display:grid;grid-template-columns:1fr 64px 64px 64px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--panel2)}
   .toolrow2>span:first-child{font-size:13px}
   .toolrow2 label.sw{justify-self:center}
+  .socialhd{display:grid;grid-template-columns:1fr 2.2fr 64px;align-items:center;padding:6px 2px 8px;font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border2)}
+  .socialhd span:last-child{justify-self:center}
+  .socialrow{display:grid;grid-template-columns:1fr 2.2fr 64px;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--panel2)}
+  .socialrow>span:first-child{font-size:13px}
+  .socialrow input{width:100%}
+  .socialrow label.sw{justify-self:center}
+  @media(max-width:560px){.socialhd{display:none}
+    .socialrow{grid-template-columns:1fr 64px;gap:8px}
+    .socialrow input{grid-column:1/-1;order:3}}
 </style>
 </head>
 <body>
@@ -139,6 +148,20 @@
   </div>
 
   <div class="card">
+    <h2>Footer &amp; social</h2>
+    <div id="sMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:12px">An icon appears in the site
+      footer only when it is switched on <b>and</b> holds an <code>https://</code>
+      address. Switching one off hides it everywhere without losing the address,
+      so it can go back up later without being retyped. Addresses are checked on
+      the server — anything that is not https is stored as blank.</div>
+    <div id="social"><div class="sub">Loading…</div></div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveSocial()">Save footer &amp; social</button>
+    <div class="sub" style="margin-top:8px">Saved changes show on the next page
+      load of the public site. No deploy is needed.</div>
+  </div>
+
+  <div class="card">
     <h2>Trial win-back emails</h2>
     <div id="wbMsg" class="msg"></div>
     <div class="sub" style="margin-bottom:10px">Sends a 3-email sequence (Day 0 / 2 / 5 after a trial expires), then stops. Each user receives each email only once.</div>
@@ -179,7 +202,7 @@ async function unlock(){
   }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
 }
 function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
-function boot(){loadStats();loadUsers();loadPricing();loadReferral();loadTools()}
+function boot(){loadStats();loadUsers();loadPricing();loadReferral();loadTools();loadSocial()}
 
 async function loadStats(){
   try{
@@ -359,6 +382,72 @@ function renderTools(){
       `</div>`;
   });
   $("tools").innerHTML=html;
+}
+
+//  Footer social links. Same shape as the pricing and referral cards: read
+//  the panel, POST one row, the public footer picks it up on its next load.
+//  The URL CHECK IS ON THE SERVER — a type="url" field is a suggestion, and
+//  the footer is on every page, so a bad address there is visible everywhere.
+const SOCIAL=[{k:"facebook",label:"Facebook"},{k:"linkedin",label:"LinkedIn"},
+               {k:"youtube",label:"YouTube"},{k:"whatsapp",label:"WhatsApp"}];
+let SOCIALSTATE={};
+
+async function loadSocial(){
+  try{
+    const c=await(await fetch(`${API}/api/config`)).json();
+    const s=(c&&c.social)||{};
+    SOCIALSTATE={};
+    SOCIAL.forEach(n=>{
+      const v=s[n.k];
+      if(v&&typeof v==="object") SOCIALSTATE[n.k]={url:String(v.url||""),on:v.on===true};
+      else { const u=String(v||"").trim(); SOCIALSTATE[n.k]={url:u,on:!!u}; }
+    });
+    renderSocial();
+  }catch(e){
+    //  Show the fields rather than a dead card, but say plainly that these are
+    //  not the live values — saving from a blank panel would wipe the footer.
+    SOCIAL.forEach(n=>SOCIALSTATE[n.k]={url:"",on:false});
+    renderSocial();
+    $("sMsg").textContent="Could not read the current links ("+e.message+
+      ") — these fields are blank, not empty. Refresh before saving.";
+  }
+}
+
+function renderSocial(){
+  $("social").innerHTML=
+    '<div class="socialhd"><span>Network</span><span>Address</span><span>Show</span></div>'+
+    SOCIAL.map(n=>{
+      const s=SOCIALSTATE[n.k]||{url:"",on:false};
+      const v=String(s.url||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+      return `<div class="socialrow"><span>${n.label}</span>`+
+        `<input type="url" inputmode="url" spellcheck="false" placeholder="https://…" value="${v}" `+
+        `oninput="SOCIALSTATE['${n.k}'].url=this.value">`+
+        `<label class="sw"><input type="checkbox" ${s.on?"checked":""} `+
+        `onchange="SOCIALSTATE['${n.k}'].on=this.checked"><span class="sl"></span></label>`+
+        `</div>`;
+    }).join("");
+}
+
+async function saveSocial(){
+  $("sMsg").textContent="Saving…";
+  const social={};
+  SOCIAL.forEach(n=>{const s=SOCIALSTATE[n.k]||{};
+    social[n.k]={url:String(s.url||"").trim(),on:!!s.on};});
+  try{
+    const r=await fetch(`${API}/api/admin/social`,{method:"POST",headers:H(),
+      body:JSON.stringify({social})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.detail||("HTTP "+r.status));
+    //  Repaint from what the SERVER stored, not from what was typed, so a
+    //  rejected address shows up as the blank it actually became.
+    if(d.social){
+      SOCIAL.forEach(n=>{const v=d.social[n.k]||{};
+        SOCIALSTATE[n.k]={url:String(v.url||""),on:v.on===true};});
+      renderSocial();
+    }
+    const on=(d.showing||[]).map(k=>(SOCIAL.find(n=>n.k===k)||{}).label||k);
+    $("sMsg").textContent="Saved. Footer now shows: "+(on.length?on.join(", "):"no icons")+".";
+  }catch(e){ $("sMsg").textContent="Not saved — "+e.message; }
 }
 
 async function wbTest(){

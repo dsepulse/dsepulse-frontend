@@ -87,6 +87,19 @@
       hours:   ""           // e.g. "Sunday–Thursday, 10am–6pm"
     },
 
+    /* ─── SOCIAL: THE ADMIN PANEL OWNS THESE NOW ──────────────────────────
+     *  These four are the FALLBACK, not the source of truth. The live values
+     *  come from /api/config, written by the "Footer & social" card in
+     *  admin.html, so a link can be added, corrected or taken down without
+     *  editing this file and without a deploy.
+     *
+     *  They are kept here, and kept CURRENT, for one reason: the footer draws
+     *  from them immediately and patches the icon row when the API answers.
+     *  If the backend is unreachable the footer still shows the right icons
+     *  rather than a gap. That only holds while these values match what is
+     *  actually live — so if you change them in the admin panel and they stay
+     *  changed, change them here too on the next frontend release.
+     *  ------------------------------------------------------------------- */
     social: {
       facebook: "https://www.facebook.com/dsepulse",
       linkedin: "https://www.linkedin.com/company/146100974/",
@@ -148,6 +161,79 @@
   };
   var LABEL = { facebook: "Facebook", linkedin: "LinkedIn",
                 youtube: "YouTube", whatsapp: "WhatsApp" };
+
+  /* ═══ WHICH ICONS SHOW, AND WHO DECIDES ════════════════════════════════
+   *  Two separate facts per network: the address, and whether it is shown.
+   *  Keeping them apart is the whole point of the admin toggle — switching
+   *  Facebook off must not throw the address away, or it has to be retyped
+   *  from memory to put it back.
+   * --------------------------------------------------------------------- */
+  var API_BASE = "https://dsepulse-backend-production.up.railway.app";
+  try {
+    if (window.DSEEnv && window.DSEEnv.apiBase) API_BASE = window.DSEEnv.apiBase;
+  } catch (e) {}
+
+  var NETWORKS = ["facebook", "linkedin", "youtube", "whatsapp"];
+
+  //  Accepts either shape: the plain string this file has always carried, or
+  //  the {url, on} pair the admin panel writes. A row saved by an older build
+  //  must keep working rather than silently emptying the footer.
+  function normSocial(raw) {
+    var out = {};
+    raw = raw || {};
+    NETWORKS.forEach(function (k) {
+      var v = raw[k], url, on;
+      if (v && typeof v === "object") {
+        url = String(v.url || "").trim();
+        on  = (v.on === undefined) ? true : !!v.on;
+      } else {
+        url = String(v || "").trim();
+        on  = !!url;
+      }
+      //  https only. A blank, an http:// address, or anything else renders
+      //  nothing: a dead or downgraded link in a footer is worse than no icon.
+      if (!/^https:\/\//.test(url)) { url = ""; on = false; }
+      out[k] = { url: url, on: on && !!url };
+    });
+    return out;
+  }
+
+  function socialHTML(map) {
+    var soc = "";
+    NETWORKS.forEach(function (k) {
+      if (!map[k] || !map[k].on) return;
+      soc += '<a href="' + esc(map[k].url) + '" target="_blank"' +
+             ' rel="noopener noreferrer"' +
+             ' aria-label="DSE Pulse on ' + LABEL[k] + '">' + ICON[k] + "</a>";
+    });
+    return soc;
+  }
+
+  /*  One small GET, AFTER the footer is already on screen. Waiting for the
+   *  network before drawing would hold the whole footer behind a request that
+   *  may never come back. A failure is silent on purpose: the fallback row is
+   *  already rendered, and a footer that logs an error on twenty-three pages
+   *  every time the API hiccups is noise nobody will read.
+   *
+   *  The backend answers with its own defaults when no row has ever been
+   *  saved, and those defaults are the two live links — so the very first
+   *  page load after this ships looks exactly like the one before it.
+   */
+  function refreshSocial() {
+    var host = document.getElementById("dsef-social");
+    if (!host || !window.fetch) return;
+    try {
+      window.fetch(API_BASE + "/api/config")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j || !j.social) return;          // older backend: keep fallback
+          var html = socialHTML(normSocial(j.social));
+          host.innerHTML = html;
+          host.style.display = html ? "" : "none";
+        })
+        .catch(function () {});
+    } catch (e) {}
+  }
 
   //  TYPE SIZE. The page this sits under runs at 16px. The footer used to run
   //  at 14px with a 13.5px link and an 11.5px disclaimer, which is what made
@@ -252,14 +338,14 @@
     h += '<div class="dsef-brand"><b>' + esc(C.brand.name) + "</b>" +
          '<span class="l">' + esc(C.brand.line) + "</span>" +
          (C.brand.about ? "<p>" + esc(C.brand.about) + "</p>" : "");
-    var soc = "";
-    ["facebook", "linkedin", "youtube", "whatsapp"].forEach(function (k) {
-      var url = String((C.social || {})[k] || "").trim();
-      if (!/^https:\/\//.test(url)) return;         // no URL, no dead icon
-      soc += '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"' +
-             ' aria-label="DSE Pulse on ' + LABEL[k] + '">' + ICON[k] + "</a>";
-    });
-    if (soc) h += '<div class="dsef-social">' + soc + "</div>";
+    //  The container is ALWAYS rendered, even empty, because refreshSocial()
+    //  needs somewhere to put icons that the fallback did not include — a
+    //  YouTube link added in the admin panel has no element to go into if the
+    //  row only exists when the fallback was non-empty. Empty means hidden,
+    //  not absent.
+    var soc = socialHTML(normSocial(C.social));
+    h += '<div class="dsef-social" id="dsef-social"' +
+         (soc ? '' : ' style="display:none"') + '>' + soc + "</div>";
     h += "</div>";
 
     (C.columns || []).forEach(function (col) {
@@ -347,6 +433,8 @@
             document.body.style.flexWrap = "wrap";
         }
       } catch (e) {}
+
+      refreshSocial();
     } catch (e) {}
   }
 

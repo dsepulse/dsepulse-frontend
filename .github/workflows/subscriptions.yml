@@ -1,0 +1,38 @@
+name: Daily Subscription Cycle
+
+#  Downgrades paid plans whose expiry has passed, sends the 7-day and 1-day
+#  renewal reminders, and releases discount reservations left behind by
+#  abandoned checkouts.
+#
+#  Without this, a customer pays for one month and keeps the plan forever,
+#  and every record still looks healthy while it happens.
+#
+#  04:30 UTC is 10:30 in Dhaka, half an hour before the win-back run, so
+#  expiries settle before any email goes out.
+
+on:
+  schedule:
+    - cron: "30 4 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  subscriptions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger subscription cycle
+        run: |
+          code=$(curl -sS -X POST \
+            "https://dsepulse-backend-production.up.railway.app/api/cron/subscriptions" \
+            -H "X-Cron-Key: ${{ secrets.CRON_SECRET }}" \
+            -o response.json -w "%{http_code}")
+          echo "HTTP $code"
+          cat response.json || true
+          echo
+          #  A wrong or missing CRON_SECRET answers 403 and changes nothing.
+          #  Without this check the job would go green for months while the
+          #  cycle never ran once — the exact failure this workflow exists to
+          #  prevent, so it fails loudly instead.
+          if [ "$code" != "200" ]; then
+            echo "::error::subscription cycle returned HTTP $code"
+            exit 1
+          fi

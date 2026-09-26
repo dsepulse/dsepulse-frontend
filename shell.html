@@ -1559,6 +1559,30 @@ async function buildSectors(){
       if (signIn) signIn.onclick = () => window.openAuth("login");
       if (getStarted) getStarted.onclick = () => window.openAuth("signup");
     }
+
+    /*  Arriving with the decision already made.
+        Someone who clicked "Sign in" on the landing page has chosen. Landing
+        them on THIS page's landing view and asking them to click "Sign in" a
+        second time is a step that only loses people. home.html now links to
+        /shell.html#signin and /shell.html#signup, and this opens the modal on
+        arrival — the same modal the nav buttons open, through the same
+        window.openAuth, so there is one auth surface and not two.
+
+        The hash is cleared first, for three reasons: a refresh must not
+        re-open a modal the visitor just closed; the back button after a
+        successful sign-in must not either; and openFirstVisibleTool() below
+        reads location.hash to restore the last tool, so an auth word left in
+        it would be one more unknown value falling through its VALID list.
+        history.replaceState leaves no extra entry in the back stack.        */
+    var _ah = (location.hash || "").replace("#", "").toLowerCase();
+    if (_ah === "signin" || _ah === "login" || _ah === "signup" || _ah === "register"){
+      try { history.replaceState(null, "", location.pathname + location.search); }
+      catch (e) { location.hash = ""; }
+      //  Already signed in: no modal. Fall through to the dashboard below,
+      //  which is what that visitor actually wanted.
+      if (!getToken()) window.openAuth(_ah === "signup" || _ah === "register" ? "signup" : "login");
+    }
+
     const t = getToken();
     if (t){
       // user was logged in — go straight to dashboard, skip landing page

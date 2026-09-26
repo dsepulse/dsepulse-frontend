@@ -1,0 +1,96 @@
+name: Daily Signal Intelligence
+
+#  Evaluates what the signal engines published against what the market did
+#  next, and writes the result to signal_outcomes.
+#
+#  WHY THIS FILE EXISTS
+#    /api/cron/si-evaluate has been live for some time and nothing has ever
+#    called it on a schedule. The table's last computed_at was 2026-09-13,
+#    thirteen days stale, because the only run it has ever had was by hand.
+#    An evaluation layer nobody runs is an evaluation layer that does not
+#    exist.
+#
+#  WHY 12:15 UTC
+#    18:15 in Dhaka. The DSE closes at 14:30 Dhaka and the desktop tools
+#    upload after that, so this runs once the day's price_history and
+#    market_summary rows are in. Running earlier would find no new closes and
+#    resolve nothing. The minute is 15 rather than 00 because GitHub's
+#    scheduler is heavily contended on the hour and quietly runs late.
+#
+#  WHY EVERY DAY, INCLUDING FRIDAY AND SATURDAY
+#    The job is idempotent: it recomputes whatever has matured and leaves the
+#    rest pending. On a non-trading day there are no new market_summary dates,
+#    so it finds nothing to resolve and costs nothing. Running seven days a
+#    week means a failed Thursday is retried on Friday rather than waiting
+#    until Sunday.
+#
+#  LOOKBACK
+#    15 signal days by default. That is deliberately more than one: a pending
+#    row from ten days ago becomes resolvable the moment its horizon elapses,
+#    and re-running an already-resolved date recomputes it to the same verdict
+#    because si_evaluate() is a pure function of prices that no longer change.
+#    Use the manual run below with a larger number to catch up after a gap.
+
+on:
+  schedule:
+    - cron: "15 12 * * *"
+  workflow_dispatch:
+    inputs:
+      lookback:
+        description: "Signal days to re-evaluate (1-60). Use 60 to catch up after a gap."
+        required: false
+        default: "15"
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate signal outcomes
+        run: |
+          LOOKBACK="${{ github.event.inputs.lookback }}"
+          if [ -z "$LOOKBACK" ]; then LOOKBACK=15; fi
+          echo "lookback=$LOOKBACK"
+
+          code=$(curl -sS -X POST \
+            "https://dsepulse-backend-production.up.railway.app/api/cron/si-evaluate?lookback=$LOOKBACK" \
+            -H "X-Cron-Key: ${{ secrets.CRON_SECRET }}" \
+            -o response.json -w "%{http_code}")
+          echo "HTTP $code"
+          cat response.json || true
+          echo
+
+          #  A wrong or missing CRON_SECRET answers 401 and changes nothing.
+          #  Without this check the job would go green for months while the
+          #  evaluation never ran once — which is exactly how this ended up
+          #  thirteen days stale in the first place.
+          if [ "$code" != "200" ]; then
+            echo "::error::si-evaluate returned HTTP $code"
+            exit 1
+          fi
+
+      - name: Summarise what was written
+        run: |
+          #  A run that writes zero rows on a trading day is a silent failure
+          #  wearing a green tick. Surface the counts in the job summary so the
+          #  Actions page answers "is this working" without opening the log.
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          try:
+              d = json.load(open("response.json"))
+          except Exception as e:
+              print("Could not read the response: %s" % e)
+              raise SystemExit(0)
+          print("### Signal Intelligence\n")
+          print("- dates processed: **%s**" % d.get("dates_processed"))
+          print("- rows written: **%s**" % d.get("rows_written"))
+          print("- duration: %s ms" % d.get("duration_ms"))
+          print("- basis: %s\n" % d.get("basis"))
+          oc = d.get("outcomes") or {}
+          if oc:
+              print("| outcome | rows |")
+              print("|---|---|")
+              for k in sorted(oc):
+                  print("| %s | %s |" % (k, oc[k]))
+          else:
+              print("_No outcomes returned._")
+          PY

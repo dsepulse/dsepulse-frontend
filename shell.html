@@ -2406,9 +2406,13 @@ function openFirstVisibleTool(){
   }
 
   /* ── My plan ─────────────────────────────────────────────────────────── */
-  //  Cancelling does NOT end access. It stops the renewal and leaves the
-  //  period already paid for intact — which is what "cancel anytime" has to
-  //  mean if the promise on the pricing page is to be true.
+  //  Nothing here renews. SSLCommerz takes ONE-OFF payments on this account:
+  //  there is no stored card and no mandate, so no customer is ever charged a
+  //  second time by the system. "Cancel" therefore turns off the reminder
+  //  emails and records the intent — it cannot stop a charge, because no
+  //  charge was coming. The copy below says that plainly: a customer who
+  //  believes they will auto-renew is a customer who gets cut off on the date
+  //  without understanding why, and blames us for it.
 
   /*  One way in to the plan pane, so every "see plans" in the product lands
       somewhere that can actually take a payment. Before this, the holdings
@@ -2665,7 +2669,7 @@ function openFirstVisibleTool(){
       (sub && sub.days_left != null
          ? '<div class="sf"><b>' + esc(sub.days_left) + '</b><span>days left</span></div>' : '') +
       (until ? '<div class="sf"><b>' + esc(until) + '</b><span>' +
-               (cancelled ? 'access ends' : 'renews on') + '</span></div>' : '');
+               (cancelled ? 'access ends' : 'expires on') + '</span></div>' : '');
 
     var head =
       '<div class="ac"><div class="ac-card"><h3>My plan</h3>' +
@@ -2684,14 +2688,17 @@ function openFirstVisibleTool(){
       head += '<p class="ac-fine">You are on the free plan. Choose a plan below to ' +
               'unlock the full engine output.</p>';
     } else if (cancelled) {
-      head += '<p class="ac-fine"><b>This will not renew.</b> You keep everything you ' +
+      head += '<p class="ac-fine"><b>Reminders are off.</b> You keep everything you ' +
               'have paid for until ' + esc(until || "the end of the period") +
-              ', and can turn renewal back on before then.</p>' +
+              ', and nothing will be charged. Turn reminders back on if you would ' +
+              'like a nudge before it ends.</p>' +
               '<p class="ac-note" id="ac-msg"></p>';
     } else {
-      head += '<p class="ac-fine"><b>Cancel anytime.</b> It stops the renewal, not your ' +
-              'access — you keep ' + esc(label) + ' until ' + esc(until || "it expires") +
-              '.</p><p class="ac-note" id="ac-msg"></p>';
+      head += '<p class="ac-fine"><b>You will not be charged again.</b> There is no ' +
+              'stored card — ' + esc(label) + ' runs until ' + esc(until || "it expires") +
+              ' and then stops. Renew below whenever you like; cancelling only ' +
+              'turns off the reminders we send before that date.' +
+              '</p><p class="ac-note" id="ac-msg"></p>';
     }
     head += "</div>";
 

@@ -1071,6 +1071,87 @@ body.has-banner .ybanner .ylong{display:none}
   .fbtns{flex-direction:column}
   .fgo,.falt{width:100%}
 }
+
+/* ══ REDESIGN 2026-09-26 ═══════════════════════════════════════════════════
+   New components only. Nothing above this line was altered, so every existing
+   layout — the auth modal, the join column, the tier cards, the teaser grid,
+   the analyse panel — behaves exactly as it did.
+   Mobile-first: the base rules are the phone, min-width queries add to them.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── hero actions ───────────────────────────────────────────────────────
+   Two buttons on a phone, one on a desktop. Above 900px the six cards are
+   already on screen, so "See today's picks" would scroll to something the
+   visitor is looking at — a control that appears to do nothing. Below 900px
+   the cards are a screen away and the button earns its place.            */
+.heroact{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 0}
+.hcta,.hcta2{display:inline-block;text-decoration:none;font:600 14.5px/1
+  var(--sans);padding:13px 18px;border-radius:9px;min-height:44px;
+  display:inline-flex;align-items:center;justify-content:center}
+.hcta{background:var(--navy);color:#fff;flex:1 1 auto}
+.hcta:hover{background:var(--navy2)}
+.hcta2{background:var(--gold);color:var(--navy);font-weight:700;flex:1 1 auto}
+.hcta2:hover{background:var(--gold-d);color:#fff}
+@media(min-width:900px){
+  .hcta{display:none}
+  .hcta2{flex:0 0 auto}
+}
+.micro{margin:10px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--ink3)}
+.micro a{color:var(--gold-d);text-decoration:none;border-bottom:1px solid var(--gold-bd)}
+.micro a:hover{color:var(--ink)}
+
+/* ── the funnel: 400+ stocks down to entry/target/stop ───────────────────
+   A numbered rail rather than six boxes in a row. Six boxes across is
+   unreadable on a phone and only slightly better on a laptop.            */
+.fnl{list-style:none;margin:20px 0 0;padding:0;position:relative}
+.fnl li{position:relative;padding:0 0 18px 34px;border-left:2px solid var(--bd);
+  margin-left:7px}
+.fnl li:last-child{border-left-color:transparent;padding-bottom:0}
+.fnl li:before{content:"";position:absolute;left:-8px;top:3px;width:14px;
+  height:14px;border-radius:50%;background:var(--paper);
+  border:2px solid var(--bd)}
+.fnl li.fin:before{background:var(--gold);border-color:var(--gold)}
+.fnl b{display:block;font:700 16px/1.25 var(--sans);color:var(--ink)}
+.fnl span{display:block;font-size:14.5px;color:var(--ink2);margin-top:3px;
+  max-width:60ch}
+.fnl li.fin b{color:var(--gold-d)}
+@media(min-width:820px){
+  .fnl{display:grid;grid-template-columns:1fr 1fr;gap:0 34px}
+}
+
+/* ── track record ───────────────────────────────────────────────────────
+   Every tile is filled from /api/track-record. A tile whose metric the API
+   did not return is not rendered at all — there is no placeholder, no dash
+   standing in for a number nobody measured.                               */
+.tr{background:var(--paper);border-top:1px solid var(--bd);
+  border-bottom:1px solid var(--bd)}
+.tr .wrap{padding-top:34px;padding-bottom:34px}
+.trtabs{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px}
+.trtabs button{font:600 12.5px/1 var(--sans);padding:9px 13px;border-radius:999px;
+  border:1.5px solid var(--bd);background:var(--cream);color:var(--ink2);
+  cursor:pointer;min-height:38px}
+.trtabs button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);
+  color:#fff}
+.trstats{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+@media(min-width:620px){.trstats{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:960px){.trstats{grid-template-columns:repeat(5,1fr)}}
+.trcell{background:var(--cream);border:1px solid var(--bd);border-radius:11px;
+  padding:13px 14px}
+.trcell .v{font:700 clamp(19px,2.4vw,25px)/1 var(--mono);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.trcell .k{font:600 9.5px/1.35 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3);margin-top:7px;display:block}
+.trcell.pos .v{color:var(--green)} .trcell.neg .v{color:var(--red)}
+.trcell .sub{display:block;font:500 11px/1.3 var(--sans);color:var(--ink3);
+  margin-top:4px}
+.trmeth{margin:14px 0 0;font-size:13px;line-height:1.65;color:var(--ink3);
+  max-width:80ch}
+.trcta{display:inline-flex;align-items:center;min-height:44px;margin:16px 0 0;
+  background:var(--navy);color:#fff;text-decoration:none;font:600 14px/1 var(--sans);
+  padding:0 18px;border-radius:9px}
+.trcta:hover{background:var(--navy2)}
+.tr .load{color:var(--ink3);font-size:14px;padding:18px 0}
+.trfail{font-size:13.5px;color:var(--ink3);padding:14px 0}
 </style>
 
 <div class="band" id="top">
@@ -1081,23 +1162,31 @@ body.has-banner .ybanner .ylong{display:none}
       <span class="stat opt"><span class="l">Positive</span><span class="v" id="b-pos">—</span></span>
       <span class="stat"><span class="l">As of</span><span class="v" id="b-date">—</span></span>
       <nav class="bnav">
-        <a href="#top">Home</a><a href="#stack">Tools</a><a href="#about">About</a><a
-        href="#how">How it works</a><a href="#join">Pricing</a>
+        <a href="#todays-picks" data-ev="nav_todays_picks">Today’s Picks</a><a
+        href="#how-it-works" data-ev="nav_how">How it works</a><a
+        href="#track-record" data-ev="nav_track_record">Track record</a><a
+        href="#pricing" data-ev="nav_pricing">Pricing</a>
       </nav>
-      <a class="signin" href="/shell.html" id="b-signin">Sign in</a>
-      <a class="sign" href="#join" id="b-signup">Sign up</a>
+      <a class="signin" href="/shell.html" id="b-signin" data-ev="signin_click">Sign in</a>
+      <a class="sign" href="#pricing" id="b-signup" data-ev="signup_click">Try free</a>
     </div>
 </div>
 
 <div class="wrap"><div id="youbanner"></div></div>
 
-<div class="screen">
-  <div class="wrap top">
-    <h1>Hundreds of stocks. One question.<span class="hq">Which one deserves
-      your attention?</span></h1>
-    <p class="lede1">DSE Pulse scans hundreds of Dhaka-listed stocks after every
-    close, turning noise into a structured plan —
-    <b>entry, target and risk</b>. Free on any ticker.</p>
+<div class="screen" id="hero">
+  <div class="wrap top" id="interactive-demo">
+    <h1>Stop searching through 400+ DSE stocks.<span class="hq">See the stocks
+      worth watching today.</span></h1>
+    <p class="lede1">DSE Pulse analyses the market after every close and turns
+    hundreds of listed stocks into a focused shortlist —
+    <b>entry, target, stop loss and signal strength</b>.</p>
+    <p class="heroact">
+      <a class="hcta" href="#todays-picks" data-ev="today_picks_view">See today’s picks &rarr;</a>
+      <a class="hcta2" href="#pricing" data-ev="signup_click">Try free — no card required</a>
+    </p>
+    <p class="micro">Updated daily after the close · 400+ DSE stocks analysed
+      · <a href="#track-record" data-ev="track_record_view">what happened to past signals</a></p>
     <form class="ask" id="ask" autocomplete="off">
       <input id="code" name="code" placeholder="Type a ticker — e.g. BATBC"
              maxlength="20" aria-label="Stock ticker" spellcheck="false">
@@ -1120,7 +1209,7 @@ body.has-banner .ybanner .ylong{display:none}
     </div>
   </div>
 
-  <div class="wrap gridwrap">
+  <div class="wrap gridwrap" id="todays-picks">
     <div class="boxes" id="boxes">
       <div class="load">Loading today’s Signal Stack…</div>
     </div>
@@ -1131,17 +1220,120 @@ body.has-banner .ybanner .ylong{display:none}
   </div>
 
   <div class="wrap screenfoot">
-    <span id="sf-note">Every box is a real stock that cleared a real filter this
-    evening. One is shown in full so you can check it anywhere.</span>
-    <a href="/shell.html" id="cta-screen">Start free — 7 days of Pro</a>
+    <span id="sf-note">Real stocks that cleared a real filter after tonight’s
+    close. One name is open in full — the rest unlock with an account.</span>
+    <a href="/shell.html" id="cta-screen" data-ev="trial_started">Start free — 7 days of Pro</a>
   </div>
 </div>
 
-<!-- ── THE SIGNAL STACK ─────────────────────────────────────────────────── -->
-<section class="stack" id="stack">
+<!-- ── TRACK RECORD ──────────────────────────────────────────────────────── -->
+<section class="tr" id="track-record">
   <div class="wrap">
     <div class="hd">
-      <h2>The Signal Stack</h2>
+      <h2>Did the signals work?</h2>
+      <span class="note" id="tr-note"></span>
+    </div>
+    <p class="lede">What happened <i>after</i> the signal. Every figure below
+    comes from picks issued live on the day and resolved against the prices
+    that followed — not a backtest, and not a simulation.</p>
+
+    <div class="trtabs" id="tr-tabs"></div>
+    <div class="trstats" id="tr-stats"><div class="load">Loading track record…</div></div>
+    <p class="trmeth" id="tr-meth"></p>
+
+    <a class="trcta" href="/trackrecord.html" data-ev="track_record_view">View the full track record &rarr;</a>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="tools-sec" id="tools">
+    <div class="hd">
+      <h2>Why is a stock on today’s list?</h2>
+      <span class="note" id="tl-note"></span>
+    </div>
+    <p class="lede">The actual rows produced this evening, with the numbers
+    that decide a setup, priced on your capital. Only the name is withheld —
+    and it is withheld on the server, not hidden in this page.</p>
+
+    <div class="tabs" id="tl-tabs"></div>
+    <div class="toolbox">
+      <div class="tool-hd" id="tl-hd"></div>
+      <div id="tl-rows"><div class="load">Loading today's shortlist…</div></div>
+      <div class="cta" id="tl-cta">
+        <div class="m"><b>The names are the product</b>
+        <span>Every row above is a real stock that cleared a real filter this
+        evening. A subscription is the name, so you can act on it.</span></div>
+        <a href="/shell.html" id="cta-tools">Start free — 7 days of Pro</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────── --><section class="how" id="how-it-works">
+  <div class="wrap">
+    <div class="hd"><h2>How we find the stocks worth watching</h2></div>
+    <ol class="fnl">
+      <li><b>400+ DSE stocks</b><span>every listed name after the close, not a
+        watchlist someone chose in advance</span></li>
+      <li><b>Market and technical analysis</b><span>momentum, moving averages,
+        MACD, RSI, volume, Bollinger Bands, DSEX mood</span></li>
+      <li><b>Multiple signals</b><span>six readings run independently on the
+        same stock</span></li>
+      <li><b>DSE Pulse score</b><span>one number, so setups can be ranked
+        against each other</span></li>
+      <li><b>Focused shortlist</b><span>only what clears the thresholds.
+        Everything else is dropped, silently</span></li>
+      <li class="fin"><b>Entry · Target · Stop</b><span>written as a plan you
+        can act on or ignore</span></li>
+    </ol>
+    <p class="decide">You decide what to do with it.</p>
+  </div>
+</section>
+
+<!-- ── TRUST ────────────────────────────────────────────────────────────── --><section class="about" id="why">
+  <div class="wrap">
+    <div class="hd"><h2>What you get — and what you don’t</h2></div>
+    <p class="lede">A shortlist with levels, every evening. Here is exactly how
+    it is produced, and what it does not claim to be.</p>
+    <div class="qa">
+      <div class="q">
+        <span class="qk">Rule-based</span>
+        <p><b>Arithmetic over past price and volume, and nothing else.</b>
+        The same rules run on every stock, every evening, with no discretion
+        and no hand-picked exceptions. Nothing here predicts a price.</p>
+      </div>
+      <div class="q">
+        <span class="qk">Conditional</span>
+        <p><b>Every taka figure on this site is an "if", not a forecast.</b>
+        It is what a position would come to <i>if</i> the price reached those
+        levels — before brokerage, tax and slippage, and with no promise that
+        any level is reached at all.</p>
+      </div>
+      <div class="q">
+        <span class="qk">What it costs</span>
+        <p><b>Nothing to start.</b> Any ticker you name is free, forever.
+        The shortlist itself is <span id="c-cost">priced below</span>, and the
+        trial needs no card.</p>
+      </div>
+    </div>
+    <div class="astrip">
+      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
+      <div><b>5</b><span>layers, run in sequence from 4:35 PM</span></div>
+      <div><b>1</b><span>setup published in full every day, free</span></div>
+      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
+    </div>
+    <p class="anote">The Signal Stack is wrong regularly, and the track record
+    is published in full — the good days and the bad ones. It is not advice,
+    not a recommendation, and not a prediction that any price will be reached.
+    What it gives you is a structured starting point; the decision stays
+    yours.</p>
+  </div>
+</section>
+
+<!-- ── THE SIGNAL STACK ─────────────────────────────────────────────────── --><section class="stack" id="engine">
+  <div class="wrap">
+    <div class="hd">
+      <h2>The engine underneath</h2>
       <span class="note">runs every trading evening, from 4:35 PM</span>
     </div>
     <p class="lede">Multiple market readings. Layered confirmation.
@@ -1211,113 +1403,7 @@ body.has-banner .ybanner .ylong{display:none}
   </div>
 </section>
 
-<!-- ── THE PROBLEM ──────────────────────────────────────────────────────── -->
-<section class="problem">
-  <div class="wrap">
-    <span class="pk">The problem</span>
-    <h2>The market gives you too much information, and too much noise.</h2>
-    <p>Hundreds of stocks trade on the Dhaka Stock Exchange, and every one of
-    them produces a price, a volume, a chart and an opinion after the close.
-    Almost none of that is a decision. Nothing in it tells you which name is
-    worth an hour of your evening — or where you would get in, where you
-    would take profit, and where you would be wrong.</p>
-  </div>
-</section>
-
-<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────── -->
-<section class="how" id="how">
-  <div class="wrap">
-    <div class="hd"><h2>How it works</h2></div>
-    <p class="lede">Four steps, in the same order, every trading evening.</p>
-    <ol class="steps four">
-      <li><span class="n">01</span>
-        <h3>Scan</h3>
-        <p>Hundreds of stocks are processed after the close — every listed
-        name, not a watchlist someone chose in advance.</p></li>
-      <li><span class="n">02</span>
-        <h3>Analyse</h3>
-        <p>Multiple market readings are evaluated on each one: momentum,
-        moving averages, MACD, RSI, volume, Bollinger Bands, DSEX mood.</p></li>
-      <li><span class="n">03</span>
-        <h3>Filter</h3>
-        <p>Only setups that meet the defined rules move forward. Everything
-        that does not clear the thresholds is dropped, silently.</p></li>
-      <li><span class="n">04</span>
-        <h3>Plan</h3>
-        <p>What survives is written as a setup you can act on or ignore:
-        <b>entry · target · risk</b>.</p></li>
-    </ol>
-    <p class="decide">You decide what to do with it.</p>
-  </div>
-</section>
-
-<div class="wrap">
-  <section class="tools-sec" id="tools">
-    <div class="hd">
-      <h2>What made the shortlist today</h2>
-      <span class="note" id="tl-note"></span>
-    </div>
-    <p class="lede">Not a count of what you are missing — the actual rows the
-    Signal Stack produced this evening, with the numbers that decide a setup,
-    priced on your capital. Only the name is withheld, and it is withheld on
-    the server: it is not in this page at all.</p>
-
-    <div class="tabs" id="tl-tabs"></div>
-    <div class="toolbox">
-      <div class="tool-hd" id="tl-hd"></div>
-      <div id="tl-rows"><div class="load">Loading today's shortlist…</div></div>
-      <div class="cta" id="tl-cta">
-        <div class="m"><b>The names are the product</b>
-        <span>Every row above is a real stock that cleared a real filter this
-        evening. A subscription is the name, so you can act on it.</span></div>
-        <a href="/shell.html" id="cta-tools">Start free — 7 days of Pro</a>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- ── TRUST ────────────────────────────────────────────────────────────── -->
-<section class="about" id="about">
-  <div class="wrap">
-    <div class="hd"><h2>What this is, and what it is not</h2></div>
-    <p class="lede">The numbers are only worth something if you know exactly
-    how they were arrived at. So here is the whole of it.</p>
-    <div class="qa">
-      <div class="q">
-        <span class="qk">Rule-based</span>
-        <p><b>Arithmetic over past price and volume, and nothing else.</b>
-        The same rules run on every stock, every evening, with no discretion
-        and no hand-picked exceptions. Nothing here predicts a price.</p>
-      </div>
-      <div class="q">
-        <span class="qk">Conditional</span>
-        <p><b>Every taka figure on this site is an "if", not a forecast.</b>
-        It is what a position would come to <i>if</i> the price reached those
-        levels — before brokerage, tax and slippage, and with no promise that
-        any level is reached at all.</p>
-      </div>
-      <div class="q">
-        <span class="qk">What it costs</span>
-        <p><b>Nothing to start.</b> Any ticker you name is free, forever.
-        The shortlist itself is <span id="c-cost">priced below</span>, and the
-        trial needs no card.</p>
-      </div>
-    </div>
-    <div class="astrip">
-      <div><b id="a-scan">—</b><span>shares scanned each evening</span></div>
-      <div><b>5</b><span>layers, run in sequence from 4:35 PM</span></div>
-      <div><b>1</b><span>setup published in full every day, free</span></div>
-      <div><b>7</b><span>days of Pro, no card needed, cancel anytime</span></div>
-    </div>
-    <p class="anote">The Signal Stack is wrong regularly, and the track record
-    is published in full — the good days and the bad ones. It is not advice,
-    not a recommendation, and not a prediction that any price will be reached.
-    What it gives you is a structured starting point; the decision stays
-    yours.</p>
-  </div>
-</section>
-
-<div class="wrap">
+<div class="wrap" id="pricing">
   <section class="join" id="join">
     <div id="refbanner"></div>
     <div id="paybanner"></div>
@@ -1396,15 +1482,14 @@ body.has-banner .ybanner .ylong{display:none}
 
 </div>
 
-<!-- ── FINAL CTA ────────────────────────────────────────────────────────── -->
-<section class="fcta">
+<!-- ── FINAL CTA ────────────────────────────────────────────────────────── --><section class="fcta" id="final-cta">
   <div class="wrap">
-    <h2>Give DSE Pulse a ticker, and see what it sees.</h2>
-    <p>One name, the full plan — entry, target and risk, on the money you
-    actually have. Free, and no account needed to try it.</p>
+    <h2>Stop watching everything. Focus on what matters.</h2>
+    <p>Explore the DSE for free, see today’s shortlist, and decide whether
+    DSE Pulse fits your workflow. No card needed to try it.</p>
     <div class="fbtns">
-      <button type="button" class="fgo" id="fcta-try">Find the signal</button>
-      <a class="falt" href="/shell.html" id="cta-final">Start free — 7 days of Pro</a>
+      <button type="button" class="fgo" id="fcta-try" data-ev="ticker_search">See today’s picks</button>
+      <a class="falt" href="/shell.html" id="cta-final" data-ev="trial_started">Start free &rarr;</a>
     </div>
   </div>
 </section>
@@ -1463,7 +1548,7 @@ body.has-banner .ybanner .ylong{display:none}
     belong to is what an account opens — along with every other row the Signal
     Stack produced today.</p>
     <div class="mrow">
-      <a class="mbtn primary" href="#join" id="auth-new">Create a free account</a>
+      <a class="mbtn primary" href="#pricing" id="auth-new">Create a free account</a>
       <a class="mbtn" href="/shell.html" id="auth-in">I already have an account</a>
     </div>
     <p class="mfine">Trial finished, or a subscription lapsed?
@@ -2946,5 +3031,167 @@ body.has-banner .ybanner .ylong{display:none}
     host.innerHTML = out;
   })();
 
+})();
+</script>
+
+<script>
+/* ══ REDESIGN 2026-09-26 · track record + event hooks ═══════════════════════
+   Appended, not merged. The existing script above is untouched, so nothing it
+   owns — auth, payment, referrals, the teaser grid, the analyse panel — can be
+   broken by anything here. This block only reads DOM it created itself.
+   ════════════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  var API = (window.DSEEnv && window.DSEEnv.apiBase) ||
+            "https://dsepulse-backend-production.up.railway.app";
+
+  /* ── 1 · EVENT HOOKS ──────────────────────────────────────────────────
+     There is no analytics provider on this site today — no gtag, no
+     dataLayer, no Plausible. So this does not pretend to send anything
+     anywhere. It normalises the events and hands them to whatever is
+     installed later: dataLayer if GTM arrives, gtag if GA4 does, and a
+     buffer on window either way so nothing fired before the tag loads is
+     lost. Wiring a provider is then one line, not a re-instrumentation. */
+  var Q = (window.dsePulseEvents = window.dsePulseEvents || []);
+  function track(name, props) {
+    if (!name) return;
+    var ev = { event: name, ts: Date.now() };
+    if (props) for (var k in props) if (props.hasOwnProperty(k)) ev[k] = props[k];
+    Q.push(ev);
+    try { if (window.dataLayer && window.dataLayer.push) window.dataLayer.push(ev); } catch (e) {}
+    try { if (typeof window.gtag === "function") window.gtag("event", name, props || {}); } catch (e) {}
+  }
+  window.dseTrack = track;   //  the payment and signup paths can call this
+
+  track("landing_view", { path: location.pathname });
+
+  document.addEventListener("click", function (e) {
+    var c = e.target && e.target.closest ? e.target : null;
+    if (!c || !c.closest) return;
+    var t = c.closest("[data-ev]");
+    if (t) track(t.getAttribute("data-ev"));
+    //  Tier cards are generated by the existing script, so they cannot carry
+    //  data-ev without editing it. They already carry data-plan.
+    var tier = c.closest("[data-plan]");
+    if (tier) {
+      var plan = String(tier.getAttribute("data-plan") || "").toLowerCase();
+      if (plan === "premium" || plan === "pro") track(plan + "_selected");
+      track("checkout_started", { plan: plan });
+    }
+    if (c.closest("#boxes [data-lock]")) track("stock_analysis_click", { source: "teaser_card" });
+  }, true);
+
+  var askForm = document.getElementById("ask");
+  if (askForm) askForm.addEventListener("submit", function () {
+    var v = document.getElementById("code");
+    track("ticker_search", { ticker: v ? String(v.value || "").toUpperCase().slice(0, 20) : "" });
+  });
+
+  try {
+    if ("IntersectionObserver" in window) {
+      var seen = {};
+      var io = new IntersectionObserver(function (rows) {
+        rows.forEach(function (r) {
+          if (!r.isIntersecting) return;
+          var name = { "todays-picks": "today_picks_view",
+                       "track-record": "track_record_view",
+                       "pricing": "pricing_view" }[r.target.id];
+          if (name && !seen[name]) { seen[name] = 1; track(name); }
+        });
+      }, { threshold: 0.3 });
+      ["todays-picks", "track-record", "pricing"].forEach(function (id) {
+        var n = document.getElementById(id); if (n) io.observe(n);
+      });
+    }
+  } catch (e) {}
+
+  /* ── 2 · TRACK RECORD ─────────────────────────────────────────────────
+     Renders ONLY the metrics the response actually contains. _tr_agg omits
+     a key entirely when the data cannot support it — no resolved trades
+     means no expectancy key — so a missing key means "not measured", and
+     the honest rendering of that is nothing at all, not a dash or a zero. */
+  var elS = document.getElementById("tr-stats");
+  if (!elS) return;
+  var elT = document.getElementById("tr-tabs"),
+      elN = document.getElementById("tr-note"),
+      elM = document.getElementById("tr-meth");
+  var TOOLS = [], cur = 0;
+  function n1(v) { return (v > 0 ? "+" : "") + Number(v).toFixed(1) + "%"; }
+
+  function cells(a) {
+    var out = [];
+    function add(v, k, fmt, sub, sign) {
+      if (v === undefined || v === null) return;
+      out.push({ v: fmt ? fmt(v) : String(v), k: k, sub: sub,
+                 cls: sign ? (Number(v) > 0 ? "pos" : Number(v) < 0 ? "neg" : "") : "" });
+    }
+    add(a.samples,         "Signals measured");
+    add(a.hit,             "Target reached");
+    add(a.stopped,         "Stop reached");
+    add(a.holding,         "Still open");
+    add(a.expired,         "Window closed", null, "neither level hit");
+    add(a.avg_ret,         "Average outcome", n1, "per signal, gross", true);
+    add(a.win_rate,        "Positive", function (v) { return v + "%"; }, "of measured signals");
+    add(a.avg_days_to_hit, "Days to target", function (v) { return v + "d"; }, "trading days");
+    add(a.expectancy,      "Expectancy", n1, "per resolved signal, before costs", true);
+    add(a.profit_factor,   "Profit factor", function (v) { return Number(v).toFixed(2); },
+                           "gains ÷ losses");
+    add(a.avg_alpha,       "vs DSEX", n1, "against a passive hold", true);
+    add(a.best,            "Best", n1, null, true);
+    add(a.worst,           "Worst", n1, null, true);
+    return out;
+  }
+
+  function esc(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+  function paint() {
+    var t = TOOLS[cur]; if (!t) return;
+    if (elT) elT.innerHTML = TOOLS.map(function (x, i) {
+      return '<button type="button" data-i="' + i + '" aria-pressed="' +
+             (i === cur) + '">' + esc(x.label) + "</button>";
+    }).join("");
+    var c = cells(t.agg || {});
+    if (!c.length) {
+      elS.innerHTML = '<p class="trfail">No resolved signals yet for ' +
+        esc(t.label) + '. Nothing is shown rather than a zero — ' +
+        '"not measured" and "measured at zero" are different things.</p>';
+      return;
+    }
+    elS.innerHTML = c.map(function (x) {
+      return '<div class="trcell ' + x.cls + '"><span class="v">' + esc(x.v) +
+        '</span><span class="k">' + esc(x.k) + "</span>" +
+        (x.sub ? '<span class="sub">' + esc(x.sub) + "</span>" : "") + "</div>";
+    }).join("");
+  }
+
+  if (elT) elT.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest ? e.target.closest("button[data-i]") : null;
+    if (!b) return;
+    cur = +b.getAttribute("data-i"); paint();
+    track("track_record_engine", { engine: (TOOLS[cur] || {}).key });
+  });
+
+  fetch(API + "/api/track-record")
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || !j.tools || !j.tools.length) throw new Error("no tools");
+      //  Engines with nothing resolved go to the back rather than being
+      //  dropped — their emptiness is itself true and worth seeing.
+      TOOLS = j.tools.slice().sort(function (a, b) {
+        return ((b.agg && b.agg.samples) || 0) - ((a.agg && a.agg.samples) || 0);
+      });
+      if (elN && j.updated) elN.textContent = "resolved to " + j.updated;
+      if (elM) elM.textContent = [j.note_method, j.note_smartmoney,
+        "Figures are gross: brokerage, tax and slippage are not deducted."]
+        .filter(Boolean).join(" ");
+      paint();
+    })
+    .catch(function () {
+      elS.innerHTML = '<p class="trfail">The track record could not be loaded ' +
+        'just now. It is published in full, the good days and the bad, on ' +
+        '<a href="/trackrecord.html">the track record page</a>.</p>';
+      if (elM) elM.textContent = "";
+    });
 })();
 </script>

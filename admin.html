@@ -60,6 +60,21 @@
   .socialrow>span:first-child{font-size:13px}
   .socialrow input{width:100%}
   .socialrow label.sw{justify-self:center}
+  /*  Growth. The one card that answers "is December reachable", so it reads
+      top-down: the gap, the rate it demands, the rate actually happening. */
+  .gwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .gbig{background:var(--panel2);border-radius:10px;padding:14px 16px}
+  .gbig .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .gbig .v{font-size:26px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .gbig .s{font-size:11px;color:var(--hint);margin-top:2px}
+  .gv-ok{color:var(--success)} .gv-bad{color:var(--danger)} .gv-warn{color:var(--amber)}
+  .gsec{font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 6px}
+  .grow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px 2px;border-bottom:1px solid var(--panel2);font-size:13px}
+  .grow b{font-variant-numeric:tabular-nums}
+  .gnote{font-size:12px;color:var(--muted);background:#141f33;border-left:3px solid var(--amber);
+    border-radius:0 7px 7px 0;padding:10px 12px;margin-top:12px;line-height:1.6}
+  .gbar{height:8px;border-radius:99px;background:#243043;overflow:hidden;margin-top:10px}
+  .gbar i{display:block;height:100%;background:var(--success);border-radius:99px}
   @media(max-width:560px){.socialhd{display:none}
     .socialrow{grid-template-columns:1fr 64px;gap:8px}
     .socialrow input{grid-column:1/-1;order:3}}
@@ -84,6 +99,20 @@
   <div class="card">
     <h2>Overview</h2>
     <div class="stats" id="stats"><div class="stat"><div class="l">Loading…</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Growth &middot; 5,000 paying subscribers</h2>
+    <div class="bar">
+      <select id="gDays">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+      <button class="btn" onclick="loadGrowth()">&#8635; Refresh</button>
+    </div>
+    <div id="gMsg" class="msg"></div>
+    <div id="growth"><div class="sub">Loading&hellip;</div></div>
   </div>
 
   <div class="card">
@@ -202,7 +231,84 @@ async function unlock(){
   }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
 }
 function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
-function boot(){loadStats();loadUsers();loadPricing();loadReferral();loadTools();loadSocial()}
+function boot(){loadStats();loadGrowth();loadUsers();loadPricing();loadReferral();loadTools();loadSocial()}
+
+/*  Growth. Everything here comes from /api/admin/growth, which reads the
+    users, transactions and subscriptions tables that already exist — no
+    visitor tracking is needed for any of it. The visitor block is the one
+    part that waits on the collector, and it says so rather than showing a
+    zero, because an empty collector and a zero conversion rate look identical
+    in a number and mean opposite things.                                   */
+function gnum(n){ return (n===null||n===undefined) ? "\u2014" : Number(n).toLocaleString(); }
+function grow(l,v){ return `<div class="grow"><span>${l}</span><b>${v}</b></div>`; }
+
+async function loadGrowth(){
+  $("gMsg").textContent="Loading growth\u2026";
+  const days=$("gDays").value||30;
+  try{
+    const r=await fetch(`${API}/api/admin/growth?days=${days}`,{headers:H()});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    const t=d.target||{}, reg=d.registrations||{}, paid=d.paid||{},
+          rev=d.revenue||{}, rate=d.rates||{}, vis=d.visitors||{};
+
+    //  Behind or ahead, stated as a fact rather than a colour alone.
+    const need=t.required_net_paid_per_week||0, got=t.actual_new_paid_last_7||0;
+    const cls = got>=need&&need>0 ? "gv-ok" : (got>0 ? "gv-warn" : "gv-bad");
+    const pct = t.goal ? Math.min(100,(100*(t.active_paid_now||0)/t.goal)) : 0;
+
+    let h='<div class="gwrap">'+
+      `<div class="gbig"><div class="l">Active paid now</div><div class="v">${gnum(t.active_paid_now)}</div><div class="s">of ${gnum(t.goal)} by ${t.deadline||""}</div></div>`+
+      `<div class="gbig"><div class="l">Gap</div><div class="v">${gnum(t.gap)}</div><div class="s">${t.weeks_remaining} weeks left</div></div>`+
+      `<div class="gbig"><div class="l">Needed / week</div><div class="v gv-warn">${gnum(need)}</div><div class="s">net new paying</div></div>`+
+      `<div class="gbig"><div class="l">Actual last 7 days</div><div class="v ${cls}">${gnum(got)}</div><div class="s">${need? (got>=need?"on track":"behind by "+gnum(need-got)) : ""}</div></div>`+
+      `<div class="gbig"><div class="l">Revenue</div><div class="v">\u09f3${gnum(rev.total_bdt)}</div><div class="s">\u09f3${gnum(rev.last_30_bdt)} last 30 days</div></div>`+
+      '</div>'+
+      `<div class="gbar"><i style="width:${pct.toFixed(2)}%"></i></div>`;
+
+    h+='<div class="gsec">Registrations</div>'+
+       grow("Total", gnum(reg.total))+grow("Last 7 days", gnum(reg.last_7))+
+       grow("Last 30 days", gnum(reg.last_30));
+
+    h+='<div class="gsec">Paid</div>'+
+       grow("Paying users ever", gnum(paid.paying_users_ever))+
+       grow("New, last 7 days", gnum(paid.new_last_7))+
+       grow("New, last 30 days", gnum(paid.new_last_30))+
+       grow("Renewals, last 30 days", gnum(paid.renewals_last_30))+
+       grow("Registration \u2192 paid", rate.registration_to_paid_pct==null?"\u2014":rate.registration_to_paid_pct+"%")+
+       grow("Lapsed subscriptions", gnum(rate.lapsed_subscriptions));
+
+    h+='<div class="gsec">Visitors \u00b7 last '+(vis.days||days)+' days</div>';
+    if(vis.collecting){
+      h+=grow("Unique visitors", gnum(vis.unique_visitors))+
+         grow("Sessions", gnum(vis.sessions))+
+         grow("Page views", gnum(vis.page_views))+
+         grow("Visitor \u2192 registration", vis.visitor_to_registration_pct==null?"\u2014":vis.visitor_to_registration_pct+"%");
+      (vis.by_source||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;source &middot; "+x.source, gnum(x.visitors)); });
+      (vis.by_device||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;device &middot; "+x.device, gnum(x.visitors)); });
+    } else {
+      h+=`<div class="gnote">${vis.note||"No visitor events collected yet."}</div>`;
+    }
+
+    //  The arithmetic that turns the target into a traffic requirement. Shown
+    //  only when there is a real conversion rate to base it on — a required
+    //  visitor count derived from one sale would be a made-up number.
+    if(t.required_registrations_per_week){
+      h+=`<div class="gnote"><b>At the current ${rate.registration_to_paid_pct}% registration\u2192paid rate,
+          ${gnum(need)} paying subscribers a week needs about
+          <b>${gnum(t.required_registrations_per_week)} registrations a week</b>.</b>
+          Against ${gnum(reg.last_7)} in the last 7 days. This is arithmetic from your own
+          numbers, not a forecast \u2014 the rate itself rests on ${gnum(paid.paying_users_ever)} paying
+          ${paid.paying_users_ever===1?"user":"users"} and will move a lot as that grows.</div>`;
+    }
+
+    $("growth").innerHTML=h;
+    $("gMsg").textContent="As of "+(d.as_of||"").replace("T"," ")+".";
+  }catch(e){
+    $("growth").innerHTML="";
+    $("gMsg").textContent="Could not load growth: "+e.message;
+  }
+}
 
 async function loadStats(){
   try{

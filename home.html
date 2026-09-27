@@ -3070,146 +3070,33 @@ body.has-banner .ybanner .ylong{display:none}
      installed later: dataLayer if GTM arrives, gtag if GA4 does, and a
      buffer on window either way so nothing fired before the tag loads is
      lost. Wiring a provider is then one line, not a re-instrumentation. */
+  /*  ── the shim ──────────────────────────────────────────────────────────
+      The collector used to live here, which is why it only ever measured this
+      one page. It now lives in /analytics.js, injected by env.js into every
+      page and into the dashboard frame as well.
+
+      What remains is a shim, and it exists for a race: this script runs
+      immediately, analytics.js is deferred, so events fired above the fold
+      would otherwise be thrown at a function that does not exist yet. They go
+      into window.dsePulseEvents, and analytics.js drains that queue the
+      moment it loads. Once it has, it replaces window.dseTrack with the real
+      one and nothing reaches this shim again.
+
+      Identity, sessions, UTM capture, transport, page_view and session_start
+      are all analytics.js's job now. Duplicating any of them here is what
+      would double every number on the landing page.                        */
   var Q = (window.dsePulseEvents = window.dsePulseEvents || []);
-
-  /*  ── identity ──────────────────────────────────────────────────────────
-      A visitor id in localStorage (one browser profile, not a person) and a
-      session id in sessionStorage that rolls over after 30 minutes idle. Both
-      are random and meaningless on their own: no email, no name, no IP, and
-      nothing that identifies anyone off this site. The server never accepts
-      a user_id from here — it reads that from the auth token — so these ids
-      cannot be used to write into somebody else's history.
-
-      Every read and write is wrapped: private mode, blocked storage and
-      quota errors all throw, and analytics must never be the reason a page
-      fails to load.                                                        */
-  var IDLE_MS = 30 * 60 * 1000;
-  function rid(p) {
-    var a = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", o = p || "";
-    try {
-      if (window.crypto && crypto.getRandomValues) {
-        var b = new Uint8Array(16); crypto.getRandomValues(b);
-        for (var i = 0; i < 16; i++) o += a[b[i] % a.length];
-        return o;
-      }
-    } catch (e) {}
-    for (var j = 0; j < 16; j++) o += a[Math.floor(Math.random() * a.length)];
-    return o;
-  }
-  function ls(k, v) {
-    try { if (v === undefined) return localStorage.getItem(k);
-          localStorage.setItem(k, v); return v; } catch (e) { return null; }
-  }
-  function ss(k, v) {
-    try { if (v === undefined) return sessionStorage.getItem(k);
-          sessionStorage.setItem(k, v); return v; } catch (e) { return null; }
-  }
-
-  var VID = ls("dse_vid") || ls("dse_vid", rid("v-"));
-  var NEWSESSION = false;
-  var SID = (function () {
-    var id = ss("dse_sid"), last = +(ss("dse_sid_at") || 0);
-    if (!id || !last || (Date.now() - last) > IDLE_MS) {
-      id = ss("dse_sid", rid("s-"));
-      NEWSESSION = true;
-    }
-    ss("dse_sid_at", String(Date.now()));
-    return id;
-  })();
-
-  /*  Our own visits, kept out of the numbers the growth decisions are made
-      from. Visit any page once with ?dse_internal=1 to mark this browser, and
-      ?dse_internal=0 to unmark it.                                         */
-  (function () {
-    try {
-      var m = /[?&]dse_internal=([01])/.exec(location.search);
-      if (m) ls("dse_internal", m[1]);
-    } catch (e) {}
-  })();
-  var INTERNAL = ls("dse_internal") === "1";
-
-  /*  ── the campaign that brought them ────────────────────────────────────
-      Captured on the FIRST page of the session and remembered for the rest of
-      it. Without that, a visitor who lands on a utm-tagged link and then
-      clicks through to pricing is recorded as having arrived at pricing from
-      nowhere, and every campaign loses credit for the conversion it paid for. */
-  var UTM = (function () {
-    try {
-      var keep = ss("dse_utm");
-      if (keep) return JSON.parse(keep);
-      var q = new URLSearchParams(location.search), out = {};
-      ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
-        .forEach(function (k) { var v = q.get(k); if (v) out[k] = String(v).slice(0, 80); });
-      ss("dse_utm", JSON.stringify(out));
-      return out;
-    } catch (e) { return {}; }
-  })();
-  var REF = (function () { try { return document.referrer || ""; } catch (e) { return ""; } })();
-
-  /*  ── the send ──────────────────────────────────────────────────────────
-      Batched, and flushed with sendBeacon so the browser delivers it in the
-      background without the page waiting. A beacon also survives the tab
-      being closed, which is the only way the last event of a visit is ever
-      recorded. fetch with keepalive is the fallback; if both are missing the
-      events are simply dropped, because an analytics call must never block.  */
-  var BUF = [], TIMER = null, API_TRACK = API + "/api/track";
-  function flush() {
-    if (TIMER) { clearTimeout(TIMER); TIMER = null; }
-    if (!BUF.length) return;
-    var body = JSON.stringify({ visitor_id: VID, session_id: SID,
-                                internal: INTERNAL, events: BUF.splice(0, 25) });
-    try {
-      if (navigator.sendBeacon) {
-        var blob = new Blob([body], { type: "application/json" });
-        if (navigator.sendBeacon(API_TRACK, blob)) return;
-      }
-    } catch (e) {}
-    try {
-      var h = { "Content-Type": "application/json" };
-      //  Sent ONLY when a token already exists — this never causes a sign-in.
-      //  It is what stitches an anonymous visit to the account it became.
-      var t = null; try { t = localStorage.getItem("dse_token"); } catch (x) {}
-      if (t) h["Authorization"] = "Bearer " + t;
-      fetch(API_TRACK, { method: "POST", headers: h, body: body, keepalive: true })
-        .catch(function () {});
-    } catch (e) {}
-  }
-  function schedule() { if (!TIMER) TIMER = setTimeout(flush, 1200); }
-
   function track(name, props) {
     if (!name) return;
+    //  Already loaded? Hand it straight over.
+    if (window.dseTrack && window.dseTrack !== track) {
+      try { window.dseTrack(name, props); return; } catch (e) {}
+    }
     var ev = { event: name, ts: Date.now() };
     if (props) for (var k in props) if (props.hasOwnProperty(k)) ev[k] = props[k];
     Q.push(ev);
-    try { if (window.dataLayer && window.dataLayer.push) window.dataLayer.push(ev); } catch (e) {}
-    try { if (typeof window.gtag === "function") window.gtag("event", name, props || {}); } catch (e) {}
-    //  And to our own collector, which is the one that actually stores it.
-    try {
-      var out = { event: name, path: location.pathname, referrer: REF, utm: UTM };
-      if (props) for (var p in props) if (props.hasOwnProperty(p) && p !== "path") out[p] = props[p];
-      BUF.push(out);
-      ss("dse_sid_at", String(Date.now()));   // this visit is still alive
-      schedule();
-    } catch (e) {}
   }
-  window.dseTrack = track;   //  the payment and signup paths can call this
-
-  //  One session_start per visit, and one page_view per navigation — never on
-  //  a re-render, which is what stops a single page being counted four times.
-  if (NEWSESSION) track("session_start", { entry: location.pathname });
-  track("page_view", { path: location.pathname });
-
-  //  Flush on the way out, on tab hide, and on a soft navigation.
-  try {
-    window.addEventListener("pagehide", flush);
-    window.addEventListener("beforeunload", flush);
-    document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "hidden") flush();
-    });
-    window.addEventListener("popstate", function () { track("page_view", { path: location.pathname }); });
-  } catch (e) {}
-
-  track("landing_view", { path: location.pathname });
+  if (!window.dseTrack) window.dseTrack = track;
 
   /*  The gateway returns the customer to the site with ?payment=success. The
       SERVER has already recorded the payment from its own callback — that is
@@ -3224,13 +3111,15 @@ body.has-banner .ybanner .ylong{display:none}
     } catch (e) {}
   })();
 
+  /*  [data-ev] is NOT handled here any more — analytics.js delegates it across
+      every page, and doing it in both places would double every click on this
+      one. What remains are the two things that are specific to this page and
+      that analytics.js cannot know about: the tier cards, which carry
+      data-plan rather than data-ev because the existing script generates them,
+      and the locked teaser boxes.                                          */
   document.addEventListener("click", function (e) {
     var c = e.target && e.target.closest ? e.target : null;
     if (!c || !c.closest) return;
-    var t = c.closest("[data-ev]");
-    if (t) track(t.getAttribute("data-ev"));
-    //  Tier cards are generated by the existing script, so they cannot carry
-    //  data-ev without editing it. They already carry data-plan.
     var tier = c.closest("[data-plan]");
     if (tier) {
       var plan = String(tier.getAttribute("data-plan") || "").toLowerCase();

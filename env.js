@@ -245,6 +245,40 @@
   (document.head || document.documentElement).appendChild(s);
 })();
 
+/* ── analytics, on every page ────────────────────────────────────────────────
+ *  The collector lived inline in home.html, which measured the landing page
+ *  and nothing else — not shell.html, not one of the eighteen tool pages. So
+ *  feature usage and stock analysis were uncollectable rather than merely
+ *  unbuilt. Injected here for the same reason footer.js and the favicons are:
+ *  one file instead of an edit to twenty-five.
+ *
+ *  UNLIKE footer.js, THIS RUNS INSIDE THE FRAME TOO.
+ *  footer.js returns early when window.top !== window.self, because a footer
+ *  inside the dashboard frame would be absurd. Analytics is the opposite case:
+ *  the tool pages ARE that frame, so skipping it would miss everything a
+ *  paying customer actually does. Top and frame share an origin and therefore
+ *  the same visitor and session; the frame is a page view inside the same
+ *  visit, which is exactly what it is.
+ *
+ *  Deferred, because nothing on the page waits for it and a visitor should
+ *  never pay for our measurement.
+ * ------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+  if (document.getElementById("dse-analytics-js")) return;
+  //  The admin pages are our own screens, not visitor traffic. Excluding them
+  //  here is cheaper and more honest than filtering them out afterwards.
+  try {
+    var p = String(location.pathname || "").toLowerCase();
+    if (p.indexOf("admin") !== -1 || p.indexOf("audit") !== -1) return;
+  } catch (e) {}
+  var s = document.createElement("script");
+  s.id = "dse-analytics-js";
+  s.src = "/analytics.js";
+  s.defer = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+
 /* ── the tab icon, on every page ─────────────────────────────────────────────
  *  Twenty-five pages, none of which declare one, so every tab reads as a blank
  *  document. Adding six <link> tags to twenty-five files is twenty-five edits

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSE Pulse · Analytics</title>
+<style>
+  /*  Sections 1-21, 23-27 of the analytics brief.
+      Same tokens as admin.html, same admin key, same sessionStorage slot —
+      this is the existing admin system with more screens, not a second one.
+
+      ONE SEGMENT TABLE RENDERER DRIVES EVERY BREAKDOWN.
+      Device, browser, OS, country, screen, new-vs-returning, source, campaign,
+      medium, feature and stock all render through segTable() over the same
+      columns the API returns. That is the reason "signup rate" on the device
+      table can be compared with the one on the source table: it is the same
+      number computed once. Eleven hand-written tables would have been eleven
+      chances to disagree.                                                   */
+  :root{--bg:#0a0f1a;--panel:#0e1726;--panel2:#16233a;--border:#1d2b40;--border2:#2a3a52;
+    --text:#e8eef7;--muted:#9fb0c7;--hint:#7b8aa3;--info:#378add;--success:#5fd38a;
+    --danger:#ff8fa3;--amber:#f4c659;
+    /*  Trend series, validated against #16233a: CVD separation ΔE 18.9
+        (deuteranopia), normal-vision 27.5, all above 3:1 contrast. Amber was
+        the obvious third and failed — green↔amber is ΔE 5.7 under protanopia,
+        which is to say the same colour. Identity is also carried by the
+        legend, an endpoint label and the table beneath, so hue never works
+        alone.                                                               */
+    --s1:#378add;--s2:#5fd38a;--s3:#b79bff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px}
+  a{color:var(--info)}
+  .wrap{max-width:1300px;margin:0 auto;padding:16px 14px 70px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    flex-wrap:wrap;margin-bottom:12px}
+  .top h1{font-size:19px;margin:0;font-weight:600}
+  .btn{padding:8px 12px;border:1px solid var(--border2);border-radius:8px;
+    background:var(--panel2);color:var(--text);cursor:pointer;font-size:12.5px}
+  .btn:hover{background:#1d2d49}
+  .btn.on{background:var(--info);border-color:var(--info);color:#04243f;font-weight:600}
+  .btn-pri{background:var(--info);border-color:var(--info);color:#04243f;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;margin-bottom:13px}
+  .card h2{font-size:12px;margin:0 0 11px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.05em}
+  .card h2 .r{float:right;text-transform:none;letter-spacing:0;color:var(--hint);
+    font-weight:400;font-size:11px}
+  .sub{color:var(--hint);font-size:11.5px;line-height:1.6}
+  .msg{font-size:12.5px;min-height:17px;color:var(--muted);margin:4px 0}
+  .msg.bad{color:var(--danger)}
+  input,select{padding:7px 10px;border:1px solid var(--border2);border-radius:8px;
+    background:var(--panel2);color:var(--text);font-size:12.5px}
+  .bar{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center}
+  .hide{display:none}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media(max-width:900px){.two{grid-template-columns:1fr}}
+  /*  A grid or flex child defaults to min-width:auto, which is the table's
+      min-content width — every cell is white-space:nowrap, so a wide table
+      stretches its track past the viewport and the whole PAGE scrolls
+      sideways instead of the table scrolling inside its own box. These four
+      declarations are the entire fix; without them .tbl{overflow-x:auto}
+      never gets a chance to do its job.                                   */
+  .two>*, .card, .tbl, .kpis{min-width:0}
+
+  .tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+  .tabs .btn{padding:9px 13px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:9px}
+  .kpi{background:var(--panel2);border-radius:10px;padding:11px 13px;min-width:0}
+  .kpi .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .kpi .v{font-size:22px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;
+    overflow-wrap:anywhere}
+  .kpi .c{font-size:10.5px;color:var(--hint);margin-top:2px}
+  .kpi .c b{color:var(--muted)}
+  .up{color:var(--success)} .dn{color:var(--danger)} .fl{color:var(--hint)}
+
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--panel2);
+    white-space:nowrap;font-size:12px}
+  th:first-child,td:first-child,th.l,td.l{text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;
+    letter-spacing:.05em;cursor:pointer;user-select:none}
+  th:hover{color:var(--text)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr.click{cursor:pointer}
+  tbody tr.click:hover{background:var(--panel2)}
+  .pill{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;
+    text-transform:uppercase}
+  .p-yes{background:#13321f;color:var(--success)}
+  .p-no{background:#243043;color:var(--hint)}
+  .p-paid{background:#3a2f12;color:var(--amber)}
+  .p-new{background:#12283a;color:var(--info)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+
+  .chart svg{display:block;width:100%;height:220px;overflow:visible}
+  .legend{display:flex;gap:15px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:8px 0 0}
+  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;
+    vertical-align:3px;margin-right:6px}
+  #ctip{position:fixed;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:#04101e;border:1px solid var(--border2);color:var(--text);font-size:11.5px;
+    padding:8px 10px;border-radius:8px;z-index:60;font-family:ui-monospace,monospace;
+    line-height:1.55}
+
+  .fn{display:flex;flex-direction:column;gap:3px}
+  .fnrow{display:grid;grid-template-columns:225px 1fr 132px;gap:9px;align-items:center}
+  .fnlab{font-size:12.5px}
+  .fntrack{background:#141f33;border-radius:6px;height:29px;position:relative;overflow:hidden}
+  .fnbar{height:100%;background:var(--info);border-radius:6px}
+  .fnval{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;
+    font-weight:600;font-variant-numeric:tabular-nums}
+  .fnmeta{font-size:10.5px;color:var(--hint);text-align:right}
+  @media(max-width:620px){.fnrow{grid-template-columns:1fr;gap:2px}.fnmeta{text-align:left}}
+
+  .jp{display:flex;flex-direction:column}
+  .jpstep{display:grid;grid-template-columns:70px 14px 1fr;gap:9px;align-items:start;padding:6px 0}
+  .jpt{font-size:11px;color:var(--hint);font-family:ui-monospace,monospace;text-align:right}
+  .jpdot{position:relative}
+  .jpdot i{position:absolute;left:4px;top:5px;width:7px;height:7px;border-radius:50%;
+    background:var(--info)}
+  .jpdot::before{content:"";position:absolute;left:7px;top:12px;bottom:-8px;width:1px;
+    background:var(--border2)}
+  .jpstep:last-child .jpdot::before{display:none}
+  .jpev{font-size:12.5px} .jpev span{color:var(--hint)}
+
+  .note{background:#141f33;border-left:3px solid var(--amber);border-radius:0 8px 8px 0;
+    padding:9px 12px;font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:9px}
+  .note b{color:var(--text)}
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
+  .gate input{width:100%;margin:14px 0}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;
+    margin-right:6px}
+  @media(max-width:520px){.wrap{padding:14px 12px 60px}}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <h1>DSE Pulse · Analytics</h1>
+  <p style="color:#9fb0c7">Enter your admin key to continue.</p>
+  <input id="keyIn" type="password" placeholder="Admin key" onkeydown="if(event.key==='Enter')unlock()">
+  <button class="btn btn-pri" style="width:100%" onclick="unlock()">Unlock</button>
+  <div id="gateMsg" class="msg bad"></div>
+</div>
+
+<div id="app" class="wrap hide">
+  <div class="top">
+    <h1>DSE Pulse · Analytics</h1>
+    <div class="bar" style="margin:0">
+      <a class="btn" href="/admin.html">← Admin &amp; Growth</a>
+      <button class="btn" onclick="lock()">Lock</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="btn" data-r="today">Today</button>
+    <button class="btn" data-r="yesterday">Yesterday</button>
+    <button class="btn on" data-r="7d">7 days</button>
+    <button class="btn" data-r="30d">30 days</button>
+    <button class="btn" data-r="90d">90 days</button>
+    <button class="btn" data-r="this_month">This month</button>
+    <button class="btn" data-r="last_month">Last month</button>
+    <input id="dCustom" type="number" min="1" max="365" placeholder="days" style="width:80px">
+    <button class="btn" onclick="setCustom()">Apply</button>
+    <span style="width:14px"></span>
+    <span class="sub">Trend:</span>
+    <button class="btn on" data-g="day">Daily</button>
+    <button class="btn" data-g="week">Weekly</button>
+    <button class="btn" data-g="month">Monthly</button>
+    <span id="range" class="sub"></span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</div>
+<div id="ctip"></div>
+
+<script>
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
+let KEY=sessionStorage.getItem("dse_admin_key")||"";
+let RANGE="7d", DAYS=7, GRAIN="day", TAB="overview";
+let SORT={}, JOURNEY=null, PAGEDETAIL=null, LIVET=null;
+const H=()=>({"X-Admin-Key":KEY});
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n=v=>(v===null||v===undefined)?"—":Number(v).toLocaleString();
+const pc=v=>(v===null||v===undefined)?"—":v+"%";
+const bdt=v=>(v===null||v===undefined)?"—":"৳"+Number(v).toLocaleString();
+const secs=v=>(v===null||v===undefined)?"—":(v<60?v+"s":Math.floor(v/60)+"m "+(v%60)+"s");
+const hhmm=t=>String(t||"").replace("T"," ").replace("Z","").slice(5,16);
+const qs=()=>`range=${RANGE}&days=${DAYS}&grain=${GRAIN}`;
+
+const TABS=[["overview","Overview"],["visitors","Visitor Log"],["pages","Pages"],
+            ["journey","Journey"],["acquisition","Acquisition"],["events","Events"],
+            ["funnel","Conversions"],["tech","Technical"]];
+
+async function api(p){
+  const r=await fetch(API+p,{headers:H()});
+  if(r.status===401||r.status===403) throw new Error("admin key rejected");
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+async function unlock(){
+  KEY=$("keyIn").value.trim();
+  if(!KEY){$("gateMsg").textContent="Enter a key.";return}
+  $("gateMsg").textContent="Checking…";
+  try{ await api("/api/admin/analytics/overview?range=today");
+    sessionStorage.setItem("dse_admin_key",KEY);
+    $("gate").classList.add("hide"); $("app").classList.remove("hide"); boot();
+  }catch(e){ $("gateMsg").textContent=e.message; }
+}
+function lock(){ sessionStorage.removeItem("dse_admin_key"); location.reload(); }
+
+function boot(){
+  $("tabs").innerHTML=TABS.map(([k,l])=>
+    `<button class="btn ${k===TAB?"on":""}" data-t="${k}">${l}</button>`).join("");
+  $("tabs").onclick=e=>{const b=e.target.closest("[data-t]"); if(!b)return;
+    TAB=b.dataset.t; JOURNEY=null; PAGEDETAIL=null; boot();};
+  document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{
+    RANGE=b.dataset.r;
+    document.querySelectorAll("[data-r]").forEach(x=>x.classList.toggle("on",x===b));
+    render();});
+  document.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{
+    GRAIN=b.dataset.g;
+    document.querySelectorAll("[data-g]").forEach(x=>x.classList.toggle("on",x===b));
+    render();});
+  render();
+}
+function setCustom(){
+  const v=+$("dCustom").value; if(!v||v<1)return;
+  RANGE="custom"; DAYS=Math.min(v,365);
+  document.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on"));
+  render();
+}
+
+/*  Every screen shows the SAME "nothing collected" message rather than a grid
+    of zeroes. An empty collector and a real zero look identical in a number
+    and mean opposite things.                                                */
+const empty=d=>`<div class="card"><h2>No data</h2><div class="note">${
+  esc(d.note||"Nothing collected for this period yet.")}</div></div>`;
+const fail=e=>`<div class="card"><h2>Could not load</h2><div class="msg bad">${esc(e.message)}</div></div>`;
+
+async function render(){
+  if(LIVET){clearInterval(LIVET);LIVET=null}
+  $("view").innerHTML='<div class="card"><h2>Loading…</h2></div>';
+  try{
+    if(TAB==="overview")        await vOverview();
+    else if(TAB==="visitors")   await vVisitors();
+    else if(TAB==="pages")      await (PAGEDETAIL?vPageDetail():vPages());
+    else if(TAB==="journey")    await vJourney();
+    else if(TAB==="acquisition")await vAcq();
+    else if(TAB==="events")     await vEvents();
+    else if(TAB==="funnel")     await vFunnel();
+    else if(TAB==="tech")       await vTech();
+  }catch(e){ $("view").innerHTML=fail(e); }
+}
+
+/* ── the one segment renderer ─────────────────────────────────────────────── */
+const SEG=[["key","",  "l"],["visitors","Visitors"],["sessions","Sessions"],
+  ["pages_per_session","Pages / session"],["median_seconds","Median visit"],
+  ["signups","Signups"],["trials","Trials"],["paid","Paid"],["renewed","Renewed"],
+  ["revenue","Revenue"],["signup_rate_pct","Signup rate"],
+  ["trial_rate_pct","Trial rate"],["paid_rate_pct","Paid rate"]];
+function segTable(label,rows,sortKey,opts){
+  const cols=SEG.map(c=>c[0]==="key"?[c[0],label,"l"]:c);
+  return table(cols,rows||[],Object.assign({sortKey:sortKey,cell:segCell},opts||{}));
+}
+function segCell(c,r){
+  if(c==="median_seconds")return esc(secs(r[c]));
+  if(c==="revenue")return bdt(r[c]);
+  if(c==="signup_rate_pct"||c==="trial_rate_pct"||c==="paid_rate_pct")return pc(r[c]);
+  return typeof r[c]==="number"?n(r[c]):esc(r[c]==null?"—":r[c]);
+}
+
+/* ── 1 · OVERVIEW — the single-screen digest of section 26 ────────────────── */
+async function vOverview(){
+  //  Seven calls in parallel: this is the digest screen, and a digest that
+  //  loads its panels one after another is a screen nobody waits for.
+  const [o,pg,ac,fn,ev,vs]=await Promise.all([
+    api("/api/admin/analytics/overview?"+qs()),
+    api("/api/admin/analytics/pages?"+qs()).catch(()=>null),
+    api("/api/admin/analytics/acquisition?"+qs()).catch(()=>null),
+    api("/api/admin/analytics/funnel?"+qs()).catch(()=>null),
+    api("/api/admin/analytics/events?"+qs()).catch(()=>null),
+    api("/api/admin/analytics/visitors?"+qs()+"&limit=8").catch(()=>null)]);
+  if(!o.collecting){ $("view").innerHTML=empty(o); return; }
+  $("range").textContent=o.period.label+" · "+o.period.days+"d";
+
+  const kpi=(l,v,c)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div>${
+    c?`<div class="c">${c}</div>`:""}</div>`;
+  //  A comparison is a COUNT, never a percentage change: at these volumes a
+  //  move from 1 to 3 is "+200%", which is true and tells you nothing.
+  const cmp=(cur,prev,lab)=>{
+    const d=(cur||0)-(prev||0);
+    const cls=d>0?"up":(d<0?"dn":"fl");
+    return `<b class="${cls}">${d>0?"+":""}${n(d)}</b> vs ${lab} <b>${n(prev)}</b>`;
+  };
+  const c=o.current,p=o.previous,t=o.today,y=o.yesterday;
+
+  let h=`<div class="card"><h2>Today<span class="r">against yesterday</span></h2><div class="kpis">
+    ${kpi("Unique visitors",n(t.visitors),cmp(t.visitors,y.visitors,"yday"))}
+    ${kpi("Sessions",n(t.sessions),cmp(t.sessions,y.sessions,"yday"))}
+    ${kpi("Page views",n(t.page_views),cmp(t.page_views,y.page_views,"yday"))}
+    ${kpi("Registrations",n(t.signups),cmp(t.signups,y.signups,"yday"))}
+    ${kpi("Trials",n(t.trials),cmp(t.trials,y.trials,"yday"))}
+    ${kpi("Paid",n(t.paid),cmp(t.paid,y.paid,"yday"))}
+    ${kpi("Revenue",bdt(t.revenue),cmp(t.revenue,y.revenue,"yday"))}
+  </div></div>
+
+  <div class="card"><h2>${esc(o.period.label)}<span class="r">against ${esc(o.previous_period.label)}</span></h2>
+  <div class="kpis">
+    ${kpi("Unique visitors",n(c.visitors),cmp(c.visitors,p.visitors,"prev"))}
+    ${kpi("Sessions",n(c.sessions),cmp(c.sessions,p.sessions,"prev"))}
+    ${kpi("Page views",n(c.page_views),cmp(c.page_views,p.page_views,"prev"))}
+    ${kpi("Registrations",n(c.signups),cmp(c.signups,p.signups,"prev"))}
+    ${kpi("Trials",n(c.trials),cmp(c.trials,p.trials,"prev"))}
+    ${kpi("Paid",n(c.paid),cmp(c.paid,p.paid,"prev"))}
+    ${kpi("Renewed",n(c.renewed),cmp(c.renewed,p.renewed,"prev"))}
+    ${kpi("Cancelled",n(c.cancelled),cmp(c.cancelled,p.cancelled,"prev"))}
+    ${kpi("Revenue",bdt(c.revenue),cmp(c.revenue,p.revenue,"prev"))}
+    ${kpi("Pages / session",n(o.engagement.pages_per_session))}
+    ${kpi("Median session",secs(o.engagement.median_seconds))}
+  </div><div class="sub" style="margin-top:8px">${esc(o.notes.comparison)}</div></div>`;
+
+  h+=`<div class="card"><h2>Visitor trend<span class="r">${esc(GRAIN)}</span></h2>
+    <div class="chart" id="chart"></div>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Unique visitors</span>
+      <span><i style="background:var(--s2)"></i>Sessions</span>
+      <span><i style="background:var(--s3)"></i>Page views</span></div>
+    <div class="tbl" style="margin-top:11px">${table(
+      [["bucket","Period","l"],["visitors","Visitors"],["new_visitors","New"],
+       ["returning_visitors","Returning"],["sessions","Sessions"],
+       ["page_views","Page views"],["events","Events"]],
+      o.trend.slice().reverse(),{sortKey:"tr"})}</div></div>`;
+
+  //  Section 26: top pages and traffic sources side by side on the digest.
+  h+=`<div class="two">
+    <div class="card"><h2>Top pages<span class="r">by visitors</span></h2><div class="tbl">${
+      table([["name","Page","l"],["visitors","Visitors"],["views","Views"],
+             ["signups","Signups"],["paid","Paid"]],(pg&&pg.pages||[]).slice(0,8),
+            {sortKey:"otp",click:r=>({path:r.path})})}</div>
+      <div class="sub" style="margin-top:7px">Click a page for its detail.</div></div>
+    <div class="card"><h2>Traffic sources<span class="r">first touch</span></h2><div class="tbl">${
+      table([["key","Source","l"],["visitors","Visitors"],["signups","Signups"],
+             ["paid","Paid"],["revenue","Revenue"]],(ac&&ac.sources||[]).slice(0,8),
+            {sortKey:"ots",cell:segCell})}</div></div></div>`;
+
+  if(fn&&fn.stages){
+    const top=Math.max(1,...fn.stages.map(s=>s.count));
+    h+=`<div class="card"><h2>Funnel<span class="r">${esc(o.period.label)}</span></h2>
+      <div class="fn">${fn.stages.map(s=>`<div class="fnrow">
+        <div class="fnlab">${esc(s.stage)}</div>
+        <div class="fntrack"><div class="fnbar" style="width:${(100*s.count/top).toFixed(2)}%"></div>
+          <div class="fnval">${n(s.count)}</div></div>
+        <div class="fnmeta">${s.of_previous_pct===null?"—":pc(s.of_previous_pct)+" of prev"}${
+          s.drop_off?` · −${n(s.drop_off)}`:""}</div></div>`).join("")}</div></div>`;
+  }
+
+  h+=`<div class="two">
+    <div class="card"><h2>Most analysed stocks</h2><div class="tbl">${
+      table([["code","Ticker","l"],["visitors","Visitors"],["paid","Paid users"]],
+            (ev&&ev.stocks||[]).slice(0,8),{sortKey:"ost"})}</div>
+      ${ev&&ev.stocks_note?`<div class="note">${esc(ev.stocks_note)}</div>`:""}</div>
+    <div class="card"><h2>Feature usage</h2><div class="tbl">${
+      table([["feature","Feature","l"],["visitors","Visitors"],["signups","Signups"],
+             ["paid","Paid"],["paid_rate_pct","Paid rate"]],(ev&&ev.features||[]).slice(0,8),
+            {sortKey:"osf",cell:segCell})}</div></div></div>`;
+
+  h+=`<div class="card"><h2>Recent visitor activity</h2><div class="tbl">${
+    visitorTable((vs&&vs.sessions)||[],"orv")}</div>
+    <div class="sub" style="margin-top:7px">The newest eight visits. Full log in the
+      <b>Visitor Log</b> tab.</div></div>`;
+
+  h+=`<div class="card"><h2>Live<span class="r">last 5 minutes</span></h2>
+    <div id="liveBox">Loading…</div></div>`;
+
+  $("view").innerHTML=h;
+  drawTrend(o.trend);
+  liveTick(); LIVET=setInterval(liveTick,20000);
+}
+
+async function liveTick(){
+  const box=$("liveBox"); if(!box)return;
+  try{
+    const d=await api("/api/admin/analytics/live?minutes=5");
+    let h=`<div class="bar" style="margin-bottom:9px"><span><span class="dot"></span>
+      <b>${d.active}</b> active now</span>${d.by_page.map(p=>
+      `<span class="sub">${n(p.active)} on ${esc(p.page)}</span>`).join("")}</div>`;
+    h+=`<div class="tbl">${table([["visitor","Visitor","l"],["page_name","Page","l"],
+      ["source","Source","l"],["device","Device","l"],["country","Ctry","l"],
+      ["signed_in","Signed in"],["idle_seconds","Idle"]],d.visitors,
+      {sortKey:"lv",cell:(c,r)=>{
+        if(c==="idle_seconds")return esc(secs(r[c]));
+        if(c==="signed_in")return `<span class="pill ${r[c]?"p-yes":"p-no"}">${r[c]?"yes":"no"}</span>`;
+        if(c==="visitor")return `<span class="mono">${esc(r[c])}</span>`;
+        return esc(r[c]==null?"—":r[c]);},
+       click:r=>({session_id:r.session_id})})}</div>
+      <div class="sub" style="margin-top:7px">${esc(d.note)} Polled every 20 seconds —
+      a websocket for a handful of visitors would be infrastructure bought to solve a
+      problem nobody has.</div>`;
+    box.innerHTML=h;
+  }catch(e){ box.innerHTML=`<span class="sub">live unavailable: ${esc(e.message)}</span>`; }
+}
+
+/*  A small line chart, drawn by hand. Three series of at most ninety points
+    does not justify a dependency, and a CDN script is one more thing that can
+    fail on an admin page.                                                    */
+function drawTrend(trend){
+  const el=$("chart"); if(!el||!trend||!trend.length)return;
+  const W=1000,Hh=220,PL=44,PR=56,PT=14,PB=26;
+  const ser=[["visitors","var(--s1)"],["sessions","var(--s2)"],["page_views","var(--s3)"]];
+  const max=Math.max(1,...trend.flatMap(r=>ser.map(([k])=>+r[k]||0)));
+  const x=i=>PL+(trend.length<2?0:i*(W-PL-PR)/(trend.length-1));
+  const yv=v=>PT+(Hh-PT-PB)*(1-(v/max));
+  let g="";
+  for(let i=0;i<=4;i++){const v=max*i/4,yy=yv(v);
+    g+=`<line x1="${PL}" x2="${W-PR}" y1="${yy}" y2="${yy}" stroke="#1d2b40" stroke-width="1"/>`;
+    g+=`<text x="${PL-8}" y="${yy+4}" fill="#7b8aa3" font-size="11" text-anchor="end">${Math.round(v)}</text>`;}
+  trend.forEach((r,i)=>{
+    if(trend.length>10 && i%Math.ceil(trend.length/8)!==0 && i!==trend.length-1)return;
+    g+=`<text x="${x(i)}" y="${Hh-6}" fill="#7b8aa3" font-size="10" text-anchor="middle">${
+      esc(String(r.bucket).length>7?String(r.bucket).slice(5):String(r.bucket))}</text>`;});
+  ser.forEach(([k,col])=>{
+    const pts=trend.map((r,i)=>[x(i),yv(+r[k]||0)]);
+    g+=`<polyline fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"
+      points="${pts.map(p=>p[0]+","+p[1]).join(" ")}"/>`;
+    pts.forEach(p=>{g+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${col}" stroke="#0e1726" stroke-width="2"/>`;});
+    const last=pts[pts.length-1];
+    g+=`<text x="${last[0]+9}" y="${last[1]+4}" fill="${col}" font-size="11" font-weight="600">${
+      n(trend[trend.length-1][k])}</text>`;});
+  trend.forEach((r,i)=>{const w=(W-PL-PR)/Math.max(1,trend.length-1);
+    g+=`<rect x="${x(i)-w/2}" y="${PT}" width="${w}" height="${Hh-PT-PB}" fill="transparent"
+      data-i="${i}" style="cursor:crosshair"/>`;});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" role="img"
+    aria-label="Visitors, sessions and page views by ${esc(GRAIN)}">${g}</svg>`;
+  const tip=$("ctip");
+  el.querySelectorAll("rect[data-i]").forEach(rc=>{
+    rc.addEventListener("mousemove",ev=>{
+      const r=trend[+rc.dataset.i];
+      tip.innerHTML=`<b>${esc(r.bucket)}</b><br>visitors ${n(r.visitors)}<br>`+
+        `new ${n(r.new_visitors)} · returning ${n(r.returning_visitors)}<br>`+
+        `sessions ${n(r.sessions)}<br>page views ${n(r.page_views)}`;
+      tip.style.opacity=1;
+      tip.style.left=Math.min(ev.clientX+14,innerWidth-200)+"px";
+      tip.style.top=Math.max(10,ev.clientY-88)+"px";});
+    rc.addEventListener("mouseleave",()=>tip.style.opacity=0);});
+}
+
+/* ── sortable table, delegated once ──────────────────────────────────────── */
+function table(cols,rows,opts){
+  opts=opts||{}; const key=opts.sortKey||"__t"; const st=SORT[key]||{};
+  if(st.col){rows=rows.slice().sort((a,b)=>{
+    const x=a[st.col],y=b[st.col];
+    if(x===y)return 0;
+    if(x===null||x===undefined)return 1;
+    if(y===null||y===undefined)return -1;
+    const r=(typeof x==="number"&&typeof y==="number")?x-y:String(x).localeCompare(String(y));
+    return st.dir==="asc"?r:-r;});}
+  if(!rows.length)return `<table><tbody><tr><td class="l" style="color:#7b8aa3">Nothing in this period.</td></tr></tbody></table>`;
+  let h=`<table><thead><tr>`+cols.map(c=>
+    `<th class="${c[2]||""}" data-sk="${key}" data-c="${c[0]}">${esc(c[1])}${
+      st.col===c[0]?(st.dir==="asc"?" ▲":" ▼"):""}</th>`).join("")+`</tr></thead><tbody>`;
+  rows.forEach(r=>{
+    h+=`<tr${opts.click?` class="click" data-row='${esc(JSON.stringify(opts.click(r)))}'`:""}>`+
+      cols.map(c=>`<td class="${c[2]||""}">${opts.cell?opts.cell(c[0],r)
+        :(typeof r[c[0]]==="number"?n(r[c[0]]):esc(r[c[0]]==null?"—":r[c[0]]))}</td>`).join("")+`</tr>`;});
+  return h+`</tbody></table>`;
+}
+document.addEventListener("click",e=>{
+  const th=e.target.closest("th[data-c]");
+  if(th){const k=th.dataset.sk,c=th.dataset.c,st=SORT[k]||{};
+    SORT[k]={col:c,dir:(st.col===c&&st.dir==="desc")?"asc":"desc"}; render(); return;}
+  const tr=e.target.closest("tr.click");
+  if(tr){try{const d=JSON.parse(tr.dataset.row);
+    if(d.session_id){JOURNEY=d.session_id;TAB="journey";boot();}
+    else if(d.path){PAGEDETAIL=d.path;TAB="pages";boot();}}catch(x){}}
+});
+
+/*  Export goes through fetch with the admin header and then a blob: a plain
+    link cannot carry X-Admin-Key, and putting the key in a query string would
+    leave it in browser history and every proxy log between here and Railway. */
+async function dl(path,name){
+  try{
+    const r=await fetch(API+path,{headers:H()});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const b=await r.blob(),u=URL.createObjectURL(b);
+    const a=document.createElement("a");a.href=u;a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),4000);
+  }catch(e){alert("Export failed: "+e.message);}
+}
+
+/* ── 2 · VISITOR LOG (sections 7, 20) ────────────────────────────────────── */
+function visitorTable(rows,key){
+  const cols=[["started","Time","l"],["visitor","Visitor","l"],["type","Type","l"],
+    ["seconds","Length"],["landing_name","Landing","l"],["last_page_name","Last page","l"],
+    ["pages","Pages"],["source","Source","l"],["campaign","Campaign","l"],
+    ["device","Device","l"],["browser","Browser","l"],["screen","Screen","l"],
+    ["country","Ctry","l"],["signed_in","Signed in"],["registered","Registered"],
+    ["trial","Trial"],["paid","Paid"],["renewed","Renewed"],["revenue","Revenue"],
+    ["stocks","Stocks","l"]];
+  const cell=(c,r)=>{
+    if(c==="started")return `<span class="mono">${esc(hhmm(r.started))}</span>`;
+    if(c==="visitor")return `<span class="mono">${esc(r.visitor)}</span>`;
+    if(c==="type")return `<span class="pill ${r.type==="New"?"p-new":"p-no"}">${esc(r.type)}</span>`;
+    if(c==="seconds")return esc(secs(r.seconds));
+    if(c==="revenue")return r.revenue?bdt(r.revenue):"—";
+    if(c==="stocks")return r.stocks&&r.stocks.length?`<span class="mono">${esc(r.stocks.join(" "))}</span>`:"—";
+    if(["signed_in","registered","trial","paid","renewed"].indexOf(c)>=0)
+      return `<span class="pill ${r[c]?((c==="paid"||c==="renewed")?"p-paid":"p-yes"):"p-no"}">${r[c]?"yes":"no"}</span>`;
+    return typeof r[c]==="number"?n(r[c]):esc(r[c]==null?"—":r[c]);
+  };
+  return table(cols,rows,{sortKey:key||"vis",cell,click:r=>({session_id:r.session_id})});
+}
+
+async function vVisitors(){
+  const f=window.__vf||(window.__vf={limit:100,offset:0,source:"",device:"",registered:"",paid:"",new:""});
+  let q="?"+qs()+`&limit=${f.limit}&offset=${f.offset}`;
+  if(f.source)q+="&source="+encodeURIComponent(f.source);
+  if(f.device)q+="&device="+encodeURIComponent(f.device);
+  if(f.registered!=="")q+="&registered="+f.registered;
+  if(f.paid!=="")q+="&paid="+f.paid;
+  if(f.new!=="")q+="&new="+f.new;
+  const d=await api("/api/admin/analytics/visitors"+q);
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  const sel=(id,ph,opts,cur)=>`<select id="${id}"><option value="">${ph}</option>${
+    opts.map(([v,l])=>`<option value="${v}" ${cur===v?"selected":""}>${l}</option>`).join("")}</select>`;
+  $("view").innerHTML=`<div class="card">
+    <h2>Visitor log<span class="r">${n(d.total)} visits · ${esc(d.period.label)}</span></h2>
+    <div class="bar">
+      ${sel("vSrc","Any source",["direct","google","facebook","linkedin","youtube","whatsapp","twitter","referral","internal"].map(s=>[s,s]),f.source)}
+      ${sel("vDev","Any device",[["mobile","mobile"],["desktop","desktop"],["tablet","tablet"]],f.device)}
+      ${sel("vNew","New or returning",[["true","New only"],["false","Returning only"]],f.new)}
+      ${sel("vReg","Registered or not",[["true","Registered"],["false","Not registered"]],f.registered)}
+      ${sel("vPaid","Paid or not",[["true","Paid"],["false","Not paid"]],f.paid)}
+      <button class="btn" onclick="vApply()">Apply</button>
+      <button class="btn" onclick="vExport()">Export CSV</button>
+      <span class="sub">${n(d.offset+1)}–${n(Math.min(d.offset+d.limit,d.total))} of ${n(d.total)}</span>
+      <button class="btn" onclick="vPage(-1)">← Prev</button>
+      <button class="btn" onclick="vPage(1)">Next →</button>
+    </div>
+    <div class="tbl">${visitorTable(d.sessions)}</div>
+    <div class="note"><b>One row per visit, not per person.</b> A returning visitor is
+      several rows tied by the visitor id — click any row for the step-by-step journey.
+      No IP address and no email: the collector never sends an IP, and an email would be
+      an account detail leaking into traffic analysis. The user id finds the account.</div>
+  </div>`;
+}
+function vApply(){const f=window.__vf;
+  f.source=$("vSrc").value;f.device=$("vDev").value;f.new=$("vNew").value;
+  f.registered=$("vReg").value;f.paid=$("vPaid").value;f.offset=0;render();}
+function vPage(d){const f=window.__vf;f.offset=Math.max(0,f.offset+d*f.limit);render();}
+function vExport(){const f=window.__vf;
+  let q="?"+qs()+"&limit=500&offset=0&format=csv";
+  if(f.source)q+="&source="+encodeURIComponent(f.source);
+  if(f.device)q+="&device="+encodeURIComponent(f.device);
+  if(f.registered!=="")q+="&registered="+f.registered;
+  if(f.paid!=="")q+="&paid="+f.paid;
+  if(f.new!=="")q+="&new="+f.new;
+  dl("/api/admin/analytics/visitors"+q,"visitor-log.csv");}
+
+/* ── 3 · PAGES (sections 5, 6, 14) ───────────────────────────────────────── */
+async function vPages(){
+  const d=await api("/api/admin/analytics/pages?"+qs());
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  const cols=[["name","Page","l"],["path","Path","l"],["visitors","Visitors"],
+    ["views","Views"],["sessions","Sessions"],["new_visitors","New"],
+    ["returning_visitors","Returning"],["entries","Entries"],["exits","Exits"],
+    ["median_seconds","Median visit"],["signups","Signups"],["trials","Trials"],
+    ["paid","Paid"],["revenue","Revenue"],["signup_rate_pct","Signup rate"],
+    ["trial_rate_pct","Trial rate"],["paid_rate_pct","Paid rate"]];
+  $("view").innerHTML=`<div class="card">
+    <h2>Pages<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/pages?${qs()}&format=csv','pages.csv')">Export CSV</button>
+      <span class="sub">Click a row for that page in detail.</span></div>
+    <div class="tbl">${table(cols,d.pages,{sortKey:"pg",cell:(c,r)=>
+      c==="path"?`<span class="mono">${esc(r.path)}</span>`:segCell(c,r),
+      click:r=>({path:r.path})})}</div>
+    <div class="note"><b>Entries and exits are per session, not per view.</b> A page is
+      an entry only when the visit started there and an exit only when it ended there —
+      counting every view as both would make the columns identical. Signup, trial and
+      paid rates are the share of visitors who touched this page and went on to convert,
+      which is section 14's question.</div></div>`;
+}
+async function vPageDetail(){
+  const d=await api("/api/admin/analytics/pages?"+qs()+"&path="+encodeURIComponent(PAGEDETAIL));
+  if(!d.found){ $("view").innerHTML=`<div class="card"><h2>${esc(PAGEDETAIL)}</h2>
+    <div class="note">No page views for this path in the period.</div>
+    <button class="btn" onclick="PAGEDETAIL=null;boot()">← All pages</button></div>`; return; }
+  const s=d.summary,kpi=(l,v)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  $("view").innerHTML=`<div class="card">
+    <div class="bar"><button class="btn" onclick="PAGEDETAIL=null;boot()">← All pages</button>
+      <span class="sub mono">${esc(d.path)}</span>
+      <button class="btn" onclick="dl('/api/admin/analytics/pages?${qs()}&format=csv','pages.csv')">Export all pages</button></div>
+    <h2>${esc(s.name)}<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="kpis">
+      ${kpi("Unique visitors",n(s.visitors))}${kpi("Page views",n(s.views))}
+      ${kpi("Sessions",n(s.sessions))}${kpi("New",n(s.new_visitors))}
+      ${kpi("Returning",n(s.returning_visitors))}${kpi("Entries",n(s.entries))}
+      ${kpi("Exits",n(s.exits))}${kpi("Median visit",secs(s.median_seconds))}
+      ${kpi("Signups",n(s.signups))}${kpi("Trials",n(s.trials))}
+      ${kpi("Paid",n(s.paid))}${kpi("Revenue",bdt(s.revenue))}
+      ${kpi("Signup rate",pc(s.signup_rate_pct))}${kpi("Paid rate",pc(s.paid_rate_pct))}
+    </div></div>
+    <div class="card"><h2>Visitors over time<span class="r">${esc(d.period.grain)}</span></h2>
+      <div class="tbl">${table([["bucket","Period","l"],["visitors","Visitors"],["views","Views"]],
+        d.trend.slice().reverse(),{sortKey:"pdt"})}</div></div>
+    <div class="two">
+      <div class="card"><h2>Came from</h2><div class="tbl">${table(
+        [["name","Previous page","l"],["sessions","Sessions"]],d.top_previous,{sortKey:"pdp"})}</div></div>
+      <div class="card"><h2>Went next</h2><div class="tbl">${table(
+        [["name","Next page","l"],["sessions","Sessions"]],d.top_next,{sortKey:"pdn"})}</div></div></div>
+    <div class="card"><h2>Traffic sources</h2><div class="tbl">${segTable("Source",d.by_source,"pds")}</div></div>
+    <div class="card"><h2>Devices</h2><div class="tbl">${segTable("Device",d.by_device,"pdd")}</div></div>
+    <div class="card"><h2>New vs returning</h2><div class="tbl">${segTable("Type",d.by_new,"pdnr")}</div></div>`;
+}
+
+/* ── 4 · JOURNEY (sections 7, 20) ────────────────────────────────────────── */
+async function vJourney(){
+  if(!JOURNEY){ $("view").innerHTML=`<div class="card"><h2>Session journey</h2>
+    <div class="note">Pick a visit from the <b>Visitor Log</b> — or from Live, or Recent
+    activity on the Overview — and this shows every step in order: landing page, tools
+    opened, stocks analysed, where it ended.</div>
+    <button class="btn btn-pri" onclick="TAB='visitors';boot()">Open the Visitor Log</button></div>`;
+    return; }
+  const d=await api("/api/admin/analytics/session?session_id="+encodeURIComponent(JOURNEY));
+  if(!d.found){ $("view").innerHTML=`<div class="card"><h2>Session</h2>
+    <div class="note">That visit has no events — it may have fallen outside the 90-day
+    retention window.</div>
+    <button class="btn" onclick="TAB='visitors';boot()">← Visitor log</button></div>`; return; }
+  const kpi=(l,v)=>`<div class="kpi"><div class="l">${l}</div><div class="v" style="font-size:15px">${esc(v)}</div></div>`;
+  $("view").innerHTML=`<div class="card">
+    <div class="bar"><button class="btn" onclick="TAB='visitors';boot()">← Visitor log</button></div>
+    <h2>${esc(d.visitor)} · one visit</h2>
+    <div class="kpis">
+      ${kpi("Source",d.source||"—")}${kpi("Campaign",d.campaign||"—")}
+      ${kpi("Device",d.device||"—")}${kpi("Browser",d.browser||"—")}
+      ${kpi("OS",d.os||"—")}${kpi("Screen",d.screen||"—")}
+      ${kpi("Country",d.country||"—")}${kpi("Length",secs(d.seconds))}
+      ${kpi("Account",d.user_id?"signed in":"anonymous")}
+    </div></div>
+    <div class="card"><h2>${n(d.steps.length)} steps, in order</h2>
+    <div class="jp">${d.steps.map(s=>`<div class="jpstep">
+      <div class="jpt">${esc(String(s.ts||"").slice(11,19))}</div>
+      <div class="jpdot"><i></i></div>
+      <div class="jpev"><b>${esc(s.event)}</b>${s.path?`<span> · ${esc(s.name)}</span>`:""}${
+        s.code?` · <span class="mono">${esc(s.code)}</span>`:""}${
+        s.feature?`<span> · ${esc(s.feature)}</span>`:""}${
+        s.origin==="server"?`<span class="pill p-paid" style="margin-left:6px">server</span>`:""}
+      </div></div>`).join("")}</div>
+    <div class="note">Steps marked <b>server</b> were written by the backend, not the
+      browser — signups, payments, renewals and cancellations are recorded server-side so
+      a closed tab cannot lose them.</div></div>`;
+}
+
+/* ── 5 · ACQUISITION (sections 9, 10) ────────────────────────────────────── */
+async function vAcq(){
+  const d=await api("/api/admin/analytics/acquisition?"+qs());
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  $("view").innerHTML=`<div class="card">
+    <h2>Traffic sources<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/acquisition?${qs()}&format=csv','acquisition.csv')">Export CSV</button></div>
+    <div class="tbl">${segTable("Source",d.sources,"src")}</div>
+    <div class="note"><b>Attribution: ${esc(d.attribution)}.</b> ${esc(d.note)}</div></div>
+    <div class="card"><h2>Campaigns</h2><div class="tbl">${segTable("Campaign",d.campaigns,"cmp")}</div>
+    ${d.campaigns.length?"":`<div class="note">No campaigns yet. Tag a link with
+      <span class="mono">?utm_source=facebook&amp;utm_campaign=DSE-PULSE-SEPT</span> and it
+      appears here, carried through to signups, trials, payments and revenue.</div>`}</div>
+    <div class="card"><h2>Mediums</h2><div class="tbl">${segTable("Medium",d.mediums,"med")}</div></div>`;
+}
+
+/* ── 6 · EVENTS, STOCKS, FEATURES (sections 11, 12, 19) ──────────────────── */
+async function vEvents(){
+  const d=await api("/api/admin/analytics/events?"+qs());
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  const stockCols=SEG.map(c=>c[0]==="key"?["code","Ticker","l"]:c);
+  const featCols =SEG.map(c=>c[0]==="key"?["feature","Feature","l"]:c);
+  $("view").innerHTML=`<div class="card">
+    <h2>Most analysed stocks<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/events?${qs()}&format=csv&export=stocks','stocks.csv')">Export CSV</button></div>
+    <div class="tbl">${table(stockCols,d.stocks,{sortKey:"stk",cell:segCell})}</div>
+    ${d.stocks_note?`<div class="note">${esc(d.stocks_note)}</div>`:""}</div>
+    <div class="card"><h2>Feature usage</h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/events?${qs()}&format=csv&export=features','features.csv')">Export CSV</button></div>
+    <div class="tbl">${table(featCols,d.features,{sortKey:"ft",cell:segCell})}</div>
+    <div class="note">Feature → registration, trial and paid: which features actually
+      contribute to conversion, which is section 12's question.</div></div>
+    <div class="card"><h2>Event → conversion</h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/events?${qs()}&format=csv&export=conversion','event-conversion.csv')">Export CSV</button></div>
+    <div class="tbl">${table([["event","Event","l"],["sessions","Sessions"],
+      ["visitors","Visitors"],["signups","Signups"],["paid","Paid"],
+      ["signup_rate_pct","Signup rate"],["paid_rate_pct","Paid rate"]],d.event_conversion,
+      {sortKey:"evc",cell:segCell})}</div>
+    <div class="note">Every visit that emitted an event, and what those visits went on to
+      do. This is how "most clicked signals" and "most searched" are answered without a
+      separate table for each.</div></div>
+    <div class="card"><h2>Every event</h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/events?${qs()}&format=csv&export=events','events.csv')">Export CSV</button></div>
+    <div class="tbl">${table([["event","Event","l"],["count","Count"],["visitors","Visitors"],
+      ["client","From the browser"],["server","From the server"]],d.events,{sortKey:"ev"})}</div>
+    <div class="note"><b>Count money on the server column.</b> A browser can be closed,
+      blocked or lying; payments, signups, renewals and cancellations are written by the
+      backend after the fact. Behaviour is the browser's job.</div></div>`;
+}
+
+/* ── 7 · CONVERSIONS (sections 13, 14) ───────────────────────────────────── */
+async function vFunnel(){
+  const d=await api("/api/admin/analytics/funnel?"+qs());
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  const top=Math.max(1,...d.stages.map(s=>s.count));
+  $("view").innerHTML=`<div class="card">
+    <h2>Funnel<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="bar"><button class="btn" onclick="dl('/api/admin/analytics/funnel?${qs()}&format=csv','funnel.csv')">Export CSV</button></div>
+    <div class="fn">${d.stages.map(s=>`<div class="fnrow">
+      <div class="fnlab">${esc(s.stage)}</div>
+      <div class="fntrack"><div class="fnbar" style="width:${(100*s.count/top).toFixed(2)}%"></div>
+        <div class="fnval">${n(s.count)}</div></div>
+      <div class="fnmeta">${s.of_previous_pct===null?"—":pc(s.of_previous_pct)+" of previous"}${
+        s.drop_off?`<br>−${n(s.drop_off)} dropped`:""}</div></div>`).join("")}</div>
+    <div class="note"><b>${esc(d.nesting)}</b></div>
+    <div class="note">Reached pricing or checkout: <b>${n(d.intent.reached_pricing_or_checkout)}</b>
+      (${pc(d.intent.of_visitors_pct)} of visitors). ${esc(d.intent.note)}</div>
+    <div class="note">${esc(d.caveat)}</div></div>
+    <div class="two">
+      <div class="card"><h2>Stage definitions</h2><div class="tbl">${table(
+        [["k","Stage","l"],["v","Means","l"]],Object.entries(d.definitions).map(([k,v])=>({k,v})))}</div></div>
+      <div class="card"><h2>Nested vs independent</h2><div class="tbl">${table(
+        [["stage","Stage","l"],["count","In the funnel"],
+         ["reached_independently","Ignoring order"]],d.stages,{sortKey:"fni"})}</div>
+        <div class="sub" style="margin-top:7px">A wide gap means visitors are skipping the
+        step above.</div></div></div>`;
+}
+
+/* ── 8 · TECHNICAL (sections 15, 16, 17) ─────────────────────────────────── */
+async function vTech(){
+  const d=await api("/api/admin/analytics/overview?"+qs());
+  if(!d.collecting){ $("view").innerHTML=empty(d); return; }
+  $("range").textContent=d.period.label+" · "+d.period.days+"d";
+  const s=d.segments;
+  $("view").innerHTML=`<div class="card">
+    <h2>New vs returning<span class="r">${esc(d.period.label)}</span></h2>
+    <div class="tbl">${segTable("Type",s.new_vs_returning,"tnr")}</div>
+    <div class="note">${esc(d.notes.new)} ${esc(d.notes.rates)}</div></div>
+    <div class="card"><h2>Device</h2><div class="tbl">${segTable("Device",s.device,"tdv")}</div>
+      <div class="note">Signup and paid rates per device — if mobile converts materially
+        worse than desktop, that is a landing-page problem and this is where it shows.</div></div>
+    <div class="card"><h2>Browser</h2><div class="tbl">${segTable("Browser",s.browser,"tbr")}</div></div>
+    <div class="card"><h2>Operating system</h2><div class="tbl">${segTable("OS",s.os,"tos")}</div></div>
+    <div class="card"><h2>Screen size</h2><div class="tbl">${segTable("Viewport",s.screen,"tsc")}</div>
+      <div class="note">Rounded to 20px, deliberately. It exists to spot a layout broken
+        on a size we do not test; an exact pixel size is a fingerprinting surface for no
+        extra insight.</div></div>
+    <div class="card"><h2>Country</h2><div class="tbl">${segTable("Country",s.country,"tct")}</div>
+      <div class="note">Only what the platform's edge supplies as a header. No IP lookup,
+        and blank is a truthful answer rather than an invented one.</div></div>`;
+}
+
+if(KEY){ api("/api/admin/analytics/overview?range=today")
+  .then(()=>{$("gate").classList.add("hide");$("app").classList.remove("hide");boot();})
+  .catch(()=>{}); }
+</script>
+</body>
+</html>

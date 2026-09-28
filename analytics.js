@@ -140,6 +140,17 @@
   })();
 
   /* ── transport ────────────────────────────────────────────────────────── */
+  /*  Section 17. Coarse on purpose: the viewport rounded to 20px, not the
+      exact pixel. It exists to spot a layout broken on a size we do not test,
+      and an exact size is a fingerprinting surface for no extra insight.    */
+  var SCREEN = (function () {
+    try {
+      var r = function (n) { return Math.round(n / 20) * 20; };
+      return r(window.innerWidth || screen.width || 0) + "x" +
+             r(window.innerHeight || screen.height || 0);
+    } catch (e) { return ""; }
+  })();
+
   var BUF = [], TIMER = null;
 
   function flush() {
@@ -171,7 +182,8 @@
   function track(name, props) {
     if (!name) return;
     try {
-      var ev = { event: String(name), path: location.pathname, referrer: REF, utm: UTM };
+      var ev = { event: String(name), path: location.pathname, referrer: REF,
+                 utm: UTM, screen: SCREEN };
       if (props) for (var k in props)
         if (props.hasOwnProperty(k) && k !== "path" && k !== "referrer" && k !== "utm")
           ev[k] = props[k];
@@ -261,6 +273,20 @@
   if (NEWSESSION) track("session_start", { entry: location.pathname });
   drain();
   pageView("load");
+
+  /*  An invitation is an acquisition channel, so the click has to be counted
+      separately from the signup it may or may not become. Emitted once per
+      session: a referred visitor who reloads four times is one referral
+      click, not four.                                                       */
+  (function () {
+    try {
+      var m = /[?&]ref=([A-Za-z0-9]{4,16})/.exec(location.search);
+      if (!m) return;
+      if (ss("dse_ref_seen") === "1") return;
+      ss("dse_ref_seen", "1");
+      track("referral_clicked", { ref: m[1].toUpperCase() });
+    } catch (e) {}
+  })();
 
   /*  Soft navigation. shell.html swaps tools by changing the hash and by
       pushState, and neither fires a page load, so without this the whole

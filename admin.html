@@ -93,7 +93,14 @@
 <div id="app" class="wrap hide">
   <div class="top">
     <h1>DSE Pulse · Admin</h1>
-    <button class="btn" onclick="lock()">Lock</button>
+    <div style="display:flex;gap:8px">
+      <!--  Analytics is its own page rather than another card here: seven
+            screens inside a card stack would bury the settings this page
+            exists for. Same admin key, same sessionStorage slot, so opening
+            it does not ask for the key again.  -->
+      <a class="btn btn-pri" href="/analytics.html">Analytics →</a>
+      <button class="btn" onclick="lock()">Lock</button>
+    </div>
   </div>
 
   <div class="card">

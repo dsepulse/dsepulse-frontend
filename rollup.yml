@@ -1,0 +1,90 @@
+name: Daily Analytics Roll-up
+
+#  Pre-aggregates each finished day into analytics_daily,
+#  analytics_page_stats and analytics_campaigns.
+#
+#  WHY IT EXISTS
+#    Every analytics screen reads analytics_events directly, which is right at
+#    a few thousand rows and wrong at a few million. This keeps the dashboard
+#    fast as volume arrives — and because raw events are deleted after
+#    ANALYTICS_RETAIN_DAYS (90), it is also the only thing that preserves the
+#    long-term trend once the events behind it are gone.
+#
+#  WHY 00:40 UTC
+#    06:40 in Dhaka, comfortably after midnight UTC so that "yesterday" is a
+#    finished day everywhere. The job never rolls up today: a partial count
+#    that the next run corrects is worse than a number that arrives late.
+#
+#  WHY lookback 3 AND NOT 1
+#    A missed night then self-heals on the next run instead of leaving a hole
+#    in the trend for ever. Re-running a day recomputes it rather than
+#    doubling it, because each row upserts on (day, env).
+
+on:
+  schedule:
+    - cron: "40 0 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Finished days to re-roll (1-90). Use 90 to backfill."
+        required: false
+        default: "3"
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Roll up analytics
+        run: |
+          DAYS="${{ github.event.inputs.days }}"
+          if [ -z "$DAYS" ]; then DAYS=3; fi
+          echo "days=$DAYS"
+          code=$(curl -sS -X POST \
+            "https://dsepulse-backend-production.up.railway.app/api/cron/analytics-rollup?days=$DAYS" \
+            -H "X-Cron-Key: ${{ secrets.CRON_SECRET }}" \
+            -o response.json -w "%{http_code}")
+          echo "HTTP $code"
+          cat response.json || true
+          echo
+          #  A wrong CRON_SECRET answers 401 and changes nothing. Without this
+          #  check the job goes green for months while the roll-up never runs —
+          #  which is exactly how si-evaluate ended up thirteen days stale.
+          if [ "$code" != "200" ]; then
+            echo "::error::analytics roll-up returned HTTP $code"
+            exit 1
+          fi
+
+      - name: Prune raw events past retention
+        run: |
+          code=$(curl -sS -X POST \
+            "https://dsepulse-backend-production.up.railway.app/api/cron/analytics-prune" \
+            -H "X-Cron-Key: ${{ secrets.CRON_SECRET }}" \
+            -o prune.json -w "%{http_code}")
+          echo "HTTP $code"; cat prune.json || true; echo
+          #  Runs AFTER the roll-up, never before: pruning first would delete
+          #  the events the aggregate was about to be computed from.
+          if [ "$code" != "200" ]; then
+            echo "::error::analytics prune returned HTTP $code"
+            exit 1
+          fi
+
+      - name: Summarise
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          try: d=json.load(open("response.json"))
+          except Exception as e:
+              print("Could not read the response: %s" % e); raise SystemExit(0)
+          print("### Analytics roll-up\n")
+          print("- days rolled: **%s**" % d.get("days_rolled"))
+          w=d.get("rows_written") or {}
+          print("- rows written: daily **%s**, pages **%s**, campaigns **%s**\n"
+                % (w.get("daily"), w.get("pages"), w.get("campaigns")))
+          det=d.get("detail") or []
+          if det:
+              print("| day | events | visitors | pages | campaigns |")
+              print("|---|---|---|---|---|")
+              for r in det:
+                  print("| %s | %s | %s | %s | %s |" % (r.get("date"), r.get("events"),
+                        r.get("visitors","—"), r.get("pages","—"), r.get("campaigns","—")))
+          PY

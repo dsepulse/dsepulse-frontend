@@ -19,16 +19,33 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
 .hdr{background:var(--white);border-bottom:1px solid var(--border);padding:14px 22px}
-.hdr-in{max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.hdr-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
 .logo{font-family:var(--serif);font-weight:800;font-size:20px;color:var(--navy)}.logo span{color:var(--gold)}
 .back{font-size:12px;color:var(--gold);text-decoration:none;font-weight:600}.back:hover{text-decoration:underline}
-.wrap{max-width:760px;margin:0 auto;padding:24px 18px}
-.h-title{font-family:var(--serif);font-weight:800;font-size:24px;color:var(--navy);margin-bottom:4px}
-.h-sub{font-size:12px;color:var(--text3);margin-bottom:22px}
-.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 18px}
+/*  ONE WINDOW, NO SCROLL.
+    The shell loads this file in an iframe fixed at calc(100vh - 244px), so any
+    content taller than that scrolls inside the frame and the answer (position
+    sizing) sits below the fold while you are typing the inputs that produce it.
+    Above 1024px the form and the results become two columns that start at the
+    same y, which is what makes the whole tool fit one screen. Below that it
+    collapses back to the single column it has always been.
+    minmax(0,1fr), not 1fr: a grid child defaults to min-width:auto, which is
+    its min-content width, and the mono result tiles are wide enough to push
+    the track past its share and reintroduce a horizontal overflow. */
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.col>*+*{margin-top:12px}
+@media(min-width:1024px){
+  .wrap{max-width:1200px;padding:14px 20px}
+  .layout{grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:16px}
+}
+.h-title{font-family:var(--serif);font-weight:800;font-size:21px;color:var(--navy);margin-bottom:2px}
+.h-sub{font-size:11.5px;color:var(--text3);margin-bottom:14px;line-height:1.45}
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .card+.card{margin-top:12px}
+.col .card+.card{margin-top:0}
 .sec-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px}
-.field{margin-bottom:14px}
+.field{margin-bottom:11px}
 .field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px}
 .field input{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:7px;font-size:13px;font-family:var(--mono);background:var(--white);color:var(--navy);outline:none;transition:border-color .15s}
 .field input:focus{border-color:var(--navy)}
@@ -37,10 +54,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .field .hint{font-size:10px;color:var(--text3);margin-top:4px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
-.res{border-radius:8px;padding:12px 14px}
+.result-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;margin-top:6px}
+.res{border-radius:8px;padding:10px 12px}
 .res .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.res .val{font-size:22px;font-weight:700;font-family:var(--mono)}
+.res .val{font-size:19px;font-weight:700;font-family:var(--mono);line-height:1.25}
 .res.neu{background:var(--cream2);border:1px solid var(--border)}
 .res.neu .lbl{color:var(--text3)}.res.neu .val{color:var(--navy)}
 .res.pos{background:var(--green-bg);border:1px solid var(--green-border)}
@@ -51,12 +68,12 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .res.gld .lbl{color:var(--gold)}.res.gld .val{color:var(--gold)}
 .rr-bar{height:8px;border-radius:4px;background:var(--cream3);overflow:hidden;margin-top:8px}
 .rr-fill{height:100%;border-radius:4px;background:var(--green);transition:width .3s}
-.disc{font-size:11px;color:var(--text3);background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;padding:10px 13px;margin-top:14px;line-height:1.6}
-.kelly-note{font-size:11px;color:var(--text2);margin-top:10px;padding:10px 13px;background:var(--cream2);border-radius:7px;line-height:1.6}
+.disc{font-size:10.5px;color:var(--text3);background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;padding:9px 12px;margin-top:12px;line-height:1.55}
+.kelly-note{font-size:10.5px;color:var(--text2);margin-top:10px;padding:9px 12px;background:var(--cream2);border-radius:7px;line-height:1.55}
 .btn{padding:10px 20px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none}
 .btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy2)}
 .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
-.quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.quick-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
 .qbtn{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:var(--mono)}
 .qbtn:hover{border-color:var(--navy);color:var(--navy)}
 .qbtn.on{border-color:var(--navy);background:var(--navy);color:#fff}
@@ -84,7 +101,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   <div class="h-title">Risk Calculator</div>
   <div class="h-sub">Enter your capital and trade setup to get exact position size, cost, and risk/reward</div>
 
-  <!-- INPUT CARD -->
+  <div class="layout">
+  <!-- ================= LEFT COLUMN — WHAT YOU ENTER ================= -->
+  <div class="col">
   <div class="card">
     <div class="for-banner" id="forBanner">
       <span>Calculating for <b id="forCode"></b><span id="forTf" style="color:var(--text2);font-weight:400"></span></span>
@@ -151,8 +170,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     <span>&#9432;</span>
     <span id="noteText"></span>
   </div>
+  </div><!-- /left column -->
 
-  <!-- RESULTS CARD -->
+  <!-- ================= RIGHT COLUMN — WHAT IT MEANS ================= -->
+  <div class="col">
   <div class="card" id="results-card">
     <div class="sec-lbl">Position sizing</div>
     <div class="result-grid">
@@ -215,6 +236,8 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
     and shown only in the breakeven price. The Kelly fraction is mathematical guidance, not a recommendation,
     and full Kelly is widely considered too aggressive for discretionary trading.
   </div>
+  </div><!-- /right column -->
+  </div><!-- /layout -->
 </div>
 <script src="/env.js"></script>
 <script src="/auth.js"></script>
@@ -228,9 +251,33 @@ const $=id=>document.getElementById(id);
 function setcap(v){ $('capital').value=v; calc(); }
 function setrisk(v){ $('riskPct').value=v; calc(); }
 
+// ---------------------------------------------------------------------------
+//  EVERY CALL FROM THIS PAGE WAS ANONYMOUS.
+//  This file is loaded by shell.html inside an iframe on the SAME origin, so
+//  the signed-in token in localStorage has always been readable from here — it
+//  was simply never sent. /api/analyse is plan-gated (require_plan), so a
+//  logged-in subscriber's request was answered as if they had no plan, the
+//  fetch came back !ok, and the page reported "no live levels found" for a
+//  stock it had every right to read.
+// ---------------------------------------------------------------------------
+function tok(){ try{ return localStorage.getItem('dse_token')||''; }catch(e){ return ''; } }
+
 async function fetchJSON(path){
-  try{ const r=await fetch(API+path); if(!r.ok) return null; return await r.json(); }
+  try{
+    const h={}; const t=tok(); if(t) h['Authorization']='Bearer '+t;
+    const r=await fetch(API+path,{headers:h});
+    if(!r.ok) return null;
+    return await r.json();
+  }
   catch(e){ return null; }
+}
+
+//  A level may arrive as a bare number (/api/analyse, /api/scan) or as
+//  {price, profit} (/api/calculator). One reader for both shapes.
+function lvl(v){
+  if(v===null||v===undefined) return 0;
+  if(typeof v==='object') return Number(v.price)||0;
+  return Number(v)||0;
 }
 
 function hideCodeSuggest(){
@@ -282,15 +329,32 @@ async function loadCodeData(code){
   banner.style.display='flex';
   lbl.innerHTML=code+' <span class="fb-loading">&mdash; loading live levels&hellip;</span>';
 
-  let live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
-  if(!live) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
+  //  /api/calculator FIRST. It is the endpoint built for exactly this job:
+  //  it derives the whole ladder with score_stock() from the live `stocks`
+  //  row, so it answers for any of the ~400 listed codes. The page used to
+  //  ask /api/analyse only, which resolves the same way but is plan-gated,
+  //  and then /api/scan as a fallback that was never reached whenever
+  //  /api/analyse returned a 200 without usable levels.
+  const cap=Number($('capital').value)||50000;
+  let live=await fetchJSON('/api/calculator?code='+encodeURIComponent(code)+'&capital='+cap);
+  if(!live || !Number(live.entry)) live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
+  if(!live || !Number(live.entry)) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
 
-  const entry=Number(live && live.entry)||0;
-  const target=Number(live && (live.target||live.t1))||0;
-  const sl=Number(live && live.sl)||0;
+  const entry=lvl(live && live.entry);
+  //  THE TARGET BOX WAS NEVER FILLED BY AUTO-FILL, ON ANY STOCK, EVER.
+  //  The backend names the first rung of the ladder `l1` — score_stock()
+  //  returns {entry, l1, l2, l3, sl} and build_card() passes it through. It
+  //  has never emitted `target` or `t1` from any of these three endpoints, so
+  //  `live.target||live.t1` was always 0. The empty box then failed the
+  //  target>entry test below, which raised "no active buy setup" on setups
+  //  that were perfectly valid. `t1` stays first in the chain because the
+  //  Scan card in shell.html does use that name when it hands levels over.
+  const target=lvl(live && (live.target!==undefined ? live.target
+                          : live.t1!==undefined ? live.t1 : live.l1));
+  const sl=lvl(live && live.sl);
 
   if(!entry){
-    lbl.innerHTML=code+' <span class="fb-loading">&mdash; no live levels found, enter manually below</span>';
+    lbl.innerHTML=code+' <span class="fb-loading">&mdash; no live levels available right now, enter manually below</span>';
     return;
   }
 

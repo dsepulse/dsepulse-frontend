@@ -83,11 +83,16 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .code-suggest-item:hover,.code-suggest-item.hi{background:var(--cream2)}
 .for-banner{display:none;align-items:center;gap:8px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;padding:8px 13px;margin-bottom:14px;font-size:12px;color:var(--text2)}
 .for-banner b{color:var(--navy);font-family:var(--mono);font-size:13px}
+/*  A price that is not from the latest session must not look like one that
+    is. Same banner, different world: red ground, red rule, red date. */
+.for-banner.stale{background:var(--red-bg);border-color:var(--red-border)}
+.for-banner.stale b{color:var(--red)}
+.stale-tag{color:var(--red);font-weight:700}
 .for-banner .fb-clear{margin-left:auto;font-size:11px;color:var(--gold);cursor:pointer;font-weight:600}
 .for-banner .fb-loading{color:var(--text3);font-style:italic}
-.warn-banner{display:none;align-items:flex-start;gap:10px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5}
+.warn-banner{display:none;align-items:flex-start;gap:8px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.45}
 .warn-banner b{color:var(--red)}
-.note-banner{display:none;align-items:flex-start;gap:10px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5}
+.note-banner{display:none;align-items:flex-start;gap:8px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.45}
 .note-banner b{color:var(--gold)}
 </style>
 </head>
@@ -248,6 +253,19 @@ const DSE_CODES=[...new Set(["AAMRANET","AAMRATECH","ABBANK","ACI","ACIFORMULA",
 
 const $=id=>document.getElementById(id);
 
+// ---------------------------------------------------------------------------
+//  THE CODE LIST IS NO LONGER FROZEN IN THIS FILE.
+//  DSE_CODES above is 320 tickers typed into the page by hand. The board runs
+//  to ~424 and grows with every new listing, so roughly a hundred shares had
+//  no autocomplete entry — SICL was one, which is why typing it offered
+//  nothing. /api/codes returns the live union of `stocks` and the newest
+//  technical run, and the two lists are MERGED rather than swapped: the
+//  built-in list stays as the floor, so a share that has not traded recently
+//  enough to appear in either table is still suggested, and a failed fetch
+//  leaves the page exactly as good as it was before.
+// ---------------------------------------------------------------------------
+let CODES = DSE_CODES.slice();
+
 function setcap(v){ $('capital').value=v; calc(); }
 function setrisk(v){ $('riskPct').value=v; calc(); }
 
@@ -262,15 +280,35 @@ function setrisk(v){ $('riskPct').value=v; calc(); }
 // ---------------------------------------------------------------------------
 function tok(){ try{ return localStorage.getItem('dse_token')||''; }catch(e){ return ''; } }
 
+//  The HTTP status of the last call. "No levels" has several different
+//  causes — a stale session (401/403), a code the daily upload never carried
+//  (404), a stock that exists but did not trade (200 with status:no_data) —
+//  and they need different actions from the user. Throwing them all away and
+//  printing one sentence is what made this page impossible to diagnose from
+//  the outside.
+let LAST_HTTP = 0;
+
 async function fetchJSON(path){
+  LAST_HTTP = 0;
   try{
     const h={}; const t=tok(); if(t) h['Authorization']='Bearer '+t;
     const r=await fetch(API+path,{headers:h});
+    LAST_HTTP = r.status;
     if(!r.ok) return null;
     return await r.json();
   }
-  catch(e){ return null; }
+  catch(e){ LAST_HTTP = -1; return null; }
 }
+
+//  Run AFTER fetchJSON and its `let LAST_HTTP` exist. Placed at the top of the
+//  script this threw a TDZ ReferenceError into a floating promise — the list
+//  silently stayed at the built-in 320 and nothing in the console said so.
+(async function loadCodes(){
+  const r = await fetchJSON('/api/codes');
+  if(r && Array.isArray(r.codes) && r.codes.length){
+    CODES = [...new Set(CODES.concat(r.codes.map(c=>String(c).toUpperCase())))].sort();
+  }
+})();
 
 //  A level may arrive as a bare number (/api/analyse, /api/scan) or as
 //  {price, profit} (/api/calculator). One reader for both shapes.
@@ -287,7 +325,12 @@ function hideCodeSuggest(){
 function onCodeInput(){
   const q=$('stockCode').value.trim().toUpperCase();
   if(!q){ hideCodeSuggest(); return; }
-  const matches=DSE_CODES.filter(c=>c.indexOf(q)===0).slice(0,8);
+  //  Prefix matches first (what you are most likely typing), then anything
+  //  that merely contains the string, so a partial mid-code search still
+  //  finds the share instead of returning nothing.
+  const pre=CODES.filter(c=>c.indexOf(q)===0);
+  const mid=CODES.filter(c=>c.indexOf(q)>0);
+  const matches=pre.concat(mid).slice(0,8);
   const box=$('codeSuggest');
   if(!matches.length){ hideCodeSuggest(); return; }
   box.innerHTML=matches.map(c=>`<div class="code-suggest-item" data-code="${c}">${c}</div>`).join('');
@@ -311,6 +354,8 @@ function selectCode(code){
 function clearCode(){
   $('stockCode').value='';
   $('forBanner').style.display='none';
+  $('forBanner').classList.remove('stale');
+  hideNote();
   hideCodeSuggest();
 }
 document.addEventListener('click',function(e){
@@ -336,9 +381,32 @@ async function loadCodeData(code){
   //  and then /api/scan as a fallback that was never reached whenever
   //  /api/analyse returned a 200 without usable levels.
   const cap=Number($('capital').value)||50000;
-  let live=await fetchJSON('/api/calculator?code='+encodeURIComponent(code)+'&capital='+cap);
-  if(!live || !Number(live.entry)) live=await fetchJSON('/api/analyse/'+encodeURIComponent(code));
-  if(!live || !Number(live.entry)) live=await fetchJSON('/api/scan/'+encodeURIComponent(code));
+  const C=encodeURIComponent(code);
+  const http=[]; let detail='';
+
+  //  /api/levels resolves ANY code that has a stored price, and states which
+  //  session that price is from. /api/calculator stays as the fallback so
+  //  this page keeps working during a rollout where only one side is live.
+  let live=await fetchJSON('/api/levels/'+C);
+  http.push(LAST_HTTP);
+  if(!live || !lvl(live.entry)){
+    live=await fetchJSON('/api/calculator?code='+C+'&capital='+cap);
+    http.push(LAST_HTTP);
+  }
+
+  if(!live || !lvl(live.entry)){
+    const a=await fetchJSON('/api/analyse/'+C); http.push(LAST_HTTP);
+    //  /api/analyse answers 200 with {status, detail} when it cannot build a
+    //  card — "unknown_code", or "No price history and no usable last traded
+    //  price". That sentence is the actual answer to "why no levels", so keep
+    //  it instead of discarding the whole response.
+    if(a && lvl(a.entry)) live=a;
+    else if(a && a.detail) detail=String(a.detail);
+  }
+  if(!live || !lvl(live.entry)){
+    const s=await fetchJSON('/api/scan/'+C); http.push(LAST_HTTP);
+    if(s && lvl(s.entry)) live=s;
+  }
 
   const entry=lvl(live && live.entry);
   //  THE TARGET BOX WAS NEVER FILLED BY AUTO-FILL, ON ANY STOCK, EVER.
@@ -354,11 +422,53 @@ async function loadCodeData(code){
   const sl=lvl(live && live.sl);
 
   if(!entry){
-    lbl.innerHTML=code+' <span class="fb-loading">&mdash; no live levels available right now, enter manually below</span>';
+    //  Say WHICH of the three things went wrong. A blanket "no levels found"
+    //  sent us chasing the wrong cause for two days.
+    const gated = http.some(s => s===401 || s===403);
+    const offline= http.some(s => s===-1);
+    let why, hint;
+    if(offline){
+      why  = 'could not reach the server';
+      hint = 'Check your connection and try again.';
+    }else if(gated){
+      why  = 'your session has expired';
+      hint = 'Log out and back in, then try again.';
+    }else if(detail){
+      why  = detail.replace(/\.$/,'').toLowerCase();
+      hint = 'Enter your own levels below.';
+    }else{
+      why  = 'it is not in the latest market upload';
+      hint = 'This usually means the stock did not trade in the last session, so there is no price to build levels from. Enter your own levels below.';
+    }
+    lbl.innerHTML=code+' <span class="fb-loading">&mdash; '+why+'</span>';
+    showNote('<b>No live levels for '+code+'.</b> '+hint+
+             ' <span style="color:var(--text3)">('+http.join('/')+')</span>');
     return;
   }
+  //  ── how old is this price? ────────────────────────────────────────────
+  //  Sessions, not calendar days: across a weekend "2 days ago" and "2
+  //  sessions ago" are different facts, and only one of them is about the
+  //  market.
+  const stale = live && live.price_source === 'last_traded';
+  const nSess = Number(live && live.sessions_stale);
+  const when  = shortDate(live && live.price_date);
+  let staleNote = '';
 
-  lbl.textContent=code;
+  banner.classList.toggle('stale', !!stale);
+  if(stale){
+    lbl.innerHTML = code + ' <span class="stale-tag">&middot; price from ' +
+                    (when || 'an earlier session') + '</span>';
+    staleNote = '<b>' + code + ' did not trade in the latest session' +
+      (Number.isFinite(nSess) && nSess > 0
+        ? ' &mdash; its last trade was ' + nSess + ' session' + (nSess===1?'':'s') + ' ago, on ' + when
+        : '') + '.</b> These levels are built from that last real traded price of ' +
+      '&#2547;' + (live.ltp!==undefined ? live.ltp : entry) +
+      ', not from today\'s market. Check the current quote before acting on ' +
+      'this position size.';
+  }else{
+    lbl.textContent = code;
+  }
+
   $('entry').value=entry;
 
   const targetOk = target>entry;
@@ -367,14 +477,18 @@ async function loadCodeData(code){
   $('target').value = targetOk ? target : '';
   $('sl').value     = slOk ? sl : '';
 
+  //  ONE note, decided once. Previously each branch called showNote/hideNote
+  //  on its own, so whichever ran last silently erased the other's message —
+  //  a stale-price warning could be wiped by an unrelated "setup is fine".
+  const notes=[];
+  if(staleNote) notes.push(staleNote);
   if(!targetOk || !slOk){
     const bits=[];
     if(!targetOk) bits.push(`a target of &#2547;${target||'—'} against an entry of &#2547;${entry}`);
     if(!slOk)     bits.push(`a stop of &#2547;${sl||'—'} against an entry of &#2547;${entry}`);
-    showNote(`<b>No active buy setup for ${code}.</b> Live analysis returned ${bits.join(' and ')}, which is not a valid long trade &mdash; so the levels were not filled in. The price may have already run past its target, or this stock may have no buy signal right now. Enter your own levels below, or try another stock.`);
-  }else{
-    hideNote();
+    notes.push(`<b>No active buy setup for ${code}.</b> Live analysis returned ${bits.join(' and ')}, which is not a valid long trade &mdash; so the levels were not filled in. The price may have already run past its target, or this stock may have no buy signal right now. Enter your own levels below, or try another stock.`);
   }
+  if(notes.length) showNote(notes.join('<br><br>')); else hideNote();
   calc();
 }
 
@@ -405,6 +519,12 @@ async function loadCodeData(code){
 // --- formatting ------------------------------------------------------------
 // fmt() is unsigned by design; callers that can receive a negative must use
 // fmtSigned() so the glyph and the tile colour never disagree.
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shortDate(d){
+  if(!d) return '';
+  const m=String(d).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? (Number(m[3])+' '+MON[Number(m[2])-1]) : String(d).slice(0,10);
+}
 function fmt(n){ return '৳'+Math.abs(Math.round(n)).toLocaleString(); }
 function fmtSigned(n){ return (n<0?'-':'+')+'৳'+Math.abs(Math.round(n)).toLocaleString(); }
 function fmtPct(n){ return (n>=0?'+':'')+n.toFixed(2)+'%'; }

@@ -38,6 +38,11 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 @media(min-width:1024px){
   .wrap{max-width:1200px;padding:14px 20px}
   .layout{grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:16px}
+  /*  The breakeven card put the right column 6px past the frame at exactly
+      1024. Tightening the gaps rather than shrinking type keeps it legible. */
+  .col>*+*{margin-top:9px}
+  .disc{margin-top:9px}
+  .kelly-note{margin-top:8px}
 }
 .h-title{font-family:var(--serif);font-weight:800;font-size:21px;color:var(--navy);margin-bottom:2px}
 .h-sub{font-size:11.5px;color:var(--text3);margin-bottom:14px;line-height:1.45}
@@ -223,7 +228,7 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
       <div>
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:3px">Breakeven</div>
         <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--navy)" id="b-breakeven">&mdash;</div>
-        <div style="font-size:10px;color:var(--text3)">entry + brokerage</div>
+        <div style="font-size:10px;color:var(--text3)" id="b-be-note">entry + brokerage</div>
       </div>
       <div>
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:3px">Upside to target</div>
@@ -237,9 +242,10 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
   </div>
 
   <div class="disc">
-    Informational only &mdash; not investment advice. Brokerage is excluded from profit and loss figures
-    and shown only in the breakeven price. The Kelly fraction is mathematical guidance, not a recommendation,
-    and full Kelly is widely considered too aggressive for discretionary trading.
+    Informational only &mdash; not investment advice. Profit and loss exclude brokerage, taxes
+    and slippage; the breakeven adds the assumed rate shown beside it, not your broker&rsquo;s.
+    Kelly is mathematical guidance, not a recommendation &mdash; full Kelly is widely considered
+    too aggressive for discretionary trading.
   </div>
   </div><!-- /right column -->
   </div><!-- /layout -->
@@ -252,6 +258,19 @@ const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-product
 const DSE_CODES=[...new Set(["AAMRANET","AAMRATECH","ABBANK","ACI","ACIFORMULA","ACMELAB","ACTIVEFINE","ADNTEL","ADVENT","AFCAGRO","AGNISYSL","AGRANINS","ALARABANK","ALLTEX","AMANTEX","AMBEEPHA","AMCLPRAN","ANLIMAYARN","ANWARGALV","APEXFOODS","APEXFOOT","APEXSPINN","APEXTANRY","APOLOISPAT","ARAMIT","ARAMITCEM","ARGONDENIM","ASIAINS","ASIAPACINS","ATLASBANG","AZIZPIPES","BANGAS","BANGLAMILK","BANKASIA","BARKAPOWER","BASHUNDPAP","BATASHOE","BATBC","BAYLEASING","BBS","BBSCABLES","BDAUTOCA","BDCOM","BDFINANCE","BDLAMPS","BDSERVICE","BDTHAI","BEACHHATCH","BEACONPHAR","BEDL","BENGALWTL","BERGERPBL","BEXIMCO","BGIC","BIFC","BNICL","BRACBANK","BSCCL","BSRMLTD","BSRMSTEEL","BXPHARMA","CENTRALINS","CENTRALPHL","CHARTLIFE","CITYBANK","CLICL","CONFIDCEM","CONTININS","COPPERTECH","CROWNCEMNT","CRYSTALINS","DACCADYE","DAFODILCOM","DATASOFT","DBH","DELTASPINN","DESCO","DESHGARMNT","DESHGENERL","DESHGENINS","DHAKABANK","DHAKAINS","DOMINAGE","DOREENPWR","DRAGONSWET","DUTCHBANGL","EASTERNCAB","EASTERNINS","EASTLAND","EBL","EGEN","EHL","EMERALDOIL","ENERGYPAC","ENVOYTEX","ESQUIRE","EVINCE","EXIMBANK","FAMILYTEX","FARCHEM","FAREASTFIN","FAREASTLIF","FASFIN","FEDERALINS","FINEFOODS","FIRSTFIN","FIRSTSBANK","FORTUNE","FUWANGCER","FUWANGFOOD","GBBPOWER","GEMINISEA","GENEXIL","GHAIL","GIB","GLOBALINS","GOLDENHARV","GP","GPHISPAT","GQBALLPEN","GREENDELT","GSPFINANCE","HAKKANIPUL","HAMIDFAB","HEIDELBCEM","HRTEX","HWAWELLTEX","IBNSINA","IBP","ICB","ICBIBANK","IDLC","IFADAUTOS","IFIC","ILFSL","INDEXAGRO","INTECH","INTRACO","IPDC","ISLAMIBANK","ISLAMICFIN","ISLAMIGEN","ISLAMIINS","ISNLTD","IT","ITC","JAMUNABANK","JAMUNAOIL","JANATAINS","JMISMDL","JUTESPINN","KARNAPHULI","KATTALITEX","KDSALTD","KEYACOSMET","KHULNAPOWER","KOHINOOR","KPCL","LAFARGEHOL","LANKABAFIN","LEGACYFOOT","LHBL","LIBRAINFU","LINDEBD","LOVELLO","MAKSONSPIN","MALEKSPIN","MARICO","MATINSPINN","MEGCONMILK","MEGHNACEM","MEGHNAINS","MEGHNALIFE","MERCANBANK","METROSPIN","MICEMENT","MIDASFIN","MIDLANDBNK","MIRACLEIND","MITHUNKNIT","MJLBD","MLDYEING","MONNOAGML","MONNOCERA","MONNOFABR","MONOSPOOL","MOZAFFAR","MPETROLEUM","MTB","NATIONALFE","NATIONALTU","NATLIFEINS","NAVANACNG","NAVANAPHAR","NBFI","NBL","NCCBANK","NEWLINE","NHFIL","NITOLINS","NORTHRNGEN","NORTHRNJUTE","NPOLYMER","NRBBANK","NRBCBANK","NTC","NURANI","NWPGCL","OIMEX","OLYMPIC","ONEBANKPLC","ORIONINFU","ORIONPHARM","PADMABANK","PADMALIFE","PADMAOIL","PAPERPROC","PEOPLESINS","PHARMAID","PHENIXINS","PHOENIXFIN","PIONEERINS","PLFSL","POPULARLIF","POWERGRID","PRAGATIINS","PRAGATILIF","PREMIERBAN","PREMIERCEM","PREMIERLE","PRIMEBANK","PRIMEFIN","PRIMELIFE","PRIMETEX","PROGRESLIF","PROVATIINS","PUBALIBANK","PURABIGEN","QUASEMIND","QUEENSOUTH","RAKCERAMIC","RANFOUNDRY","RANGPURFO","RDFOOD","REGENTTEX","RELIANINS","RENATA","RENWICKJA","RINGSHINE","RINTEX","RNSPIN","ROBI","RSRMSTEEL","RUNNERAUTO","RUPALIBANK","RUPALIINS","RUPALILIFE","SAFKOSPIN","SAIFPOWER","SAIHAMCOT","SAIHAMTEX","SALAMCRST","SALVOCHEM","SAMATALETH","SAMORITA","SANDHANINS","SAVAREFR","SBACBANK","SEAPEARL","SHAHJABANK","SHAHJIBAZ","SHEPHERD","SHYAMPSUG","SIBL","SILCOPHL","SIMTEX","SINGERBD","SINOBANGLA","SONALIANSH","SONALILIFE","SONALIPAPR","SONARGAON","SOUTHBANGL","SOUTHEASTB","SPCL","SQUARETEXT","SQURPHARMA","SSSTEEL","STANCERAM","STANDBANKL","STYLECRAFT","SUMITPOWER","SUNLIFEINS","TAKAFULINS","TALLUSPIN","TILIL","TITASGAS","TOSRIFA","TRUSTBANK","TUNGHAI","UCB","UNILEVERCL","UNIONBANK","UNIONCAP","UNIQUEHRL","UNITEDAIR","UNITEDINS","UPGDCL","USMANIAGL","UTTARABANK","UTTARAFIN","WALTONHIL","WATACHEM","WMSHIPYARD","WSCABLES","WZPDCL","YPL","ZAHEENSPIN","ZAHINTEX","ZEALBANGLA"])].sort();
 
 const $=id=>document.getElementById(id);
+
+// ---------------------------------------------------------------------------
+//  ROUND-TRIP COST, USED FOR THE BREAKEVEN PRICE ONLY.
+//  It is never applied to profit, loss or risk:reward — those stay gross, as
+//  the disclaimer says.
+//
+//  This value is an ASSUMPTION, not a measurement, and the project has no
+//  documented source for it. So it is named here instead of buried in the
+//  arithmetic, and the rate is PRINTED ON SCREEN beside the breakeven price —
+//  a reader who knows their own brokerage can see what was assumed and judge
+//  the number, which a hidden constant never allows. Change it in one place.
+// ---------------------------------------------------------------------------
+const BROKERAGE_ROUND_TRIP = 0.006;   // 0.6%
 
 // ---------------------------------------------------------------------------
 //  THE CODE LIST IS NO LONGER FROZEN IN THIS FILE.
@@ -646,16 +665,17 @@ function calc(){
   }
 
   // ---- breakeven & context ----------------------------------------------
-  const brokerage=entry*0.006;              // ~0.6% round trip estimate
-  const breakeven=entry+brokerage;
-  const upside=((target-entry)/entry)*100;
-  const downside=((sl-entry)/entry)*100;
-  $('b-breakeven').innerHTML='৳'+breakeven.toFixed(2);
-  const up=$('b-upside');
-  up.textContent=fmtPct(upside);
-  up.style.color=upside>=0?'var(--green)':'var(--red)';
-  $('b-downside').textContent=fmtPct(downside);
-  $('breakeven-card').style.display='block';
+  const breakeven = entry * (1 + BROKERAGE_ROUND_TRIP);
+  const upside    = ((target - entry) / entry) * 100;
+  const downside  = ((sl - entry) / entry) * 100;
+  $('b-breakeven').innerHTML = '৳' + breakeven.toFixed(2);
+  //  The assumption, stated where the number is read.
+  $('b-be-note').textContent = 'entry + ' + (BROKERAGE_ROUND_TRIP * 100).toFixed(2) + '% brokerage';
+  const up = $('b-upside');
+  up.textContent = fmtPct(upside);
+  up.style.color = upside >= 0 ? 'var(--green)' : 'var(--red)';
+  $('b-downside').textContent = fmtPct(downside);
+  $('breakeven-card').style.display = 'block';
 }
 </script>
 </body>

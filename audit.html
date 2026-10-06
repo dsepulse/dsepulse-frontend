@@ -163,7 +163,15 @@ function alertBox(msg,type,cmd){
         <code style="font-size:10px;font-family:var(--mono);background:rgba(0,0,0,.06);padding:3px 7px;border-radius:4px;flex:1;overflow-x:auto;white-space:nowrap">${cmd}</code>
         <button onclick="copyCmd('${id}','${cmd.replace(/'/g,"\'")}')" id="${id}" style="font-size:10px;padding:3px 10px;border:1px solid currentColor;border-radius:4px;background:transparent;cursor:pointer;color:inherit;font-family:inherit;white-space:nowrap">Copy</button>
        </div>`
-    : `<div style="margin-top:4px;font-size:10px;opacity:.8">Resolves automatically on next daily run ✓</div>`;
+    /*  No footer line here.  This used to read "Resolves automatically on next
+        daily run ✓", which was printed on EVERY alert that carried no command —
+        and since the backfill command was removed from the backend, that is now
+        every alert there is.  It is also false for the one alert that matters
+        most: a missed trading day cannot be backfilled, so it does not resolve
+        on the next run, it stays a permanent gap.  The alert's own message
+        explains what to do; an invented reassurance underneath it is worse than
+        nothing.  */
+    : '';
   if(cmd&&!CMDS.includes(cmd))CMDS.push(cmd);
   return `<div class="alert ${type}">${msg}${btnHtml}</div>`;
 }

@@ -176,9 +176,22 @@ async function buildPicks(){
     return false;
   }
 
+  /* /api/picks/today now returns status:"no_data" with its own `message` —
+     "No picks have been published yet." when the table is empty, "No picks
+     published for the latest run." when the newest run wrote nothing. Use the
+     API's sentence instead of the old hardcoded "Engine ran — …", which this
+     page cannot verify: if the engine had failed to run at all, this branch
+     would print the same claim. */
   if(!data||data.status!=='live'||!Array.isArray(data.picks)||!data.picks.length){
-    const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent='No qualifying picks today — check back after the next session';
-    el.innerHTML=await quietBanner('Engine ran — no stock met the short-term conviction criteria today','picks');
+    /* A request that never came back is NOT the same fact as nothing having
+       been published, and printing the second for the first is the same false
+       all-clear this batch exists to remove. fetchJSON returns null on a
+       network error or a non-2xx, so a null `data` is named as what it is. */
+    const msg=!data
+      ? 'Could not reach the picks service — this is a connection problem, not a quiet day'
+      : (data.message?String(data.message).replace(/\.$/,''):'No picks have been published yet');
+    const sub=document.getElementById('dt-picks-sub');if(sub)sub.textContent=msg;
+    el.innerHTML=await quietBanner(msg,'picks');
     return;
   }
 
@@ -186,7 +199,11 @@ async function buildPicks(){
   if(!isTodayOrLastTradingDay(data.date)){
     const sub=document.getElementById('dt-picks-sub');
     if(sub)sub.textContent='No qualifying picks today — last active '+fmt(data.date);
-    const banner=await quietBanner('Engine ran — no stock met the short-term conviction criteria today','picks');
+    /* States the fact and nothing more. "Engine ran —" was an assertion this
+       page has no way to check: an engine that never ran also leaves the
+       newest picks date in the past. Whether the run happened is the
+       watchdog's job, not this banner's. */
+    const banner=await quietBanner('No qualifying picks for today — the most recent are from '+fmt(data.date),'picks');
     /* show banner + last qualifying picks as reference */
     const picks=data.picks.slice(0,12);
     const num=v=>Number(v||0);

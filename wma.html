@@ -28,6 +28,9 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 .tbl{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:78vh;max-width:920px}
 .thead{position:sticky;top:0;z-index:2;padding:9px 18px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
 .empty{padding:34px;text-align:center;color:var(--text3);font-size:12px}
+.prov{max-width:920px;margin:-12px 0 16px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;padding:9px 12px;font-size:11px;line-height:1.55;color:var(--text2)}
+.prov b{color:var(--navy);font-weight:600}
+.prov .pk{font-family:var(--mono);font-size:10px}
 .foot{font-size:11px;color:var(--text3);text-align:center;padding:22px;margin-top:8px}
 </style>
 </head>
@@ -38,7 +41,8 @@ body{background:var(--cream2);color:var(--text);font-family:'Inter',system-ui,sa
 </div></div>
 <div class="wrap">
   <div class="h-title">WMA Signals</div>
-  <div class="h-sub">WMA 9 / 34 / 89 trend alignment</div>
+  <div class="h-sub" id="wma-sub">WMA 9 / 34 / 89 trend alignment</div>
+  <div id="wma-prov" class="prov" style="display:none"></div>
   <div class="tbl">
     
     <div id="wma-rows"><div class="empty">Loading WMA signals&hellip;</div></div>
@@ -82,41 +86,98 @@ async function quietBanner(reason,toolLabel){
   return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 20px;max-width:920px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="width:38px;height:38px;border-radius:8px;background:${moodBg};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${moodIcon}" style="font-size:18px;color:${moodCol}" aria-hidden="true"></i></div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">No ${toolLabel} today · ${today}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${reason}</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Market mood</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${moodCol}">${moodLabel}</div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">DSEX</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${dsexVal} <span style="font-size:10px;color:${chgColor}">${ctx.chg&&Number(ctx.chg)!==0?chgSign+ctx.chg+"%":""}</span></div></div><div style="background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:9px 12px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px">Last active</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${lastActive}</div></div></div></div>`;
 }
 async function fetchJSON(path){ try{ const r=await fetch(API+path); if(!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+const wEsc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const wFmtD=d=>{ if(!d)return null; try{ const x=new Date(String(d).slice(0,10)+'T00:00:00'); if(isNaN(x))return String(d).slice(0,10); return x.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return String(d).slice(0,10); } };
+
+/* The provenance line.
+   The WMA engine publishes under today's date but carries the PREVIOUS
+   session's closes — on 29 Sep 2026 it showed MATINSPINN at 65.20 while Tech,
+   BD and Picks all showed 68.20 for the same stock on the same screen. The
+   backend now MEASURES that against tech_signals for the same date and reports
+   it as price_basis / price_as_of / price_agreement_pct. This renders what it
+   measured. It asserts nothing the API did not return: when price_basis comes
+   back null the line says the session could not be determined rather than
+   guessing one. */
+function provLine(r0,techDate,techUp){
+  const sigDate=wFmtD(r0.trade_date);
+  const basis=r0.price_basis, asOf=wFmtD(r0.price_as_of), agree=r0.price_agreement_pct;
+  const bits=[];
+  /* The agreement figure is appended only when the API actually sent one, so
+     the line can never read "Measured: % of stocks" — a number-shaped hole is
+     read as a broken page, and inventing a number to fill it is worse. */
+  const pct=(agree===null||agree===undefined||agree==='')?'':
+    ' Measured: <span class="pk">'+wEsc(agree)+'%</span> agreement.';
+  if(sigDate) bits.push('Signals computed in the <b>'+wEsc(sigDate)+'</b> run.');
+  if(basis==='previous_close')
+    bits.push('The engine priced them on the <b>'+(asOf?wEsc(asOf)+' close':'previous session\'s close')+'</b>, not that day\'s moving price — a crossover system confirms on closes.'+pct);
+  else if(basis==='live')
+    bits.push('The engine priced them on the <b>same session</b>.'+pct);
+  else
+    bits.push('Which session the engine\'s prices came from could not be measured — too few stocks overlapped with the Tech feed to tell, so no claim is made either way.');
+  /* Three states, not two. "No date on the Tech feed" is not the same fact as
+     "no Tech feed", and the page must not report the first as the second —
+     during the window where main.py has not yet been redeployed the feed is up
+     and serving prices, it just is not stamping them yet. */
+  if(techDate) bits.push('The <b>LTP</b> column is the live Tech feed price from '+wEsc(wFmtD(techDate))+'; <span class="pk">sig</span> underneath it is the price the signal was computed on.');
+  else if(techUp) bits.push('The <b>LTP</b> column is the live Tech feed price; <span class="pk">sig</span> underneath it is the price the signal was computed on. The feed did not say which session its prices are from.');
+  else bits.push('The <b>LTP</b> column is the engine\'s own price — the Tech feed returned nothing, so there is nothing newer to show.');
+  return bits.join(' ');
+}
+
 async function buildWMA(){
   const el=document.getElementById('wma-rows');if(!el)return;
   const live=await fetchJSON('/api/wma/today');
   const raw=Array.isArray(live)&&live.length?live:[];
-  if(!raw.length){ el.innerHTML=await quietBanner('WMA engine ran — no Strong Buy alignments today','WMA signals'); return; }
+  /* /api/wma/today returns [] only when wma_signals holds nothing at all — it
+     does not filter to Strong Buy — so the old "no Strong Buy alignments"
+     wording described a state this branch is never reached in. */
+  if(!raw.length){ el.innerHTML=await quietBanner('No WMA signals have been published yet','WMA signals'); return; }
 
   /* live prices from tech feed override stale WMA LTPs */
   const techFeed=await fetchJSON('/api/tech/today');
-  const LP={};
-  if(Array.isArray(techFeed)) techFeed.forEach(t=>{ if(t.code&&t.ltp!=null) LP[String(t.code).toUpperCase()]=Number(t.ltp); });
+  const LP={}; let techDate=null;
+  if(Array.isArray(techFeed)) techFeed.forEach(t=>{
+    if(t.code&&t.ltp!=null) LP[String(t.code).toUpperCase()]=Number(t.ltp);
+    if(!techDate&&t.trade_date) techDate=t.trade_date;
+  });
+
+  const prov=document.getElementById('wma-prov');
+  if(prov){ prov.innerHTML=provLine(raw[0],techDate,Array.isArray(techFeed)&&techFeed.length>0); prov.style.display='block'; }
 
   const WDr=raw.map(r=>{
     const sl=Number(r.ltp||0), ll=LP[String(r.code||'').toUpperCase()]||sl;
     const chg=ll>0&&sl>0&&Math.abs(ll-sl)>0.01;
     const lc=chg?(ll>sl?'var(--green)':'var(--red)'):'var(--navy)';
-    return {code:r.code,cat:r.cat,ltp:ll,storedLtp:sl,ltpColor:lc,w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal,fresh:r.fresh||""};
+    return {code:r.code,cat:r.cat||'',ltp:ll,storedLtp:sl,moved:chg,ltpColor:lc,w9:Number(r.w9??r.wma9??0),w34:Number(r.w34??r.wma34??0),w89:Number(r.w89??r.wma89??0),sig:r.sig??r.signal??'',fresh:r.fresh||""};
   });
   /* compact 3-column render: code+pills, LTP, signal */
-  const hdrRow='<div style="padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 75px 95px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)"><span>Stock · WMA alignment</span><span style="text-align:right">LTP</span><span style="text-align:center">Signal</span></div>';
+  const hdrRow='<div style="padding:6px 16px;background:var(--cream2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 96px 95px;gap:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)"><span>Stock · WMA alignment at signal price</span><span style="text-align:right">LTP</span><span style="text-align:center">Signal</span></div>';
   el.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:9px;overflow:hidden;max-width:920px">'+hdrRow+
     WDr.map((r,i)=>{
-      const p9=r.ltp>r.w9,p34=r.ltp>r.w34,p89=r.ltp>r.w89;
+      /* The chips are measured against the price the ENGINE used, not the
+         overlaid live price. Measuring them against the live price produced
+         rows reading "STRONG BUY" beside "9✗" — the badge and the evidence
+         under it disagreeing on the same line, because they were computed from
+         two different sessions. */
+      const bp=r.storedLtp>0?r.storedLtp:r.ltp;
+      const p9=bp>r.w9,p34=bp>r.w34,p89=bp>r.w89;
       const chip=(ok,label)=>`<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:${ok?'var(--green-bg)':'var(--red-bg)'};color:${ok?'var(--green)':'var(--red)'}">${label}${ok?'✓':'✗'}</span>`;
       const sigEl=r.sig==='STRONG BUY'
         ?`<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--green-bg);color:var(--green)">Strong buy</span>`
-        :`<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--gold-bg);color:var(--gold)">${r.sig}</span>`;
-      const ltpTip=r.ltpColor!=='var(--navy)'?`Signal: ৳${r.storedLtp.toFixed(2)} → now: ৳${r.ltp.toFixed(2)}`:'';
-      return `<div style="padding:8px 16px;border-bottom:${i===WDr.length-1?'none':'1px solid var(--border)'};display:grid;grid-template-columns:1fr 75px 95px;gap:8px;align-items:center">
+        :`<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--gold-bg);color:var(--gold)">${wEsc(r.sig)}</span>`;
+      const chipTip=`9/34/89 compared against ৳${bp.toFixed(2)}, the price the signal was computed on`;
+      const ltpTip=r.moved?`Signal price ৳${r.storedLtp.toFixed(2)} → latest Tech feed ৳${r.ltp.toFixed(2)}`:'Signal price and latest Tech feed price agree';
+      return `<div style="padding:8px 16px;border-bottom:${i===WDr.length-1?'none':'1px solid var(--border)'};display:grid;grid-template-columns:1fr 96px 95px;gap:8px;align-items:center">
         <div>
-          <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${r.code}</span>
-          <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3);margin-left:4px">${r.cat}</span>
-          ${r.fresh?`<span style="font-size:10px;margin-left:4px">${r.fresh}</span>`:''}
-          <div style="display:flex;gap:3px;margin-top:3px">${chip(p9,'9 ')}${chip(p34,'34 ')}${chip(p89,'89 ')}<a href="/calculator.html?code=${encodeURIComponent(r.code)}" style="font-size:9px;font-weight:700;color:var(--gold);text-decoration:none;margin-left:4px">Calc →</a></div>
+          <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--navy)">${wEsc(r.code)}</span>
+          <span style="font-size:9px;padding:1px 4px;background:var(--cream2);border-radius:3px;color:var(--text3);margin-left:4px">${wEsc(r.cat)}</span>
+          ${r.fresh?`<span style="font-size:10px;margin-left:4px">${wEsc(r.fresh)}</span>`:''}
+          <div style="display:flex;gap:3px;margin-top:3px" title="${wEsc(chipTip)}">${chip(p9,'9 ')}${chip(p34,'34 ')}${chip(p89,'89 ')}<a href="/calculator.html?code=${encodeURIComponent(r.code)}" style="font-size:9px;font-weight:700;color:var(--gold);text-decoration:none;margin-left:4px">Calc →</a></div>
         </div>
-        <div style="text-align:right;font-size:13px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}" title="${ltpTip}">৳${r.ltp.toFixed(2)}</div>
+        <div style="text-align:right" title="${wEsc(ltpTip)}">
+          <div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${r.ltpColor}">৳${r.ltp.toFixed(2)}</div>
+          ${r.moved?`<div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:1px">sig ৳${r.storedLtp.toFixed(2)}</div>`:''}
+        </div>
         <div style="text-align:center">${sigEl}</div>
       </div>`;
     }).join('')+'</div>';

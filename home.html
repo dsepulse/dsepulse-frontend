@@ -707,12 +707,7 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .tiers li b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
   color:var(--ink3)}
 .tiers .amt{font:700 21px/1 var(--mono);font-variant-numeric:tabular-nums}
-/*  Campaign price. The list price sits before it, struck through and in the
-    muted ink, so the eye lands on the figure actually charged.            */
-.tiers .was{font:500 13px/1 var(--mono);font-variant-numeric:tabular-nums;
-  color:var(--ink3);text-decoration:line-through;margin-right:7px}
 .tiers .per{font:500 11px/1.35 var(--sans);color:var(--ink3);margin-top:5px}
-.offnote{margin-top:10px;font:600 12px/1.45 var(--sans);color:var(--green)}
 .tiers .buy{margin-top:auto;font:600 13px/1 var(--sans);padding:11px 12px;
   border-radius:8px;border:1.5px solid var(--navy);background:var(--paper);
   color:var(--navy);cursor:pointer;width:100%}
@@ -1502,10 +1497,6 @@ body.has-banner .ybanner .ylong{display:none}
         <ul class="tiers" id="tiers">
           <li class="tload">Loading today’s prices…</li>
         </ul>
-        <!--  Filled only while a campaign is open; emptied otherwise, so a
-              page cached during one does not keep advertising it.       -->
-        <p class="offnote" id="offernote"></p>
-
         <ul class="promise">
           <li><b>Cancel anytime.</b> One click, no email, no notice period —
           and you keep the plan you paid for until the end of that period.</li>
@@ -2342,20 +2333,12 @@ body.has-banner .ybanner .ylong{display:none}
     el("tiers").innerHTML = ["free", "premium", "pro"].map(function (plan) {
       var amt = Number(row[plan] || 0);
       var cur = mine === plan;
-      //  `row[plan]` is the price the checkout will charge, campaign or not —
-      //  the server substitutes it, so this card cannot quote a figure the
-      //  till does not honour. `row.standard` appears only while a campaign
-      //  is open, and only for the plans it actually discounts, so a struck
-      //  price is never identical to the one beside it.
-      var was = Number((row.standard || {})[plan] || 0);
       var label = plan === "free" ? "Get started free"
                 : (signedIn() ? "Choose " + plan.charAt(0).toUpperCase() + plan.slice(1)
                               : "Start with " + plan.charAt(0).toUpperCase() + plan.slice(1));
       return '<li class="' + (cur ? "cur" : "") + '"><b>' + plan + "</b>" +
         (cur ? '<span class="now">your plan</span>' : "") +
-        '<span class="amt">' +
-          (was > amt && amt > 0 ? '<span class="was">' + bdt(was) + "</span>" : "") +
-          (amt > 0 ? bdt(amt) : "৳0") + "</span>" +
+        '<span class="amt">' + (amt > 0 ? bdt(amt) : "৳0") + "</span>" +
         '<span class="per">' + (amt > 0 ? esc(PERIOD_NOTE[PERIOD]) : "free, forever") +
         "</span>" +
         (cur ? "" :
@@ -2391,24 +2374,6 @@ body.has-banner .ybanner .ylong{display:none}
     el("pricenote").textContent =
       (t ? t + " days of Pro free to start, no card needed. " : "") +
       "Prices in Bangladeshi taka, charged once per period.";
-
-    //  The campaign line. `days_left` is counted on the SERVER against the
-    //  Dhaka date — a visitor whose laptop clock is wrong, or who is reading
-    //  from another timezone, still sees the same deadline the checkout
-    //  honours. The element is emptied when no campaign is running, so a
-    //  finished campaign leaves nothing behind on a cached page.
-    var on = el("offernote");
-    if (on) {
-      var o = (PRICING.offer_active && PRICING.offer) ? PRICING.offer : null;
-      if (!o) { on.textContent = ""; }
-      else {
-        var d = Number(o.days_left);
-        on.textContent = (o.name ? o.name + " — " : "") +
-          (d > 1 ? "these prices hold for " + d + " more days, until " + o.to + "."
-                 : d === 1 ? "these prices end tomorrow."
-                 : "last day — these prices end after today.");
-      }
-    }
   }
 
   //  ── choosing a plan ────────────────────────────────────────────────

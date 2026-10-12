@@ -1366,16 +1366,15 @@ async function buildSectors(){
           /Monthly/.test(el.textContent) && /Quarterly|Annually/.test(el.textContent)) el.remove();
     });
 
-    //  THE SAVING COMES FROM THE SERVER NOW, NOT FROM ARITHMETIC HERE.
+    //  THE SAVING COMES FROM THE SERVER, NOT FROM ARITHMETIC HERE.
     //
-    //  This worked out the percentage from Premium alone and printed it on a
-    //  toggle that covers both plans. Once a campaign can discount the two
-    //  plans by different amounts that stops being true — on the 12 Oct
-    //  campaign Premium saves 16% on quarterly and Pro saves 14% — and a
-    //  button promising 16% to a Pro buyer is a discount the checkout does
-    //  not give. The server now publishes `label`, computed from whichever
-    //  prices are live and taking the smaller of the two plans, so it can
-    //  only ever understate.
+    //  This worked the percentage out from Premium alone and printed it on a
+    //  toggle covering both plans. Once a campaign can discount the two plans
+    //  unevenly that stops being true — on the Early Bird numbers quarterly
+    //  Premium saves 16% and Pro 14% — and a button promising 16% to a Pro
+    //  buyer advertises a discount the checkout does not give. The server now
+    //  publishes `label`, computed from whichever prices are live and taking
+    //  the smaller of the two plans, so it can only ever understate.
     const save = pd => String((pd || {}).label || "");
 
     const periods = {
@@ -1414,16 +1413,16 @@ async function buildSectors(){
         const priceEl = card.querySelector(".plan-price");
         const periodEl = card.querySelector(".plan-period");
         const cta = card.querySelector(".plan-cta");
-        //  `amt` is already the campaign price when one is running. The list
-        //  price, present only then, goes in front of it struck through.
+        //  `amt` is already the campaign price when one is running. The
+        //  list price, present only then, goes in front of it struck through.
         const was = Number((p.data.standard || {})[tier] || 0);
         if (priceEl) {
           priceEl.textContent = "";
           if (was > Number(amt)) {
-            const s = document.createElement("s");
-            s.textContent = fmt(was);
-            s.style.cssText = "font-size:.62em;color:#7A8699;margin-right:.35em;font-weight:500";
-            priceEl.appendChild(s);
+            const sEl = document.createElement("s");
+            sEl.textContent = fmt(was);
+            sEl.style.cssText = "font-size:.62em;color:#7A8699;margin-right:.35em;font-weight:500";
+            priceEl.appendChild(sEl);
           }
           priceEl.appendChild(document.createTextNode(fmt(amt)));
         }
@@ -2383,7 +2382,7 @@ function openFirstVisibleTool(){
   .ac-plan i{font:700 23px/1 var(--mono,ui-monospace);font-style:normal;
     color:var(--navy);font-variant-numeric:tabular-nums}
   /*  The struck list price during a campaign. Smaller and in the muted ink,
-      so the figure that is actually charged stays the one the eye lands on. */
+      so the figure actually charged stays the one the eye lands on.       */
   .ac-plan i .ac-was{font-size:14px;color:var(--text3);margin-right:6px}
   .ac-share{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .ac-share .ac-btn{text-decoration:none;display:inline-block}
@@ -2788,7 +2787,7 @@ function openFirstVisibleTool(){
         .map(function (p) {
           var mine = (eff === p && sub && !cancelled);
           //  row[p] is already the campaign price when one is running — the
-          //  server substitutes it before publishing, so this card and
+          //  server substitutes it before publishing — so this card and
           //  /api/payment/init cannot quote different amounts. row.standard
           //  is present only during a campaign, only for discounted plans.
           var was = Number((row.standard || {})[p] || 0);

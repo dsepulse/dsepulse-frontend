@@ -707,6 +707,30 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .tiers li b{font:600 10px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
   color:var(--ink3)}
 .tiers .amt{font:700 21px/1 var(--mono);font-variant-numeric:tabular-nums}
+/*  Campaign price. The list price sits before it, struck and in the muted
+    ink, so the eye lands on the figure actually charged; the saving follows
+    in the same green the site already uses for a gain.                    */
+.tiers .was{font:500 13px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--ink3);text-decoration:line-through;margin-right:7px}
+.tiers .sv{font:600 11px/1 var(--sans);color:var(--green);margin-left:7px;
+  letter-spacing:.01em}
+/*  The banner. Navy on cream like the rest of the first screen, not a new
+    colour — a campaign is a price change, not a different website.        */
+.campbanner{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 12px;
+  background:var(--navy);color:#fff;border-radius:11px;padding:12px 16px;
+  margin:0 0 13px}
+.campbanner[hidden]{display:none}
+.cb-badge{font:700 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  background:var(--gold);color:var(--navy);padding:4px 9px;border-radius:999px}
+.cb-head{font:600 15px/1.3 var(--sans)}
+.cb-sub{font:400 13px/1.45 var(--sans);color:rgba(255,255,255,.82);flex:1 1 220px}
+.cb-ends{font:600 12.5px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--gold);white-space:nowrap}
+.cb-cta{font:600 12.5px/1 var(--sans);background:var(--gold);color:var(--navy);
+  text-decoration:none;padding:8px 13px;border-radius:7px;white-space:nowrap}
+.cb-cta:hover{background:var(--gold-d);color:#fff}
+.cb-terms{flex-basis:100%;font:400 11.5px/1.5 var(--sans);
+  color:rgba(255,255,255,.62)}
 .tiers .per{font:500 11px/1.35 var(--sans);color:var(--ink3);margin-top:5px}
 .tiers .buy{margin-top:auto;font:600 13px/1 var(--sans);padding:11px 12px;
   border-radius:8px;border:1.5px solid var(--navy);background:var(--paper);
@@ -1492,6 +1516,11 @@ body.has-banner .ybanner .ylong{display:none}
         <p id="join-p">Free gets you the market view and a scored verdict on any
         ticker you name. The trial opens the whole Signal Stack — every name
         and every level — with no card needed.</p>
+
+        <!--  Filled only while a campaign is open; hidden and emptied
+              otherwise, so a page cached during one cannot keep advertising
+              it after it ends.                                           -->
+        <div class="campbanner" id="campbanner" hidden></div>
 
         <div class="periods" id="periods"></div>
         <ul class="tiers" id="tiers">
@@ -2311,8 +2340,74 @@ body.has-banner .ybanner .ylong{display:none}
   })();
 
   //  ── prices, from the server ────────────────────────────────────────
+  /*  CAMPAIGN DISPLAY.
+      Every flag, every word and every figure below comes from the server's
+      resolved pricing document. Nothing here decides whether a campaign is
+      running, what it costs or how much is saved — the same call that feeds
+      this page feeds server_price(), so the card and the till cannot
+      disagree. When no campaign is running the server sends campaign:null
+      and all of this stays empty.                                          */
+  function CAMP() { return (PRICING && PRICING.campaign) || null; }
+  function CAMP_SHOW(k) {
+    var c = CAMP();
+    return !!(c && c.show && c.show[k]);
+  }
+
+  var CDOWN = null;
+  function paint_countdown() {
+    var box = el("cdown"), c = CAMP();
+    if (!box) return;
+    if (CDOWN) { clearInterval(CDOWN); CDOWN = null; }
+    if (!c || !CAMP_SHOW("countdown") || !(c.ends_in_seconds > 0)) {
+      box.textContent = ""; box.hidden = true; return;
+    }
+    box.hidden = false;
+    //  Counted down from the SERVER's remaining seconds, not from the end
+    //  date against the browser clock. A visitor whose laptop is set wrong,
+    //  or who is reading from another country, sees the same deadline the
+    //  checkout will honour — and when it reaches zero the page stops
+    //  claiming anything rather than showing a negative timer.
+    var left = Math.floor(Number(c.ends_in_seconds) || 0);
+    function tick() {
+      if (left <= 0) {
+        box.textContent = "This offer has ended. Reload for current prices.";
+        clearInterval(CDOWN); CDOWN = null; return;
+      }
+      var d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600),
+          m = Math.floor(left % 3600 / 60), s = left % 60;
+      box.textContent = (d ? d + (d === 1 ? " day " : " days ") : "") +
+        ("0" + h).slice(-2) + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2) +
+        " left";
+      left -= 1;
+    }
+    tick();
+    CDOWN = setInterval(tick, 1000);
+  }
+
+  function paint_campaign() {
+    var box = el("campbanner"), c = CAMP();
+    if (!box) return;
+    if (!c || !CAMP_SHOW("banner")) { box.innerHTML = ""; box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML =
+      (c.badge ? '<span class="cb-badge">' + esc(c.badge) + "</span>" : "") +
+      (c.heading ? '<b class="cb-head">' + esc(c.heading) + "</b>" : "") +
+      (c.description ? '<span class="cb-sub">' + esc(c.description) + "</span>" : "") +
+      '<span class="cb-ends" id="cdown"></span>' +
+      //  The CTA destination is an allow-list of this site's own paths,
+      //  enforced on the server. It is never a free-text URL, so an admin
+      //  key in the wrong hands cannot turn the pricing page into a redirect.
+      (CAMP_SHOW("cta") && c.cta_text && c.cta_href
+        ? '<a class="cb-cta" href="' + esc(c.cta_href) + '" data-ev="signup_click">' +
+          esc(c.cta_text) + "</a>" : "") +
+      (CAMP_SHOW("terms") && c.terms
+        ? '<span class="cb-terms">' + esc(c.terms) + "</span>" : "");
+    paint_countdown();
+  }
+
   function paint_prices() {
     if (!PRICING) return;
+    paint_campaign();
     var per = el("periods");
     per.innerHTML = ["monthly", "quarterly", "annual"].filter(function (k) {
       return PRICING[k];
@@ -2333,12 +2428,25 @@ body.has-banner .ybanner .ylong{display:none}
     el("tiers").innerHTML = ["free", "premium", "pro"].map(function (plan) {
       var amt = Number(row[plan] || 0);
       var cur = mine === plan;
+      //  row[plan] is ALREADY the price the checkout will charge — the server
+      //  substitutes the campaign price into that same field — so this card
+      //  cannot quote a figure the till does not honour. row.standard appears
+      //  only while a campaign runs, and only for the plans it discounts, so
+      //  a struck price is never identical to the one beside it.
+      var was = Number((row.standard || {})[plan] || 0);
       var label = plan === "free" ? "Get started free"
                 : (signedIn() ? "Choose " + plan.charAt(0).toUpperCase() + plan.slice(1)
                               : "Start with " + plan.charAt(0).toUpperCase() + plan.slice(1));
       return '<li class="' + (cur ? "cur" : "") + '"><b>' + plan + "</b>" +
         (cur ? '<span class="now">your plan</span>' : "") +
-        '<span class="amt">' + (amt > 0 ? bdt(amt) : "৳0") + "</span>" +
+        '<span class="amt">' +
+          (was > amt && amt > 0 && CAMP_SHOW("strike")
+             ? '<span class="was">' + bdt(was) + "</span>" : "") +
+          (amt > 0 ? bdt(amt) : "৳0") +
+          (was > amt && amt > 0 && CAMP_SHOW("savings")
+             ? '<span class="sv">\u2212' +
+               Math.round((was - amt) * 100 / was) + "%</span>" : "") +
+          "</span>" +
         '<span class="per">' + (amt > 0 ? esc(PERIOD_NOTE[PERIOD]) : "free, forever") +
         "</span>" +
         (cur ? "" :

@@ -731,6 +731,23 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .cb-cta:hover{background:var(--gold-d);color:#fff}
 .cb-terms{flex-basis:100%;font:400 11.5px/1.5 var(--sans);
   color:rgba(255,255,255,.62)}
+/*  The referral block. Set on the cream panel with a rule above it, so it
+    reads as a footnote to the plans rather than a fourth plan.            */
+.refsec{margin-top:18px;padding-top:16px;border-top:1px solid var(--bd)}
+.refsec[hidden]{display:none}
+.refsec h4{font:600 14.5px/1.3 var(--sans);margin:0 0 6px}
+.refsec p{margin:0 0 10px;font:400 13px/1.55 var(--sans);color:var(--ink2)}
+.reflink{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.reflink input{flex:1 1 200px;min-width:0;font:500 12.5px/1 var(--mono);
+  padding:9px 11px;border:1px solid var(--bd);border-radius:7px;
+  background:var(--paper);color:var(--ink)}
+.reflink button,.reflink a{font:600 12.5px/1 var(--sans);padding:9px 13px;
+  border-radius:7px;border:1.5px solid var(--navy);background:var(--paper);
+  color:var(--navy);cursor:pointer;text-decoration:none;white-space:nowrap}
+.reflink button:hover,.reflink a:hover{background:var(--navy);color:#fff}
+.refstat{margin-top:9px;font:500 12px/1.5 var(--sans);color:var(--ink3)}
+.refstat b{color:var(--ink);font-weight:600}
+.refmsg{margin-top:7px;font:500 12px/1 var(--sans);color:var(--green);min-height:14px}
 .tiers .per{font:500 11px/1.35 var(--sans);color:var(--ink3);margin-top:5px}
 .tiers .buy{margin-top:auto;font:600 13px/1 var(--sans);padding:11px 12px;
   border-radius:8px;border:1.5px solid var(--navy);background:var(--paper);
@@ -1535,6 +1552,20 @@ body.has-banner .ybanner .ylong{display:none}
           payment you make on purpose; no card is kept on file.</li>
         </ul>
         <p class="fine2" id="pricenote"></p>
+
+        <!--  THE REFERRAL PROGRAMME, ON THE PAGE WHERE MONEY IS DECIDED.
+              It already existed — a Referral Center in the dashboard, an
+              arrival banner, server-side reservation at checkout — but it
+              was invisible to anyone not signed in, which is everyone this
+              page is written for. Nothing new is created here: every number
+              and every sentence comes from /api/referral and
+              /api/referral/check, so changing 10 to 15 in the admin panel
+              changes this paragraph too.                              -->
+        <div class="refsec" id="refsec" hidden>
+          <h4 id="ref-h">Share DSE Pulse. Both of you benefit.</h4>
+          <p id="ref-p"></p>
+          <div id="ref-body"></div>
+        </div>
       </div>
 
       <div class="jr">
@@ -2821,10 +2852,11 @@ body.has-banner .ybanner .ylong{display:none}
 
   function loadSubscription() {
     if (!signedIn()) { SUB = null; paint_account(); paint_prices();
-                       paint_entitled(); return; }
+                       paint_entitled(); paint_referral(); return; }
     return authJSON("/api/subscription").then(function (d) {
-      SUB = d; paint_account(); paint_prices(); paint_entitled();
-    }).catch(function () { SUB = null; paint_account(); paint_entitled(); });
+      SUB = d; paint_account(); paint_prices(); paint_entitled(); paint_referral();
+    }).catch(function () { SUB = null; paint_account(); paint_entitled();
+                           paint_referral(); });
   }
 
   getJSON("/api/config").then(function (c) {
@@ -2837,6 +2869,79 @@ body.has-banner .ybanner .ylong{display:none}
       "not show a price we cannot confirm.</li>";
   });
   loadSubscription();
+
+  /* ── the referral programme, on the pricing block ────────────────────── */
+  //  This CREATES NOTHING. The programme, the codes, the reservation at
+  //  checkout and the reward settlement all already exist server-side; this
+  //  is the first place a signed-out visitor can see that they do. Every
+  //  number and the whole explanatory sentence come from the server, so a
+  //  change in the admin panel reaches this paragraph with no edit here.
+  function paint_referral() {
+    var box = el("refsec"), body = el("ref-body"), p = el("ref-p");
+    if (!box) return;
+
+    function show(terms, html) {
+      p.textContent = terms || "";
+      body.innerHTML = html;
+      box.hidden = false;
+    }
+
+    if (!signedIn()) {
+      //  Signed out: explain it and send them to the one action that makes a
+      //  link possible. No fake code, no placeholder link — a referral link
+      //  belongs to an account and there is no account yet.
+      getJSON("/api/config").then(function (c) {
+        var r = (c && c.referral) || {};
+        if (r.enabled === false) return;
+        var inv = Number(r.referred_pct || 0), unit = Number(r.unit_pct || 0);
+        if (!inv && !unit) return;
+        show("Invite someone to DSE Pulse. When their first subscription " +
+             "payment is verified, they get " + inv + "% off it and you earn " +
+             unit + "% off your own next payment. Not for the signup — for " +
+             "the payment.",
+             '<div class="reflink"><a href="#pricing" data-ev="signup_click" ' +
+             'id="ref-go">Create a free account to get your link</a></div>');
+      }).catch(function () {});
+      return;
+    }
+
+    //  Signed in: their real link, from their own account.
+    authJSON("/api/referral").then(function (d) {
+      if (!d || !d.link) { box.hidden = true; return; }
+      var msg = "I use DSE Pulse for Dhaka Stock Exchange signals. Sign up " +
+                "with my link and you get " + (d.referred_pct || 0) +
+                "% off your first subscription: ";
+      show(d.terms || "",
+        '<div class="reflink">' +
+          '<input id="ref-url" readonly value="' + esc(d.link) + '">' +
+          '<button type="button" id="ref-copy">Copy</button>' +
+          '<a href="https://wa.me/?text=' +
+            encodeURIComponent(msg + d.link) +
+            '" target="_blank" rel="noopener">WhatsApp</a>' +
+          '<a href="/shell.html#plan">Referral centre</a></div>' +
+        '<div class="refstat"><b>' + esc(String(d.successful_referrals || 0)) +
+          '</b> friends who paid · <b>' + esc(String(d.rewards_available || 0)) +
+          '</b> rewards available now' +
+          (d.pending ? ' · ' + esc(String(d.pending)) +
+           ' signed up but not yet paid' : '') + '</div>' +
+        '<div class="refmsg" id="ref-msg"></div>');
+
+      var btn = el("ref-copy");
+      if (btn) btn.onclick = function () {
+        var inp = el("ref-url"), m = el("ref-msg");
+        try {
+          inp.select(); inp.setSelectionRange(0, 99999);
+          //  execCommand is deprecated but is the only copy that works
+          //  without a secure-context permission prompt on older Android
+          //  browsers, which is a real share of this audience.
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(inp.value);
+          } else { document.execCommand("copy"); }
+          m.textContent = "Link copied.";
+        } catch (e) { m.textContent = "Select the link and copy it."; }
+      };
+    }).catch(function () { box.hidden = true; });
+  }
 
   /* ── registration ───────────────────────────────────────────────────── */
   //  The same endpoint /shell.html uses, so there is one account system and
@@ -3186,9 +3291,26 @@ body.has-banner .ybanner .ylong{display:none}
         REF_CODE = code;
         var b = el("refbanner");
         b.className = "rbanner";
-        b.innerHTML = "<b>You were invited.</b> Your first payment is " +
-          esc(String(d.referred_pct)) + "% off — applied automatically at " +
-          "checkout, there is nothing to type. Create your account to claim it.";
+        //  WHAT THIS USED TO SAY WAS NO LONGER TRUE.
+        //
+        //  "Your first payment is 10% off" was simply correct until Phase 2.
+        //  Now a campaign price and a referral reward are never combined —
+        //  the server charges whichever is lower — so during a campaign an
+        //  invited visitor pays the campaign price and spends none of their
+        //  reward. They pay LESS than the old sentence promised, which is
+        //  the right outcome, but being told a discount will be applied and
+        //  then not seeing it on the receipt is how trust is lost.
+        //
+        //  `campaign_running` comes from the server, which is the only thing
+        //  that knows. The page never works it out for itself.
+        b.innerHTML = d.campaign_running
+          ? "<b>You were invited.</b> Your " + esc(String(d.referred_pct)) +
+            "% invitation discount is saved to your account. A promotional " +
+            "price is running right now and it is the better of the two, so " +
+            "you pay that — and your discount is kept, unused, for next time."
+          : "<b>You were invited.</b> Your first payment is " +
+            esc(String(d.referred_pct)) + "% off — applied automatically at " +
+            "checkout, there is nothing to type. Create your account to claim it.";
       })
       .catch(function () {});
   })();

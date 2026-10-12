@@ -37,6 +37,12 @@
   .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
   .fld label{min-height:2.4em;display:flex;align-items:flex-end;font-size:12px;color:var(--muted);margin-bottom:4px}
   .fld input{width:100%}
+  .ocap{margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--panel2);font-size:13px;font-weight:600}
+  .oprev{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7}
+  .oprev b{color:var(--text);font-weight:600}
+  .oprev s{color:var(--hint)}
+  .oprev .on{color:var(--success);font-weight:600}
+  .oprev .off{color:var(--hint)}
   .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
   .gate input{width:100%;margin:14px 0}
   .hide{display:none}
@@ -149,6 +155,30 @@
       <div class="fld"><label>Annual · Pro (৳)</label><input id="apr" type="number"></div>
       <div class="fld"><label>Trial days</label><input id="td" type="number"></div>
     </div>
+
+    <!--  CAMPAIGN PRICE.
+          A second price per cell plus a date window. The six boxes above are
+          the list price — what gets struck through. These six are what is
+          charged while the window is open, and the server decides that from
+          the DHAKA date, not the browser's. Leave the end date empty and
+          there is no campaign at all; the list price stands.              -->
+    <div class="ocap">Campaign price <span class="sub">— optional. Shown struck
+      through against the list price above, and charged by the checkout while
+      the window is open.</span></div>
+    <div class="grid2">
+      <div class="fld"><label>Monthly · Premium (৳)</label><input id="omp" type="number" placeholder="no offer"></div>
+      <div class="fld"><label>Monthly · Pro (৳)</label><input id="ompr" type="number" placeholder="no offer"></div>
+      <div class="fld"><label>Quarterly · Premium (৳)</label><input id="oqp" type="number" placeholder="no offer"></div>
+      <div class="fld"><label>Quarterly · Pro (৳)</label><input id="oqpr" type="number" placeholder="no offer"></div>
+      <div class="fld"><label>Annual · Premium (৳)</label><input id="oap" type="number" placeholder="no offer"></div>
+      <div class="fld"><label>Annual · Pro (৳)</label><input id="oapr" type="number" placeholder="no offer"></div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="fld"><label>Campaign name</label><input id="onm" type="text" maxlength="60" placeholder="e.g. Launch offer"></div>
+      <div class="fld"><label>Starts (Dhaka, inclusive)</label><input id="ofr" type="date"></div>
+      <div class="fld"><label>Ends (Dhaka, inclusive)</label><input id="oto" type="date"></div>
+    </div>
+    <div id="oPrev" class="oprev"></div>
     <button class="btn btn-pri" style="margin-top:12px" onclick="savePricing()">Save pricing</button>
   </div>
 
@@ -387,23 +417,114 @@ async function ban(id,b){
   }catch(e){$("uMsg").textContent="Failed: "+e.message}
 }
 
+//  PRICING.
+//
+//  This panel does not work out a single price for itself. It reads the list
+//  prices and the campaign into the boxes, and for everything else — which
+//  price is live today, what the saving badge says, whether the window is
+//  open — it renders what the SERVER returned. server_price and /api/config
+//  run the same resolver, so a preview computed here could disagree with the
+//  checkout, and a pricing panel that disagrees with the till is worse than
+//  no preview at all.
+const BDT=n=>"৳"+Number(n||0).toLocaleString("en-US");
+//  The campaign name is free text an admin typed and the preview writes it
+//  into innerHTML, so it is escaped. admin.html had no esc() of its own.
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function paintOffer(res,today){
+  const box=$("oPrev"); if(!box)return;
+  if(!res){box.innerHTML="";return}
+  const on=!!res.offer_active, o=res.offer||{};
+  let h='<div>'+(on
+    ? '<span class="on">Campaign is LIVE today</span>'+(o.name?' — '+esc(o.name):"")+
+      ', ends '+esc(o.to||"?")+' ('+o.days_left+' day'+(o.days_left===1?"":"s")+' left).'
+    : '<span class="off">No campaign running today.</span> The list prices below are what the checkout charges.')
+    +' Server date in Dhaka: '+esc(today||"?")+'.</div>';
+  ["monthly","quarterly","annual"].forEach(function(per){
+    const row=res[per]||{}, std=row.standard||{};
+    const cell=function(plan){
+      const now=row[plan], was=std[plan];
+      return (was!=null&&was!==now) ? "<s>"+BDT(was)+"</s> <b>"+BDT(now)+"</b>" : "<b>"+BDT(now)+"</b>";
+    };
+    h+='<div>'+per.charAt(0).toUpperCase()+per.slice(1)+' — Premium '+cell("premium")
+      +' · Pro '+cell("pro")+(row.label?' · '+esc(row.label):"")+'</div>';
+  });
+  h+='<div class="sub" style="margin-top:6px">This is exactly what the public '
+    +'pricing cards will show and what the checkout will bill.</div>';
+  box.innerHTML=h;
+}
+
 async function loadPricing(){
   try{
-    const c=await(await fetch(`${API}/api/config`)).json();const p=c.pricing||{};
-    $("mp").value=(p.monthly&&p.monthly.premium)??499;$("mpr").value=(p.monthly&&p.monthly.pro)??999;
-    $("qp").value=(p.quarterly&&p.quarterly.premium)??1347;$("qpr").value=(p.quarterly&&p.quarterly.pro)??2697;
-    $("ap").value=(p.annual&&p.annual.premium)??4790;$("apr").value=(p.annual&&p.annual.pro)??9590;
+    //  The admin read, not /api/config: a campaign that has not started yet,
+    //  or has already finished, is deliberately absent from the public one.
+    const d=await(await fetch(`${API}/api/admin/pricing`,{headers:H()})).json();
+    const p=d.pricing||{}, o=p.offer||{};
+    const g=(a,b)=>(p[a]&&p[a][b]!=null)?p[a][b]:"";
+    $("mp").value=g("monthly","premium");   $("mpr").value=g("monthly","pro");
+    $("qp").value=g("quarterly","premium"); $("qpr").value=g("quarterly","pro");
+    $("ap").value=g("annual","premium");    $("apr").value=g("annual","pro");
     $("td").value=p.trial_days??7;
+    const go=(a,b)=>(o[a]&&o[a][b]!=null)?o[a][b]:"";
+    $("omp").value=go("monthly","premium");   $("ompr").value=go("monthly","pro");
+    $("oqp").value=go("quarterly","premium"); $("oqpr").value=go("quarterly","pro");
+    $("oap").value=go("annual","premium");    $("oapr").value=go("annual","pro");
+    $("onm").value=o.name||""; $("ofr").value=o.from||""; $("oto").value=o.to||"";
+    paintOffer(d.resolved,d.dhaka_today);
   }catch(e){$("pMsg").textContent="Could not load current pricing: "+e.message}
 }
 
 async function savePricing(){
+  const num=id=>{const v=String($(id).value).trim();return v===""?null:+v};
+  const std={monthly_premium:+$("mp").value,monthly_pro:+$("mpr").value,
+             quarterly_premium:+$("qp").value,quarterly_pro:+$("qpr").value,
+             annual_premium:+$("ap").value,annual_pro:+$("apr").value,
+             trial_days:+$("td").value};
+  //  Refuse before sending rather than after. server_price bills whatever is
+  //  in this row, so a zero or a blank typed by accident is a free
+  //  subscription, and a campaign price above the list price is not a
+  //  campaign. The server guards both as well; this says WHICH box is wrong.
+  for(const [k,v] of Object.entries(std)){
+    if(!(v>0)){$("pMsg").textContent="Nothing saved — "+k.replace(/_/g," ")+
+      " must be a number above zero.";return}
+  }
+  const off={offer_monthly_premium:num("omp"),offer_monthly_pro:num("ompr"),
+             offer_quarterly_premium:num("oqp"),offer_quarterly_pro:num("oqpr"),
+             offer_annual_premium:num("oap"),offer_annual_pro:num("oapr"),
+             offer_from:$("ofr").value||null,offer_to:$("oto").value||null,
+             offer_name:$("onm").value||null};
+  const pairs=[["offer_monthly_premium","monthly_premium"],["offer_monthly_pro","monthly_pro"],
+               ["offer_quarterly_premium","quarterly_premium"],["offer_quarterly_pro","quarterly_pro"],
+               ["offer_annual_premium","annual_premium"],["offer_annual_pro","annual_pro"]];
+  for(const [a,b] of pairs){
+    if(off[a]!=null&&!(off[a]>0)){$("pMsg").textContent="Nothing saved — "+
+      a.replace("offer_","campaign ").replace(/_/g," ")+" must be above zero, or left empty.";return}
+    if(off[a]!=null&&off[a]>=std[b]){$("pMsg").textContent="Nothing saved — the campaign "+
+      a.replace("offer_","").replace(/_/g," ")+" price ("+BDT(off[a])+
+      ") is not below the list price ("+BDT(std[b])+").";return}
+  }
+  const any=pairs.some(p=>off[p[0]]!=null);
+  if(any&&!off.offer_to){$("pMsg").textContent=
+    "Nothing saved — a campaign price needs an end date, or the campaign would never stop.";return}
+  if(off.offer_from&&off.offer_to&&off.offer_from>off.offer_to){$("pMsg").textContent=
+    "Nothing saved — the campaign starts after it ends.";return}
+  if(off.offer_to&&!any){$("pMsg").textContent=
+    "Nothing saved — there is an end date but no campaign price in any box.";return}
+
   $("pMsg").textContent="Saving…";
-  const body={monthly_premium:+$("mp").value,monthly_pro:+$("mpr").value,quarterly_premium:+$("qp").value,quarterly_pro:+$("qpr").value,annual_premium:+$("ap").value,annual_pro:+$("apr").value,trial_days:+$("td").value};
   try{
-    const r=await fetch(`${API}/api/admin/pricing`,{method:"POST",headers:H(),body:JSON.stringify(body)});
+    const r=await fetch(`${API}/api/admin/pricing`,
+      {method:"POST",headers:H(),body:JSON.stringify(Object.assign({},std,off))});
     if(!r.ok)throw new Error("HTTP "+r.status);
-    $("pMsg").textContent="Pricing saved. Hard-refresh the public site to see new prices.";
+    const d=await r.json();
+    //  The endpoint reads the row back and compares. db() returns nothing on a
+    //  rejected write, so "saved" used to be printed whether or not anything
+    //  had been stored.
+    $("pMsg").textContent = d.landed
+      ? "Pricing saved. Hard-refresh the public site to see new prices."
+      : "NOT SAVED — "+(d.detail||"the row read back does not match what was sent.");
+    paintOffer(d.effective,d.dhaka_today);
   }catch(e){$("pMsg").textContent="Failed: "+e.message}
 }
 

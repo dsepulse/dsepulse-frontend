@@ -591,6 +591,23 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
   cursor:pointer}
 .mx:hover{background:var(--cream);color:var(--ink)}
 
+/* ── the campaign popup ───────────────────────────────────────────────
+   Borrows .modal for the backdrop and .mbox for the card, so the close
+   button, the Escape key, the backdrop click and the phone padding are
+   the ones already in use rather than a second set that can drift.     */
+.cp .mbox{max-width:430px;border-top:4px solid var(--gold)}
+.cp-badge{display:inline-block;font:700 9.5px/1 var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;background:var(--gold);color:var(--navy);
+  padding:5px 9px;border-radius:999px;margin:0 0 12px}
+.cp-ends{display:block;font:600 12.5px/1 var(--mono);
+  font-variant-numeric:tabular-nums;color:var(--gold-d);
+  background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:8px;
+  padding:10px 11px;margin:0 0 16px;text-align:center}
+.cp-no{display:block;width:100%;margin:13px 0 0;padding:0;border:0;background:none;
+  font:500 13px/1 var(--sans);color:var(--ink3);cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px}
+.cp-no:hover{color:var(--ink2)}
+
 
 /* ── the one-line answer to "what is this" ─────────────────────────── */
 .lede1{max-width:62ch;margin:0 auto 14px;color:var(--ink2);font-size:15px;
@@ -1694,6 +1711,22 @@ body.has-banner .ybanner .ylong{display:none}
   </div>
 </div>
 
+<!--  The campaign popup. Every word inside it is filled from the campaign
+      row at runtime; there is deliberately no copy here, so an expired or
+      absent campaign cannot leave a stale claim in the page source.     -->
+<div class="modal cp" id="camppop" role="dialog" aria-modal="true"
+     aria-labelledby="cp-h">
+  <div class="mbox">
+    <button type="button" class="mx" id="cp-x" aria-label="Close">&times;</button>
+    <span class="cp-badge" id="cp-badge" hidden></span>
+    <h3 id="cp-h"></h3>
+    <p id="cp-p"></p>
+    <span class="cp-ends" id="cp-ends" hidden></span>
+    <a class="mbtn primary" id="cp-cta" href="#pricing" data-ev="signup_click"></a>
+    <button type="button" class="cp-no" id="cp-no">No thanks, show me the site</button>
+  </div>
+</div>
+
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function () {
@@ -2384,25 +2417,22 @@ body.has-banner .ybanner .ylong{display:none}
     return !!(c && c.show && c.show[k]);
   }
 
-  var CDOWN = null;
-  function paint_countdown() {
-    var box = el("cdown"), c = CAMP();
-    if (!box) return;
-    if (CDOWN) { clearInterval(CDOWN); CDOWN = null; }
-    if (!c || !CAMP_SHOW("countdown") || !(c.ends_in_seconds > 0)) {
-      box.textContent = ""; box.hidden = true; return;
-    }
-    box.hidden = false;
-    //  Counted down from the SERVER's remaining seconds, not from the end
-    //  date against the browser clock. A visitor whose laptop is set wrong,
-    //  or who is reading from another country, sees the same deadline the
-    //  checkout will honour — and when it reaches zero the page stops
-    //  claiming anything rather than showing a negative timer.
-    var left = Math.floor(Number(c.ends_in_seconds) || 0);
+  //  ONE countdown painter, two places that show the deadline: the banner
+  //  on the pricing block and the arrival popup.
+  //
+  //  Counted down from the SERVER's remaining seconds, not from the end date
+  //  against the browser clock. A visitor whose laptop is set wrong, or who
+  //  is reading from another country, sees the same deadline the checkout
+  //  will honour — and at zero the page stops claiming anything rather than
+  //  showing a negative timer. Returns the interval so the caller can stop
+  //  it; a deadline already past starts no interval at all.
+  function start_countdown(box, seconds) {
+    var left = Math.floor(Number(seconds) || 0), iv = null, alive = left > 0;
     function tick() {
       if (left <= 0) {
         box.textContent = "This offer has ended. Reload for current prices.";
-        clearInterval(CDOWN); CDOWN = null; return;
+        if (iv) { clearInterval(iv); iv = null; }
+        return;
       }
       var d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600),
           m = Math.floor(left % 3600 / 60), s = left % 60;
@@ -2412,7 +2442,20 @@ body.has-banner .ybanner .ylong{display:none}
       left -= 1;
     }
     tick();
-    CDOWN = setInterval(tick, 1000);
+    if (alive) iv = setInterval(tick, 1000);
+    return iv;
+  }
+
+  var CDOWN = null;
+  function paint_countdown() {
+    var box = el("cdown"), c = CAMP();
+    if (!box) return;
+    if (CDOWN) { clearInterval(CDOWN); CDOWN = null; }
+    if (!c || !CAMP_SHOW("countdown") || !(c.ends_in_seconds > 0)) {
+      box.textContent = ""; box.hidden = true; return;
+    }
+    box.hidden = false;
+    CDOWN = start_countdown(box, c.ends_in_seconds);
   }
 
   function paint_campaign() {
@@ -2436,9 +2479,122 @@ body.has-banner .ybanner .ylong{display:none}
     paint_countdown();
   }
 
+
+  /*  THE ARRIVAL POPUP.
+      A visitor who lands on the site and never scrolls as far as the pricing
+      block never learns a campaign is running. This is the one thing that
+      goes to them instead of waiting, and it is deliberately narrow:
+
+        · it exists only while a campaign is running AND the admin has the
+          popup flag on for that campaign;
+        · it refuses to open with no heading. An empty card is worse than no
+          card — the bare gold pill on the pricing block is that exact
+          failure, already seen once on this site;
+        · it never opens for someone who has PAID. A trial still sees it:
+          the trial is precisely who the offer is for;
+        · once per browser session, remembered under the campaign's own id,
+          so a different campaign later is a different decision;
+        · it waits for BOTH the prices and the account answer before arming,
+          so a subscriber whose account call is slow is never shown a signup
+          offer in the gap.
+
+      Every word in it is the campaign row, read from the same document that
+      feeds server_price(). Nothing is written here.                       */
+  var POP_DELAY_MS = 8000, POP_T0 = Date.now(), POP_CD = null,
+      POP_PRICED = false, POP_AUTHED = false, POP_ARMED = false;
+
+  function pop_key(c) { return "dsep_pop_" + String(c.id || c.code || "camp"); }
+  function pop_seen(c) {
+    //  Private-mode browsers throw on sessionStorage rather than returning
+    //  null. Treating that as "not seen" shows the popup once per load for
+    //  those visitors, which is the safe direction to fail in.
+    try { return window.sessionStorage.getItem(pop_key(c)) === "1"; }
+    catch (x) { return false; }
+  }
+  function pop_remember(c) {
+    try { window.sessionStorage.setItem(pop_key(c), "1"); } catch (x) {}
+  }
+
+  //  A trial is ENTITLED but has no paid subscription row — the same test
+  //  paint_entitled() uses to decide between "you are on PRO" and "your
+  //  trial has the whole Signal Stack open".
+  function pop_paying() { return !!(ENTITLED && SUB && SUB.subscription); }
+
+  function pop_close() {
+    var c = CAMP();
+    if (c) pop_remember(c);
+    if (POP_CD) { clearInterval(POP_CD); POP_CD = null; }
+    var box = el("camppop");
+    if (box) box.className = "modal cp";
+  }
+
+  function pop_open(c) {
+    var box = el("camppop");
+    if (!box) return;
+    var badge = el("cp-badge"), ends = el("cp-ends"), cta = el("cp-cta"),
+        p = el("cp-p");
+
+    //  textContent, not innerHTML: campaign copy is typed by an admin and is
+    //  never markup, here or in the banner.
+    if (c.badge) { badge.textContent = c.badge; badge.hidden = false; }
+    else { badge.textContent = ""; badge.hidden = true; }
+
+    el("cp-h").textContent = c.heading;
+    p.textContent = c.description || "";
+    p.hidden = !c.description;
+
+    if (CAMP_SHOW("countdown") && c.ends_in_seconds > 0) {
+      ends.hidden = false;
+      POP_CD = start_countdown(ends, c.ends_in_seconds);
+    } else {
+      ends.textContent = ""; ends.hidden = true;
+    }
+
+    //  The destination is the campaign's own CTA when an admin set one —
+    //  already restricted server-side to this site's own paths — and the
+    //  pricing block otherwise. It is never a free-text URL.
+    cta.textContent = (CAMP_SHOW("cta") && c.cta_text) ? c.cta_text
+                                                       : "See the offer";
+    cta.setAttribute("href", (CAMP_SHOW("cta") && c.cta_href) ? c.cta_href
+                                                              : "#pricing");
+    box.className = "modal cp on";
+  }
+
+  function pop_try() {
+    if (POP_ARMED || !POP_PRICED || !POP_AUTHED) return;
+    var c = CAMP();
+    if (!c || !CAMP_SHOW("popup") || !c.heading) return;
+    if (c.ends_in_seconds != null && !(c.ends_in_seconds > 0)) return;
+    if (pop_paying() || pop_seen(c)) return;
+    POP_ARMED = true;
+    //  measured from arrival, not from whenever the slowest call came back,
+    //  so a slow network does not push the popup to the twelfth second
+    setTimeout(function () {
+      //  re-checked at the moment it would open
+      if (pop_paying()) return;
+      var cc = CAMP();
+      if (cc && cc.heading && !pop_seen(cc)) pop_open(cc);
+    }, Math.max(0, POP_DELAY_MS - (Date.now() - POP_T0)));
+  }
+
+  try {
+    el("cp-x").addEventListener("click", pop_close);
+    el("cp-no").addEventListener("click", pop_close);
+    el("cp-cta").addEventListener("click", pop_close);
+    el("camppop").addEventListener("click", function (e) {
+      if (e && e.target && e.target.id === "camppop") pop_close();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e && (e.key === "Escape" || e.keyCode === 27) &&
+          el("camppop").className.indexOf("on") >= 0) pop_close();
+    });
+  } catch (x) {}
+
+
   function paint_prices() {
     if (!PRICING) return;
     paint_campaign();
+    POP_PRICED = true; pop_try();
     var per = el("periods");
     per.innerHTML = ["monthly", "quarterly", "annual"].filter(function (k) {
       return PRICING[k];
@@ -2780,6 +2936,9 @@ body.has-banner .ybanner .ylong{display:none}
   function paint_entitled() {
     var plan = paidPlan();
     ENTITLED = !!plan;
+    //  Reached on all three paths out of loadSubscription — signed out,
+    //  answered, and failed — so the popup is never left waiting.
+    POP_AUTHED = true; pop_try();
 
     //  the top bar, for anyone signed in at all
     var si = el("b-signin"), su = el("b-signup");

@@ -58,6 +58,13 @@
   .st-expired{background:#1d222b;color:var(--hint)}
   .st-disabled{background:#1d222b;color:var(--hint)}
   .st-invalid{background:#2a141c;color:var(--danger)}
+  /*  A warning the admin must not be able to scroll past. Used where acting
+      on what the panel shows would destroy data on the live site.          */
+  .warn{margin:10px 0 0;padding:11px 13px;border-radius:0 8px 8px 0;
+    border-left:3px solid var(--amber);background:#241d0c;color:var(--amber);
+    font-size:12.5px;line-height:1.65}
+  .warn b{color:var(--amber)}
+  .warn[hidden]{display:none}
   .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
   .gate input{width:100%;margin:14px 0}
   .hide{display:none}
@@ -158,8 +165,21 @@
     </div>
   </div>
 
+  <!--  ══ PRICING ════════════════════════════════════════════════════════
+        These are the LIST prices — config.pricing on the server, the
+        undiscounted table. They are NOT what the site is charging while a
+        campaign is running; the campaign card below decides that.
+
+        The boxes are filled from /api/config's `standard` block whenever a
+        campaign is live, because pricing[period][plan] is the DISCOUNTED
+        figure during a campaign. Filling them from the discounted figure and
+        pressing Save would write the campaign's own prices in as the new
+        list prices — the discount would vanish, the struck-through price
+        would disappear from the public site, and the real list prices would
+        be gone with no copy anywhere. See loadPricing().                  -->
   <div class="card">
-    <h2>Pricing</h2>
+    <h2>Pricing <span class="sub" style="text-transform:none;letter-spacing:0">— list prices, not campaign prices</span></h2>
+    <div id="pWarn" class="warn" hidden></div>
     <div id="pMsg" class="msg"></div>
     <div class="grid2">
       <div class="fld"><label>Monthly · Premium (৳)</label><input id="mp" type="number"></div>
@@ -171,6 +191,7 @@
       <div class="fld"><label>Trial days</label><input id="td" type="number"></div>
     </div>
 
+    <div id="pLadder" class="warn" hidden></div>
     <button class="btn btn-pri" style="margin-top:12px" onclick="savePricing()">Save pricing</button>
   </div>
 
@@ -178,10 +199,7 @@
         The prices above are the LIST prices and are never written by
         anything in this card. A campaign is a separate record with its own
         dates, and the five states shown on each row are worked out from the
-        clock by the server, so a campaign cannot outlive its own end date.
-
-        NOTHING HERE CHANGES THE PUBLIC SITE YET. Phase 1 is the panel and
-        the records; the pricing page and the checkout are the next phase.  -->
+        clock by the server, so a campaign cannot outlive its own end date.  -->
   <div class="card">
     <h2>Campaigns</h2>
     <div id="cNote" class="sub" style="margin-bottom:10px"></div>
@@ -227,12 +245,13 @@
         list price or the server refuses it.</span></div>
       <div class="tbl"><table><thead><tr>
         <th>Period</th><th>Eligible</th><th>Premium list</th><th>Premium campaign</th>
-        <th>Pro list</th><th>Pro campaign</th></tr></thead>
+        <th>Pro list</th><th>Pro campaign</th><th>Discount</th></tr></thead>
         <tbody id="cPrices"></tbody></table></div>
 
       <div class="ccap">What the visitor sees</div>
       <div class="cshow">
         <label><input type="checkbox" id="sw_banner" checked> Banner</label>
+        <label><input type="checkbox" id="sw_popup" checked> Arrival popup</label>
         <label><input type="checkbox" id="sw_countdown" checked> Countdown</label>
         <label><input type="checkbox" id="sw_strike" checked> Crossed-out list price</label>
         <label><input type="checkbox" id="sw_savings" checked> Savings %</label>
@@ -352,11 +371,11 @@ function boot(){loadStats();loadGrowth();loadUsers();loadPricing();loadCampaigns
     part that waits on the collector, and it says so rather than showing a
     zero, because an empty collector and a zero conversion rate look identical
     in a number and mean opposite things.                                   */
-function gnum(n){ return (n===null||n===undefined) ? "\u2014" : Number(n).toLocaleString(); }
+function gnum(n){ return (n===null||n===undefined) ? "—" : Number(n).toLocaleString(); }
 function grow(l,v){ return `<div class="grow"><span>${l}</span><b>${v}</b></div>`; }
 
 async function loadGrowth(){
-  $("gMsg").textContent="Loading growth\u2026";
+  $("gMsg").textContent="Loading growth…";
   const days=$("gDays").value||30;
   try{
     const r=await fetch(`${API}/api/admin/growth?days=${days}`,{headers:H()});
@@ -375,7 +394,7 @@ async function loadGrowth(){
       `<div class="gbig"><div class="l">Gap</div><div class="v">${gnum(t.gap)}</div><div class="s">${t.weeks_remaining} weeks left</div></div>`+
       `<div class="gbig"><div class="l">Needed / week</div><div class="v gv-warn">${gnum(need)}</div><div class="s">net new paying</div></div>`+
       `<div class="gbig"><div class="l">Actual last 7 days</div><div class="v ${cls}">${gnum(got)}</div><div class="s">${need? (got>=need?"on track":"behind by "+gnum(need-got)) : ""}</div></div>`+
-      `<div class="gbig"><div class="l">Revenue</div><div class="v">\u09f3${gnum(rev.total_bdt)}</div><div class="s">\u09f3${gnum(rev.last_30_bdt)} last 30 days</div></div>`+
+      `<div class="gbig"><div class="l">Revenue</div><div class="v">৳${gnum(rev.total_bdt)}</div><div class="s">৳${gnum(rev.last_30_bdt)} last 30 days</div></div>`+
       '</div>'+
       `<div class="gbar"><i style="width:${pct.toFixed(2)}%"></i></div>`;
 
@@ -388,15 +407,15 @@ async function loadGrowth(){
        grow("New, last 7 days", gnum(paid.new_last_7))+
        grow("New, last 30 days", gnum(paid.new_last_30))+
        grow("Renewals, last 30 days", gnum(paid.renewals_last_30))+
-       grow("Registration \u2192 paid", rate.registration_to_paid_pct==null?"\u2014":rate.registration_to_paid_pct+"%")+
+       grow("Registration → paid", rate.registration_to_paid_pct==null?"—":rate.registration_to_paid_pct+"%")+
        grow("Lapsed subscriptions", gnum(rate.lapsed_subscriptions));
 
-    h+='<div class="gsec">Visitors \u00b7 last '+(vis.days||days)+' days</div>';
+    h+='<div class="gsec">Visitors · last '+(vis.days||days)+' days</div>';
     if(vis.collecting){
       h+=grow("Unique visitors", gnum(vis.unique_visitors))+
          grow("Sessions", gnum(vis.sessions))+
          grow("Page views", gnum(vis.page_views))+
-         grow("Visitor \u2192 registration", vis.visitor_to_registration_pct==null?"\u2014":vis.visitor_to_registration_pct+"%");
+         grow("Visitor → registration", vis.visitor_to_registration_pct==null?"—":vis.visitor_to_registration_pct+"%");
       (vis.by_source||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;source &middot; "+x.source, gnum(x.visitors)); });
       (vis.by_device||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;device &middot; "+x.device, gnum(x.visitors)); });
     } else {
@@ -407,11 +426,11 @@ async function loadGrowth(){
     //  only when there is a real conversion rate to base it on — a required
     //  visitor count derived from one sale would be a made-up number.
     if(t.required_registrations_per_week){
-      h+=`<div class="gnote"><b>At the current ${rate.registration_to_paid_pct}% registration\u2192paid rate,
+      h+=`<div class="gnote"><b>At the current ${rate.registration_to_paid_pct}% registration→paid rate,
           ${gnum(need)} paying subscribers a week needs about
           <b>${gnum(t.required_registrations_per_week)} registrations a week</b>.</b>
           Against ${gnum(reg.last_7)} in the last 7 days. This is arithmetic from your own
-          numbers, not a forecast \u2014 the rate itself rests on ${gnum(paid.paying_users_ever)} paying
+          numbers, not a forecast — the rate itself rests on ${gnum(paid.paying_users_ever)} paying
           ${paid.paying_users_ever===1?"user":"users"} and will move a lot as that grows.</div>`;
     }
 
@@ -493,15 +512,79 @@ async function ban(id,b){
   }catch(e){$("uMsg").textContent="Failed: "+e.message}
 }
 
+/*  ══ THE LIST PRICES ═════════════════════════════════════════════════════
+    LIST_NOW holds the undiscounted table and nothing else. It is also what
+    the campaign editor's "Premium list" / "Pro list" columns read, so both
+    cards agree about what a list price is.
+
+    /api/config publishes TWO things per period:
+      pricing[period][plan]            what the site is CHARGING today
+      pricing[period].standard[plan]   the list price, present only while a
+                                       campaign is discounting that cell
+
+    Reading the first of those into these boxes is the bug this function
+    exists to not have: during a campaign it would fill the card with the
+    campaign's own prices, and Save would write them in as the list prices.
+    The discount would silently become zero, the struck-through price would
+    vanish from the public site, and the real list prices would be gone —
+    they are stored in exactly one place and nothing keeps a copy.        */
+let LIST_NOW = {}, CAMPAIGN_LIVE = false;
+
+function listPrice(period, plan) {
+  const row = LIST_NOW[period] || {};
+  const std = row.standard || {};
+  //  `standard` is present only for a cell a campaign is discounting, so fall
+  //  back to the charged figure — outside a campaign the two are the same.
+  return std[plan] != null ? std[plan] : row[plan];
+}
+
 async function loadPricing(){
   try{
-    const c=await(await fetch(`${API}/api/config`)).json();const p=c.pricing||{};
-    $("mp").value=(p.monthly&&p.monthly.premium)??249;$("mpr").value=(p.monthly&&p.monthly.pro)??399;
-    $("qp").value=(p.quarterly&&p.quarterly.premium)??699;$("qpr").value=(p.quarterly&&p.quarterly.pro)??1099;
-    $("ap").value=(p.annual&&p.annual.premium)??2490;$("apr").value=(p.annual&&p.annual.pro)??3990;
-    $("td").value=p.trial_days??7;
+    const c=await(await fetch(`${API}/api/config?x=`+Date.now())).json();
+    LIST_NOW = (c && c.pricing) || {};
+    CAMPAIGN_LIVE = !!(LIST_NOW.campaign);
+    const g=(per,pl,dflt)=>{ const v=listPrice(per,pl); return v==null?dflt:v; };
+    $("mp").value =g("monthly","premium",249);  $("mpr").value=g("monthly","pro",399);
+    $("qp").value =g("quarterly","premium",699);$("qpr").value=g("quarterly","pro",1099);
+    $("ap").value =g("annual","premium",2490);  $("apr").value=g("annual","pro",3990);
+    $("td").value =LIST_NOW.trial_days??7;
+
+    const w=$("pWarn");
+    if(CAMPAIGN_LIVE){
+      const nm=(LIST_NOW.campaign&&(LIST_NOW.campaign.name||LIST_NOW.campaign.id))||"a campaign";
+      w.innerHTML="<b>"+esc(String(nm))+" is running.</b> The boxes below are the "+
+        "LIST prices, which is what they have always meant — the site is "+
+        "currently charging the campaign's lower prices instead. Saving here "+
+        "changes the list prices only. It does not end the campaign, and it does "+
+        "not change what anyone is charged today.";
+      w.hidden=false;
+    } else { w.hidden=true; w.innerHTML=""; }
+    paintLadder();
   }catch(e){$("pMsg").textContent="Could not load current pricing: "+e.message}
 }
+
+/*  A longer commitment that costs MORE than paying monthly is not a plan, it
+    is a mistake — and the public site will refuse to print a saving badge for
+    it, so it would otherwise go unnoticed. Checked live as the boxes change.  */
+function paintLadder(){
+  const n=id=>Number($(id).value);
+  const bad=[];
+  [["Quarterly","qp","mp",3],["Quarterly","qpr","mpr",3],
+   ["Annual","ap","mp",12],["Annual","apr","mpr",12]].forEach(([lab,id,mid,mo])=>{
+    const now=n(id), full=n(mid)*mo;
+    if(now>0&&full>0&&now>=full)
+      bad.push(lab+" "+(id.endsWith("r")?"Pro":"Premium")+" at ৳"+now+
+               " costs the same or more than "+mo+" months at ৳"+n(mid)+
+               " (৳"+full+").");
+  });
+  const w=$("pLadder");
+  if(bad.length){ w.innerHTML="<b>Upside-down ladder</b>"+bad.map(b=>"<br>· "+esc(b)).join("");
+                  w.hidden=false; }
+  else { w.hidden=true; w.innerHTML=""; }
+}
+["mp","mpr","qp","qpr","ap","apr"].forEach(id=>{
+  document.addEventListener("input",e=>{ if(e.target&&e.target.id===id) paintLadder(); });
+});
 
 async function savePricing(){
   $("pMsg").textContent="Saving…";
@@ -509,18 +592,28 @@ async function savePricing(){
   try{
     const r=await fetch(`${API}/api/admin/pricing`,{method:"POST",headers:H(),body:JSON.stringify(body)});
     if(!r.ok)throw new Error("HTTP "+r.status);
-    $("pMsg").textContent="Pricing saved. Hard-refresh the public site to see new prices.";
+    $("pMsg").textContent="List prices saved."+(CAMPAIGN_LIVE
+      ? " A campaign is still running, so the public site keeps charging the campaign prices."
+      : " Hard-refresh the public site to see them.");
+    //  Re-read rather than trust the panel: the campaign editor's list columns
+    //  read the same table and would otherwise be a version behind.
+    loadPricing(); loadCampaigns();
   }catch(e){$("pMsg").textContent="Failed: "+e.message}
 }
 
 /* ══ CAMPAIGNS ════════════════════════════════════════════════════════════
    This panel decides nothing. Every state badge, every saving percentage and
    every preview below is a figure the SERVER returned — the same functions
-   the public page will call in the next phase. A panel that works out its own
-   answer is a second implementation, and the one that drifts is always the
-   one nobody is testing.                                                   */
+   the public page calls. A panel that works out its own answer is a second
+   implementation, and the one that drifts is always the one nobody tests.  */
 const CPLANS = ["premium", "pro"], CPERIODS = ["monthly", "quarterly", "annual"];
-let CAMPS = [], LIST = {}, CTA_TARGETS = [];
+//  Every display flag the server knows about, in one place. Adding one to
+//  _CAMPAIGN_SHOW in main.py and forgetting it here is how a flag ends up
+//  uncontrollable: campBody() would omit it and the server would apply its
+//  default on every save.
+const CSHOW = ["banner", "popup", "countdown", "strike", "savings", "cta", "terms"];
+const CSHOW_OFF_BY_DEFAULT = ["cta", "terms"];
+let CAMPS = [], CTA_TARGETS = [];
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -528,8 +621,12 @@ const BDT = n => "৳" + Number(n || 0).toLocaleString("en-US");
 
 async function loadCampaigns() {
   try {
-    const c = await (await fetch(`${API}/api/config`)).json();
-    LIST = (c && c.pricing) || {};
+    //  LIST_NOW is loaded by loadPricing(); if that has not run yet, read it
+    //  here too rather than render a table of blank list prices.
+    if (!Object.keys(LIST_NOW).length) {
+      const c = await (await fetch(`${API}/api/config?x=` + Date.now())).json();
+      LIST_NOW = (c && c.pricing) || {};
+    }
     const d = await (await fetch(`${API}/api/admin/campaigns`, { headers: H() })).json();
     CAMPS = d.campaigns || [];
     CTA_TARGETS = d.cta_targets || [];
@@ -554,6 +651,7 @@ function paintCampaigns() {
     const acts = [];
     if (c.state !== "expired")
       acts.push('<button class="ban un" onclick="campEdit(\'' + c.id + '\')">Edit</button>');
+    acts.push('<button class="ban un" onclick="campDuplicate(\'' + c.id + '\')">Duplicate</button>');
     if (c.state === "draft" || c.state === "disabled")
       acts.push('<button class="ban un" onclick="campStatus(\'' + c.id + '\',\'enabled\')">Schedule</button>');
     if (c.state === "scheduled" || c.state === "active")
@@ -574,16 +672,46 @@ function paintCampaigns() {
 function campPriceRows(prices, periods) {
   $("cPrices").innerHTML = CPERIODS.map(per => {
     const row = (prices || {})[per] || {};
-    const lp = LIST[per] || {};
     const on = !periods || periods.indexOf(per) >= 0;
+    const bits = [];
     return '<tr><td>' + per.charAt(0).toUpperCase() + per.slice(1) + '</td>' +
       '<td><input type="checkbox" id="pe_' + per + '"' + (on ? " checked" : "") + '></td>' +
-      CPLANS.map(pl =>
-        '<td class="sub">' + (lp[pl] != null ? BDT(lp[pl]) : "—") + '</td>' +
-        '<td><input type="number" id="pc_' + per + '_' + pl + '" style="width:92px" ' +
-          'placeholder="list price" value="' + (row[pl] != null ? row[pl] : "") + '"></td>'
-      ).join("") + '</tr>';
+      CPLANS.map(pl => {
+        //  THE LIST PRICE, not the charged price. listPrice() reads
+        //  pricing[period].standard first, which is the only figure that
+        //  stays put while a campaign is running.
+        const lp = listPrice(per, pl);
+        const cv = row[pl];
+        if (lp != null && cv != null && Number(lp) > 0 && Number(cv) < Number(lp))
+          bits.push(pl + " −" +
+            Math.round((lp - cv) * 100 / lp) + "% (" + BDT(lp - cv) + " off)");
+        return '<td class="sub">' + (lp != null ? BDT(lp) : "—") + '</td>' +
+          '<td><input type="number" id="pc_' + per + '_' + pl + '" style="width:92px" ' +
+            'oninput="campPriceRows_recalc()" ' +
+            'placeholder="list price" value="' + (cv != null ? cv : "") + '"></td>';
+      }).join("") +
+      '<td class="sub" id="pd_' + per + '">' + (bits.join(" · ") || "—") + '</td></tr>';
   }).join("");
+}
+
+//  Recompute only the discount column, so typing does not rebuild the inputs
+//  under the cursor.
+function campPriceRows_recalc() {
+  CPERIODS.forEach(per => {
+    const cell = $("pd_" + per);
+    if (!cell) return;
+    const bits = [];
+    CPLANS.forEach(pl => {
+      const lp = listPrice(per, pl);
+      const raw = String(($("pc_" + per + "_" + pl) || {}).value || "").trim();
+      if (raw === "" || lp == null) return;
+      const cv = Number(raw);
+      if (!(Number(lp) > 0) || !(cv < Number(lp))) return;
+      bits.push(pl + " −" + Math.round((lp - cv) * 100 / lp) +
+                "% (" + BDT(lp - cv) + " off)");
+    });
+    cell.textContent = bits.join(" · ") || "—";
+  });
 }
 
 function campNew() { campFill({}); }
@@ -591,6 +719,22 @@ function campNew() { campFill({}); }
 function campEdit(id) {
   const c = CAMPS.filter(x => x.id === id)[0];
   if (c) campFill(c);
+}
+
+//  Duplicate: same content, no id, no dates, back to draft. The dates are
+//  cleared on purpose — a copy that kept them would overlap the original and
+//  the server would refuse the save with a message about a campaign the admin
+//  did not think they were touching.
+function campDuplicate(id) {
+  const c = CAMPS.filter(x => x.id === id)[0];
+  if (!c) return;
+  const copy = JSON.parse(JSON.stringify(c));
+  copy.id = ""; copy.starts_at = ""; copy.ends_at = "";
+  copy.name = (c.name || "Campaign") + " (copy)";
+  copy.code = "";
+  campFill(copy);
+  $("cMsg").textContent = "Copied. Give it a new window and an analytics code, " +
+    "then save. Nothing has been stored yet.";
 }
 
 function campFill(c) {
@@ -605,9 +749,11 @@ function campFill(c) {
   $("cCtaT").value = c.cta_text || ""; $("cCtaH").value = c.cta_href || "";
   $("cTerms").value = c.terms || "";
   const show = c.show || {};
-  ["banner", "countdown", "strike", "savings", "cta", "terms"].forEach(k => {
-    $("sw_" + k).checked = show[k] !== undefined ? !!show[k]
-                         : (k !== "cta" && k !== "terms");
+  CSHOW.forEach(k => {
+    const box = $("sw_" + k);
+    if (!box) return;
+    box.checked = show[k] !== undefined ? !!show[k]
+                                        : CSHOW_OFF_BY_DEFAULT.indexOf(k) < 0;
   });
   campPriceRows(c.prices, c.periods);
   $("cEdit").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -628,8 +774,7 @@ function campBody(status) {
     if (Object.keys(cell).length) prices[per] = cell;
   });
   const show = {};
-  ["banner", "countdown", "strike", "savings", "cta", "terms"]
-    .forEach(k => { show[k] = $("sw_" + k).checked; });
+  CSHOW.forEach(k => { const b = $("sw_" + k); if (b) show[k] = b.checked; });
   const b = {
     name: $("cName").value, code: $("cCode").value, badge: $("cBadge").value,
     heading: $("cHead").value, description: $("cDesc").value,
@@ -667,14 +812,24 @@ function paintPreview(p, state) {
   if (!p) { $("cPrev").innerHTML = ""; return; }
   let h = '<div style="margin-bottom:8px">This campaign would be <b>' +
     esc(state) + '</b> right now.</div>';
-  if (p.show.banner) {
+  //  WHAT WOULD SHOW, AND WHERE. The banner and the popup are independent
+  //  flags, so the four combinations are spelled out rather than implied —
+  //  "no public promotion" is a real and easy-to-reach state and the admin
+  //  should not have to deduce it from two unticked boxes.
+  const where = [];
+  if (p.show.banner) where.push("the pricing banner");
+  if (p.show.popup)  where.push("the arrival popup");
+  h += '<div style="margin-bottom:8px">Shown on: <b>' +
+    (where.length ? esc(where.join(" and ")) : "nowhere — prices change silently") +
+    '</b></div>';
+  if (p.show.banner || p.show.popup) {
     h += '<div style="margin-bottom:8px">' +
       (p.badge ? '<span class="pvbadge">' + esc(p.badge) + '</span> ' : "") +
       (p.heading ? '<b>' + esc(p.heading) + '</b>' : "") +
       (p.description ? '<br>' + esc(p.description) : "") + '</div>';
-  } else {
-    h += '<div style="margin-bottom:8px" class="sub">Banner is switched off — ' +
-      'prices change but nothing announces it.</div>';
+    if (!p.heading)
+      h += '<div class="cerr">· No heading. The banner and the popup both ' +
+           'refuse to render without one, so nothing would appear.</div>';
   }
   CPERIODS.forEach(per => {
     const row = p.prices[per];
@@ -699,7 +854,7 @@ function paintPreview(p, state) {
   if (p.show.terms) h += '<div class="sub" style="margin-top:6px">' +
     esc(p.terms) + '</div>';
   h += '<div class="sub" style="margin-top:8px">Nothing was stored and no price ' +
-    'changed. Public pricing is unaffected until the next phase ships.</div>';
+    'changed.</div>';
   $("cPrev").innerHTML = h;
 }
 
@@ -714,6 +869,9 @@ async function campSave(status) {
     $("cMsg").textContent = "Saved. This campaign is " + d.state + ".";
     campClose();
     loadCampaigns();
+    //  A campaign going live changes which figure /api/config calls `standard`,
+    //  so the Pricing card must be re-read or it will be showing the old view.
+    loadPricing();
   } catch (e) { $("cMsg").textContent = "Failed: " + e.message; }
 }
 
@@ -728,6 +886,7 @@ async function campStatus(id, status) {
     $("cMsg").textContent = d.saved ? ("Now " + d.state + ".")
                                     : ("NOT SAVED — " + (d.detail || "unknown"));
     loadCampaigns();
+    loadPricing();
   } catch (e) { $("cMsg").textContent = "Failed: " + e.message; }
 }
 

@@ -2593,6 +2593,28 @@ body.has-banner .ybanner .ylong{display:none}
     return best;
   }
 
+  //  WHO IS READING THIS CARD.
+  //  A payer never gets here — pop_try refuses twice. That leaves three, and
+  //  they need three different buttons:
+  //
+  //    visitor : no account. The campaign's own CTA is written for them.
+  //    trial   : entitled with no paid subscription row. Telling someone to
+  //              "start free" while their free trial is running is the one
+  //              thing the button must never say, and it is exactly what the
+  //              admin's signup CTA says.
+  //    member  : signed in, not entitled — a free account or a lapsed trial.
+  //              Also has nothing to sign up for.
+  function pop_audience() {
+    if (!signedIn()) return "visitor";
+    return (ENTITLED && !(SUB && SUB.subscription)) ? "trial" : "member";
+  }
+
+  //  The two destinations that stop making sense once someone has an account.
+  //  Any OTHER destination an admin picks — the picks, the track record, how
+  //  it works, the pricing block — reads fine signed in or out, so it is left
+  //  alone rather than second-guessed.
+  var POP_SIGNUP_TARGETS = { "/shell.html#signup": 1, "/shell.html#signin": 1 };
+
   function pop_open(c) {
     var box = el("camppop");
     if (!box) return;
@@ -2636,10 +2658,27 @@ body.has-banner .ybanner .ylong{display:none}
     //  The destination is the campaign's own CTA when an admin set one —
     //  already restricted server-side to this site's own paths — and the
     //  pricing block otherwise. It is never a free-text URL.
-    cta.textContent = (CAMP_SHOW("cta") && c.cta_text) ? c.cta_text
-                                                       : "See the offer";
-    cta.setAttribute("href", (CAMP_SHOW("cta") && c.cta_href) ? c.cta_href
-                                                              : "#pricing");
+    var admT = (CAMP_SHOW("cta") && c.cta_text) ? String(c.cta_text) : "",
+        admH = (CAMP_SHOW("cta") && c.cta_href) ? String(c.cta_href) : "",
+        who  = pop_audience(), text, href;
+
+    if (who === "visitor" || (admH && !POP_SIGNUP_TARGETS[admH])) {
+      //  Signed out, or the admin pointed somewhere that still works for
+      //  someone with an account. Their wording wins either way.
+      text = admT || "See the offer";
+      href = admH || "#pricing";
+    } else {
+      //  Signed in, and the campaign is sending them to sign up. Send them
+      //  to the one page that can actually take their money instead.
+      //  These two labels are deliberately campaign-neutral: the offer is
+      //  already stated above them, and campaign words belong in the
+      //  campaign record, not in this file.
+      href = DASH_PLAN;
+      text = (who === "trial") ? "Keep Pro at this price"
+                               : "Unlock the full Signal Stack";
+    }
+    cta.textContent = text;
+    cta.setAttribute("href", href);
     box.className = "modal cp on";
   }
 

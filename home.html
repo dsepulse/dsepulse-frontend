@@ -592,20 +592,55 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .mx:hover{background:var(--cream);color:var(--ink)}
 
 /* ── the campaign popup ───────────────────────────────────────────────
-   Borrows .modal for the backdrop and .mbox for the card, so the close
-   button, the Escape key, the backdrop click and the phone padding are
-   the ones already in use rather than a second set that can drift.     */
-.cp .mbox{max-width:430px;border-top:4px solid var(--gold)}
+   Borrows .modal for the backdrop and the Escape/backdrop-click close.
+   The card itself is its own composition: a navy header carrying the
+   badge and the deadline, then the offer, then the figures, then one
+   action — so an offer reads as an offer and not as the sign-in dialog.
+
+   EVERY element below that sets `display` also spells out its [hidden]
+   rule. An author display rule BEATS the HTML hidden attribute, which is
+   how an empty badge shipped as a bare gold pill: the markup said hidden
+   and the stylesheet said inline-block, and the stylesheet won. The same
+   guard is already on .campbanner and .refsec; it was missing here.    */
+.cp .mbox{max-width:418px;padding:0;overflow:hidden}
+.cp-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  background:var(--navy);color:#fff;padding:16px 46px 15px 22px;min-height:20px}
+.cp .mx{color:rgba(255,255,255,.72)}
+.cp .mx:hover{background:rgba(255,255,255,.14);color:#fff}
 .cp-badge{display:inline-block;font:700 9.5px/1 var(--sans);letter-spacing:.12em;
   text-transform:uppercase;background:var(--gold);color:var(--navy);
-  padding:5px 9px;border-radius:999px;margin:0 0 12px}
-.cp-ends{display:block;font:600 12.5px/1 var(--mono);
-  font-variant-numeric:tabular-nums;color:var(--gold-d);
-  background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:8px;
-  padding:10px 11px;margin:0 0 16px;text-align:center}
-.cp-no{display:block;width:100%;margin:13px 0 0;padding:0;border:0;background:none;
+  padding:5px 9px;border-radius:999px}
+.cp-badge[hidden]{display:none}
+.cp-ends{display:inline-block;font:600 12.5px/1 var(--mono);
+  font-variant-numeric:tabular-nums;color:var(--gold);margin-left:auto}
+.cp-ends[hidden]{display:none}
+.cp-body{padding:19px 22px 20px}
+.cp .mbox h3{font:700 clamp(19px,2.3vw,22px)/1.26 var(--serif);
+  margin:0 0 9px;padding-right:0}
+.cp .mbox p{margin:0 0 15px;font-size:14px;line-height:1.6}
+.cp .mbox p[hidden]{display:none}
+/*  The figures themselves, not a sentence about them — read from the same
+    pricing document server_price() bills from, so the card and the till
+    cannot disagree. Hidden entirely when the campaign does not discount a
+    monthly plan: an offer with no number beats a number that is wrong.  */
+.cp-price{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;
+  background:var(--gold-bg);border:1px solid var(--gold-bd);
+  border-radius:10px;padding:11px 14px 12px;margin:0 0 16px}
+.cp-price[hidden]{display:none}
+.cp-plan{flex-basis:100%;font:600 9.5px/1 var(--sans);letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink3);margin:0 0 3px}
+.cp-was{font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--ink3);text-decoration:line-through}
+.cp-was[hidden]{display:none}
+.cp-now{font:700 25px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--ink)}
+.cp-per{font:400 13px/1 var(--sans);color:var(--ink2)}
+.cp-sv{font:600 11.5px/1 var(--sans);color:var(--green);margin-left:auto}
+.cp-sv[hidden]{display:none}
+.cp-no{display:block;width:100%;margin:11px 0 0;padding:0;border:0;background:none;
   font:500 13px/1 var(--sans);color:var(--ink3);cursor:pointer;
   text-decoration:underline;text-underline-offset:3px}
+.cp-no[hidden]{display:none}
 .cp-no:hover{color:var(--ink2)}
 
 
@@ -1718,12 +1753,23 @@ body.has-banner .ybanner .ylong{display:none}
      aria-labelledby="cp-h">
   <div class="mbox">
     <button type="button" class="mx" id="cp-x" aria-label="Close">&times;</button>
-    <span class="cp-badge" id="cp-badge" hidden></span>
-    <h3 id="cp-h"></h3>
-    <p id="cp-p"></p>
-    <span class="cp-ends" id="cp-ends" hidden></span>
-    <a class="mbtn primary" id="cp-cta" href="#pricing" data-ev="signup_click"></a>
-    <button type="button" class="cp-no" id="cp-no">No thanks, show me the site</button>
+    <div class="cp-top">
+      <span class="cp-badge" id="cp-badge" hidden></span>
+      <span class="cp-ends" id="cp-ends" hidden></span>
+    </div>
+    <div class="cp-body">
+      <h3 id="cp-h"></h3>
+      <p id="cp-p" hidden></p>
+      <div class="cp-price" id="cp-price" hidden>
+        <span class="cp-plan" id="cp-plan"></span>
+        <span class="cp-was" id="cp-was" hidden></span>
+        <span class="cp-now" id="cp-now"></span>
+        <span class="cp-per" id="cp-per"></span>
+        <span class="cp-sv" id="cp-sv" hidden></span>
+      </div>
+      <a class="mbtn primary" id="cp-cta" href="#pricing" data-ev="signup_click"></a>
+      <button type="button" class="cp-no" id="cp-no">No thanks, show me the site</button>
+    </div>
   </div>
 </div>
 
@@ -2528,6 +2574,25 @@ body.has-banner .ybanner .ylong{display:none}
     if (box) box.className = "modal cp";
   }
 
+  //  THE ENTRY POINT, as a figure rather than a sentence: the cheapest
+  //  monthly plan the campaign actually discounts. Read from PRICING — the
+  //  same document server_price() bills from — so the popup cannot advertise
+  //  a price the checkout will not honour. Returns null when the campaign
+  //  discounts no monthly plan, and the row is then not shown at all: an
+  //  offer with no number is better than a number that is wrong.
+  function pop_price() {
+    var row = PRICING && PRICING.monthly, std = row && row.standard;
+    if (!row || !std) return null;
+    var best = null;
+    ["premium", "pro"].forEach(function (k) {
+      var now = Number(row[k]), was = Number(std[k]);
+      if (!isFinite(now) || !isFinite(was)) return;
+      if (!(now > 0) || !(was > now)) return;
+      if (!best || now < best.now) best = { plan: k, now: now, was: was };
+    });
+    return best;
+  }
+
   function pop_open(c) {
     var box = el("camppop");
     if (!box) return;
@@ -2548,6 +2613,24 @@ body.has-banner .ybanner .ylong{display:none}
       POP_CD = start_countdown(ends, c.ends_in_seconds);
     } else {
       ends.textContent = ""; ends.hidden = true;
+    }
+
+    var pr = pop_price(), prow = el("cp-price");
+    if (pr) {
+      el("cp-plan").textContent = pr.plan.toUpperCase() + " · MONTHLY";
+      el("cp-now").textContent = bdt(pr.now);
+      el("cp-per").textContent = "a month";
+      //  The struck list price and the saving are the admin's own display
+      //  flags, the same two the tier cards obey.
+      var showWas = CAMP_SHOW("strike"), showSv = CAMP_SHOW("savings");
+      el("cp-was").textContent = bdt(pr.was);
+      el("cp-was").hidden = !showWas;
+      el("cp-sv").textContent =
+        "Save " + Math.round((pr.was - pr.now) * 100 / pr.was) + "%";
+      el("cp-sv").hidden = !showSv;
+      prow.hidden = false;
+    } else {
+      prow.hidden = true;
     }
 
     //  The destination is the campaign's own CTA when an admin set one —

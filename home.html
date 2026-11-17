@@ -774,6 +774,31 @@ footer .disc a{color:var(--ink2);text-decoration:underline}
 .campbanner[hidden]{display:none}
 .cb-badge{font:700 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
   background:var(--gold);color:var(--navy);padding:4px 9px;border-radius:999px}
+
+/* ── the campaign line in the hero ───────────────────────────────────────
+   One line, above the headline, on the navy the band already uses. It is
+   an announcement, not a second banner: no description, no button, and no
+   more than ~29px tall, because the first screen is locked to 100svh and
+   anything taller pushes the bottom row of cards off it.                */
+.herocamp{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:0 0 12px;padding:6px 12px 6px 7px;border-radius:999px;
+  background:var(--navy);color:#fff;text-decoration:none;
+  box-shadow:0 2px 10px rgba(13,31,60,.14)}
+.herocamp[hidden]{display:none}
+.herocamp:hover{background:var(--navy2)}
+.hc-was{font:500 12px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:rgba(255,255,255,.55);text-decoration:line-through}
+.hc-was[hidden]{display:none}
+.hc-now{font:700 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:#fff}
+.hc-txt{font:600 12.5px/1 var(--sans);color:rgba(255,255,255,.88)}
+.hc-ends{font:600 12px/1 var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--gold);padding-left:10px;border-left:1px solid rgba(255,255,255,.22)}
+.hc-ends[hidden]{display:none}
+@media (max-width:480px){
+  .herocamp{gap:7px;padding:6px 10px 6px 6px}
+  .hc-ends{padding-left:7px}
+}
 .cb-head{font:600 15px/1.3 var(--sans)}
 .cb-sub{font:400 13px/1.45 var(--sans);color:rgba(255,255,255,.82);flex:1 1 220px}
 .cb-ends{font:600 12.5px/1 var(--mono);font-variant-numeric:tabular-nums;
@@ -1001,7 +1026,11 @@ footer .disc{max-width:76ch;line-height:1.65}
 @media (min-width:1000px){
   .screen .top{display:grid;align-items:center;gap:10px 44px;text-align:left;
     grid-template-columns:minmax(0,1.35fr) minmax(310px,.65fr);
-    grid-template-areas:"head ask" "lede ask" "act ask" "micro ask"}
+    grid-template-areas:"camp ask" "head ask" "lede ask" "act ask" "micro ask"}
+  /*  Left column only. Putting it across both columns would push the search
+      field down by its whole height instead of sharing the slack the
+      headline column already has. */
+  .screen .top .herocamp{grid-area:camp;justify-self:start;margin:0}
   .screen .top h1{grid-area:head;margin-bottom:0}
   .screen .top .lede1{grid-area:lede;margin:0;max-width:52ch}
   .screen .top .heroact{grid-area:act;margin:4px 0 0;justify-content:flex-start}
@@ -1338,6 +1367,16 @@ body.has-banner .ybanner .ylong{display:none}
 
 <div class="screen" id="hero">
   <div class="wrap top" id="interactive-demo">
+    <!--  Filled from the campaign document at runtime; empty and hidden
+          whenever no campaign is running, so no stale claim can survive in
+          the page source.  -->
+    <a class="herocamp" id="herocamp" href="#pricing" data-ev="nav_pricing" hidden>
+      <span class="cb-badge" id="hc-badge" hidden></span>
+      <span class="hc-txt" id="hc-txt"></span>
+      <span class="hc-was" id="hc-was" hidden></span>
+      <span class="hc-now" id="hc-now"></span>
+      <span class="hc-ends" id="hc-ends" hidden></span>
+    </a>
     <h1>Stop searching through 400+ DSE stocks.<span class="hq">See the stocks
       worth watching today.</span></h1>
     <p class="lede1">DSE Pulse analyses the market after every close and turns
@@ -2713,9 +2752,53 @@ body.has-banner .ybanner .ylong{display:none}
   } catch (x) {}
 
 
+  /*  THE HERO LINE.
+      Same campaign document, same price helper as the popup, so the three
+      places an offer appears cannot quote three different figures.
+
+      It needs no heading: the price IS the message at this size, and a
+      campaign with prices but no heading still deserves to be announced —
+      unlike the banner and the popup, which are made of words and refuse
+      to render without any.                                              */
+  var HC_CD = null;
+
+  function paint_herocamp() {
+    var box = el("herocamp"), c = CAMP();
+    if (!box) return;
+    if (HC_CD) { clearInterval(HC_CD); HC_CD = null; }
+
+    var pr = c ? pop_price() : null;
+    //  No campaign, banner switched off, nothing discounted on the monthly
+    //  row, or the reader already pays — in every case, say nothing.
+    if (!c || !CAMP_SHOW("banner") || !pr || pop_paying()) {
+      box.hidden = true; return;
+    }
+
+    var badge = el("hc-badge"), was = el("hc-was"), ends = el("hc-ends");
+    if (c.badge) { badge.textContent = c.badge; badge.hidden = false; }
+    else { badge.textContent = ""; badge.hidden = true; }
+
+    el("hc-txt").textContent =
+      pr.plan.charAt(0).toUpperCase() + pr.plan.slice(1) + " now";
+    was.textContent = bdt(pr.was);
+    was.hidden = !CAMP_SHOW("strike");
+    el("hc-now").textContent = bdt(pr.now) + "/mo";
+
+    if (CAMP_SHOW("countdown") && c.ends_in_seconds > 0) {
+      ends.hidden = false;
+      HC_CD = start_countdown(ends, c.ends_in_seconds);
+    } else { ends.textContent = ""; ends.hidden = true; }
+
+    box.hidden = false;
+    //  The first screen is height-locked; a line appearing after layout
+    //  changes what fits, so re-run the measurement the page already has.
+    try { fitSoon(); } catch (x) {}
+  }
+
   function paint_prices() {
     if (!PRICING) return;
     paint_campaign();
+    paint_herocamp();
     POP_PRICED = true; pop_try();
     var per = el("periods");
     per.innerHTML = ["monthly", "quarterly", "annual"].filter(function (k) {
@@ -3061,6 +3144,9 @@ body.has-banner .ybanner .ylong{display:none}
     //  Reached on all three paths out of loadSubscription — signed out,
     //  answered, and failed — so the popup is never left waiting.
     POP_AUTHED = true; pop_try();
+    //  Same reason: until this point pop_paying() answers false for everyone,
+    //  so the hero line would show once to a subscriber and stay.
+    try { paint_herocamp(); } catch (x) {}
 
     //  the top bar, for anyone signed in at all
     var si = el("b-signin"), su = el("b-signup");

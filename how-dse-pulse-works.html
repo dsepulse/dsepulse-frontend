@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- ============================================================================
+     DSE Pulse — How it works / methodology                         2026-11-18
+
+     THIS PAGE IS DELIBERATELY STATIC.
+
+     Every other page on this site fills itself from /api/* after load. Google
+     renders that correctly — verified in Search Console's live test on 18 Nov,
+     which returned 26 prices and 38 track-record figures. The AI answer
+     engines largely do not run JavaScript, so to them those pages are empty.
+
+     This page therefore carries its text in the HTML. No fetch, no loader, no
+     placeholder. It is the one page an answer engine can read and cite today,
+     without waiting for server-side rendering of the rest of the site.
+
+     EVERYTHING BELOW IS CHECKED AGAINST PRODUCTION CODE.
+     Engine names, inputs, run times and signal bands were read out of main.py
+     on 18 Nov 2026 — not from marketing copy. Two things are deliberately
+     ABSENT: the scoring weights (publishing them hands a competitor the
+     recipe) and any claim about returns.
+============================================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How DSE Pulse Works — Methodology for Dhaka Stock Exchange Analysis</title>
+<meta name="description" content="How DSE Pulse scans 400+ Dhaka Stock Exchange stocks after every close: the six engines, what each measures, how entry, target and stop are set, and the limits.">
+
+<link rel="canonical" href="https://dsepulse.com/how-dse-pulse-works.html">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DSE Pulse">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://dsepulse.com/how-dse-pulse-works.html">
+<meta property="og:title" content="How DSE Pulse Works — Methodology">
+<meta property="og:description" content="The six engines behind DSE Pulse, what each measures, how entry, target and stop are set, the data sources, and what the method cannot do.">
+<meta property="og:image" content="https://dsepulse.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How DSE Pulse Works — Methodology">
+<meta name="twitter:description" content="The six engines behind DSE Pulse, what each measures, how levels are set, and what the method cannot do.">
+<meta name="twitter:image" content="https://dsepulse.com/og-cover.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": "https://dsepulse.com/how-dse-pulse-works.html#article",
+      "headline": "How DSE Pulse Works — Methodology for Dhaka Stock Exchange Analysis",
+      "description": "The six analysis engines behind DSE Pulse, what each one measures, how entry, target and stop loss are set, the data sources and update schedule, and the known limitations of the method.",
+      "inLanguage": "en",
+      "datePublished": "2026-11-18",
+      "dateModified": "2026-11-18",
+      "author": { "@type": "Organization", "name": "DSE Pulse", "url": "https://dsepulse.com/" },
+      "publisher": { "@id": "https://dsepulse.com/#organization" },
+      "about": [
+        "Dhaka Stock Exchange",
+        "stock screening methodology",
+        "technical analysis",
+        "weighted moving average",
+        "risk management"
+      ],
+      "mainEntityOfPage": "https://dsepulse.com/how-dse-pulse-works.html"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://dsepulse.com/how-dse-pulse-works.html#breadcrumb",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "DSE Pulse", "item": "https://dsepulse.com/" },
+        { "@type": "ListItem", "position": 2, "name": "How it works", "item": "https://dsepulse.com/how-dse-pulse-works.html" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://dsepulse.com/how-dse-pulse-works.html#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How often does DSE Pulse update?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Once per trading day, after the Dhaka Stock Exchange close. The engines run in sequence between about 4:35 PM and 5:30 PM Bangladesh time. Nothing updates intraday." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does DSE Pulse set entry, target and stop loss?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The Daily Picker derives a buy zone from the session's low and places a fixed ladder of targets above it with a stop below. BD Signal carries its own stop derived from Average True Range. Tech Analysis, WMA Analysis and Smart Money do not publish levels of their own." }
+        },
+        {
+          "@type": "Question",
+          "name": "What moving averages does DSE Pulse use?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Weighted moving averages over 9, 34 and 89 sessions, calculated from 150 days of price history. The ordering of the three averages, not their absolute values, produces the signal." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does DSE Pulse predict share prices?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. It filters a universe of over 400 listed stocks down to a shortlist that met defined technical conditions at the last close, and states the levels that follow from those conditions. It makes no forecast and promises no return." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --red:#B3261E; --red-bg:#FBEAE8; --red-bd:#EFC9C4;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:400 16px/1.68 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+
+/* ── the band, matching the rest of the site ─────────────────────────── */
+.band{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(13,31,60,.10)}
+.band .wrap{display:flex;align-items:center;gap:18px;height:52px}
+.logo{font:700 16px/1 var(--sans);color:#fff;text-decoration:none;
+  display:flex;align-items:center;gap:8px}
+.logo i{width:8px;height:8px;border-radius:50%;background:var(--gold);
+  display:inline-block}
+.band nav{margin-left:auto;display:flex;gap:17px}
+.band nav a{color:rgba(255,255,255,.80);text-decoration:none;
+  font:500 13.5px/1 var(--sans)}
+.band nav a:hover{color:#fff}
+@media(max-width:620px){ .band nav a.opt{display:none} }
+
+/* ── masthead ─────────────────────────────────────────────────────────── */
+header.top{padding:44px 0 10px}
+.crumb{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.04em;
+  text-transform:uppercase;margin:0 0 14px}
+.crumb a{color:var(--ink3)}
+h1{font:700 clamp(29px,5vw,44px)/1.15 var(--serif);margin:0 0 14px;
+  letter-spacing:-.012em;text-wrap:balance}
+.stand{font:400 18.5px/1.6 var(--sans);color:var(--ink2);margin:0 0 20px;
+  max-width:62ch}
+.asof{display:inline-flex;align-items:center;gap:9px;font:500 12.5px/1 var(--mono);
+  color:var(--gold-d);background:var(--gold-bg);border:1px solid var(--gold-bd);
+  border-radius:999px;padding:7px 13px;margin:0 0 6px}
+
+/* ── sections ─────────────────────────────────────────────────────────── */
+main{padding-bottom:30px}
+section{padding:30px 0 4px;border-top:1px solid var(--bd);margin-top:28px}
+section:first-of-type{border-top:0;margin-top:6px}
+h2{font:700 clamp(21px,3vw,28px)/1.25 var(--serif);margin:0 0 7px;
+  text-wrap:balance}
+h2 .n{font:600 12px/1 var(--mono);color:var(--gold-d);display:block;
+  margin-bottom:9px;letter-spacing:.09em}
+h3{font:600 16.5px/1.35 var(--sans);margin:26px 0 6px}
+p{margin:0 0 15px;max-width:68ch}
+a{color:var(--gold-d);text-underline-offset:2px}
+strong{font-weight:600;color:var(--ink)}
+
+/* ── the engine table ─────────────────────────────────────────────────── */
+.tbl{overflow-x:auto;margin:18px 0 6px;border:1px solid var(--bd);
+  border-radius:12px;background:var(--paper)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--bd);
+  vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);background:var(--cream);white-space:nowrap}
+td.eng{font-weight:600;white-space:nowrap}
+td.time{font-family:var(--mono);font-size:13px;white-space:nowrap;
+  font-variant-numeric:tabular-nums;color:var(--ink2)}
+
+/* ── callouts ─────────────────────────────────────────────────────────── */
+.note{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:17px 19px;margin:20px 0}
+.note p:last-child{margin-bottom:0}
+.note.warn{background:var(--gold-bg);border-color:var(--gold-bd)}
+.note b{display:block;font:600 14px/1.4 var(--sans);margin-bottom:5px}
+
+ul{margin:0 0 15px;padding-left:20px;max-width:68ch}
+li{margin-bottom:9px}
+li::marker{color:var(--gold-d)}
+
+.lvl{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  margin:18px 0}
+.lvl div{background:var(--paper);border:1px solid var(--bd);border-radius:11px;
+  padding:13px 15px}
+.lvl b{display:block;font:600 10.5px/1 var(--sans);letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.lvl span{font:600 15px/1.4 var(--sans)}
+
+/* ── close ────────────────────────────────────────────────────────────── */
+.cta{background:var(--navy);color:#fff;border-radius:15px;padding:30px 28px;
+  margin:34px 0 10px}
+.cta h2{color:#fff;margin-bottom:9px}
+.cta p{color:rgba(255,255,255,.80);margin-bottom:19px}
+.cta a.go{display:inline-block;background:var(--gold);color:var(--navy);
+  text-decoration:none;font:600 15px/1 var(--sans);padding:14px 22px;
+  border-radius:10px}
+.cta a.go:hover{background:var(--gold-d);color:#fff}
+.disc{font:400 13px/1.65 var(--sans);color:var(--ink3);max-width:72ch;
+  border-top:1px solid var(--bd);padding:22px 0 44px;margin-top:30px}
+footer{background:var(--navy);color:rgba(255,255,255,.62);padding:24px 0;
+  font:400 13px/1.6 var(--sans)}
+footer a{color:rgba(255,255,255,.82)}
+</style>
+
+<div class="band">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>DSE Pulse</a>
+    <nav>
+      <a class="opt" href="/#todays-picks">Today's Picks</a>
+      <a class="opt" href="/trackrecord.html">Track record</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/shell.html#signup">Start free</a>
+    </nav>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumb"><a href="/">DSE Pulse</a> &rsaquo; How it works</p>
+    <h1>How DSE Pulse analyses the Dhaka Stock Exchange</h1>
+    <p class="stand">Six engines read every listed stock after the market
+      closes and reduce more than 400 names to a short list. This page sets out
+      what each one measures, where the entry, target and stop come from, which
+      data the system uses — and, just as importantly, what the method does not
+      and cannot do.</p>
+    <p class="asof">Methodology current as of 18 November 2026</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <h2><span class="n">01</span>The problem this is built for</h2>
+  <p>The Dhaka Stock Exchange lists over 400 companies. A retail investor
+    checking them by hand after work cannot read 400 charts, and the published
+    market summary tells you what moved, not what is worth looking at
+    tomorrow.</p>
+  <p>DSE Pulse exists to do the reading. It is a <strong>filter, not a
+    forecaster</strong>. Each evening it applies a fixed, repeatable set of
+    technical conditions to the whole market and publishes the names that met
+    them, together with the price levels those conditions imply. Whether to act
+    on any of it is the reader's decision.</p>
+</section>
+
+<section>
+  <h2><span class="n">02</span>The six engines</h2>
+  <p>Each engine is independent. They run in sequence after the close, each
+    writing its own result, and they are deliberately <em>not</em> merged into
+    a single number — an engine that disagrees with the others is information,
+    not noise.</p>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Engine</th><th>What it measures</th><th>Runs</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="eng">Daily Picker</td>
+        <td>A momentum scan of every listed stock: price action, volume surge
+          against the stock's own average, exchange category, price-to-earnings
+          and the bid-ask spread.</td>
+        <td class="time">4:35 PM</td>
+      </tr>
+      <tr>
+        <td class="eng">WMA Analysis</td>
+        <td>Weighted moving averages over 9, 34 and 89 sessions, from 150 days
+          of history, with an alert when a crossover is fresh rather than
+          weeks old.</td>
+        <td class="time">5:00 PM</td>
+      </tr>
+      <tr>
+        <td class="eng">Tech Analysis</td>
+        <td>A score out of 100 combining the WMA stack, MACD 12/26/9, RSI 14,
+          volume surge and Bollinger Bands.</td>
+        <td class="time">5:15 PM</td>
+      </tr>
+      <tr>
+        <td class="eng">BD Signal</td>
+        <td>A score out of 100 tuned to this market specifically: overall DSEX
+          mood, a stop derived from Average True Range, a sector adjustment,
+          consecutive up days, and a check against the exchange's circuit
+          limit.</td>
+        <td class="time">5:30 PM</td>
+      </tr>
+      <tr>
+        <td class="eng">Combined Signal</td>
+        <td>Triple confirmation. A stock appears only where the Picker, WMA and
+          Tech engines independently agree — all three must clear their own
+          threshold on the same name, on the same day.</td>
+        <td class="time">5:30 PM</td>
+      </tr>
+      <tr>
+        <td class="eng">Smart Money</td>
+        <td>Stocks trading on abnormal volume, and whether the large block
+          trades are on the buy or the sell side.</td>
+        <td class="time">after close</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What the Daily Picker actually weighs</h3>
+  <p>The Picker's score is built from a stock's move on the day, its traded
+    volume relative to its own recent average, the direction of the DSEX as a
+    whole, the exchange category the stock sits in, and where RSI falls. A
+    falling market scales every score down — the same stock scores lower on a
+    red day than a green one, because a breakout against the tide is a
+    different thing from one with it.</p>
+  <p>The individual weights are not published. The inputs above are the
+    complete list; there is no hidden factor, no discretionary override and no
+    human editing of the output.</p>
+
+  <h3>How the WMA signal is read</h3>
+  <p>The signal comes from the <strong>order</strong> of the three averages,
+    never their absolute values:</p>
+  <ul>
+    <li><strong>Strong Buy</strong> — the 9 is above the 34 and the 34 is above
+      the 89. All three aligned upward.</li>
+    <li><strong>Buy</strong> — the 9 is above the 34, but the longer average
+      has not confirmed.</li>
+    <li><strong>Sell</strong> — the 9 has fallen below the 34.</li>
+    <li><strong>Strong Sell</strong> — all three aligned downward.</li>
+    <li><strong>Neutral</strong> — no crossover to read.</li>
+  </ul>
+  <p>Trend is reported separately from signal: the 34 above the 89 is an
+    uptrend, meaningfully below it a downtrend, and the narrow band between
+    the two is called sideways rather than forced into a direction.</p>
+</section>
+
+<section>
+  <h2><span class="n">03</span>Where entry, target and stop come from</h2>
+  <p>Every published setup carries three prices. They are derived
+    mechanically, not chosen.</p>
+
+  <div class="lvl">
+    <div><b>Entry</b><span>A buy zone anchored to the session's low, not to the
+      closing price</span></div>
+    <div><b>Target</b><span>A fixed ladder of three levels above the entry</span></div>
+    <div><b>Stop</b><span>A fixed percentage below the entry — or, on BD
+      Signal, an ATR-based stop</span></div>
+  </div>
+
+  <p>Anchoring the entry to the session's low rather than the close matters:
+    it means the published zone is a price the stock actually traded at that
+    day, not a level it would have to gap to reach.</p>
+  <p><strong>Not every engine publishes levels.</strong> Tech Analysis, WMA
+    Analysis and Smart Money produce no entry, target or stop of their own.
+    Where the interface shows levels beside one of those signals, they are
+    borrowed from an engine that does compute them, and the source is named.
+    Smart Money borrows none at all, by design — it tells you where money is
+    moving, not where to enter.</p>
+
+  <div class="note warn">
+    <b>Trading costs are excluded from every level shown</b>
+    <p>Round-trip exchange and regulatory charges on the DSE come to roughly
+      0.025% of turnover. Brokerage commission is on top of that and varies by
+      broker, so it is not assumed anywhere in this system. A target that looks
+      reachable before costs may not be after them, particularly on small
+      positions.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">04</span>Data and schedule</h2>
+  <p>Prices, volumes and the market summary are collected after each trading
+    session from published Dhaka Stock Exchange sources. Collection runs from a
+    connection inside Bangladesh, which matters because several of the sources
+    behave differently for overseas traffic.</p>
+  <p>The sequence is fixed: data collection first, then the engines in the
+    order shown above, finishing around 5:30 PM Bangladesh time. The site
+    reflects the most recent completed run.</p>
+  <p>The rolling 52-week high and low used across the site are
+    <strong>close-based</strong> — computed from closing prices rather than
+    intraday extremes — and refreshed daily.</p>
+
+  <div class="note">
+    <b>If a run is missed, setups disappear rather than go stale</b>
+    <p>Every published setup is bound to the most recent completed run. If the
+      engines do not run on a given evening, stocks stop showing a current
+      setup together, instead of continuing to display levels from an earlier
+      date. This is deliberate: a three-month-old buy zone presented as today's
+      is worse than no buy zone at all.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">05</span>What this method cannot do</h2>
+  <p>Publishing the limits is part of the method. These are real, and they
+    apply every day.</p>
+  <ul>
+    <li><strong>It is not live.</strong> Everything is computed once, after the
+      close. Nothing updates during the trading session, and a signal published
+      this evening describes conditions as they were at today's close.</li>
+    <li><strong>It is technical only.</strong> The engines read price, volume
+      and exchange category. They do not read news, earnings announcements,
+      board decisions, regulatory action or anything else that moves a share
+      overnight.</li>
+    <li><strong>Illiquid stocks are excluded.</strong> Names that do not trade
+      enough for the volume measures to mean anything are rejected rather than
+      scored. A thin stock can produce an impressive-looking percentage move on
+      a handful of trades.</li>
+    <li><strong>Circuit limits cap what can be measured.</strong> The exchange
+      restricts most daily moves to around 10%. A reported move beyond roughly
+      30% is treated as a data fault and suppressed rather than displayed,
+      because it is far more likely to be bad data than real news.</li>
+    <li><strong>There are no options-derived indicators.</strong> The Dhaka
+      Stock Exchange has no options market, so measures such as the put-call
+      ratio have no inputs here and are not published. Inventing one would be
+      straightforward and dishonest.</li>
+    <li><strong>Past results are not predictions.</strong> The
+      <a href="/trackrecord.html">track record</a> reports what previously
+      published signals went on to do. It is a record, not a forecast, and it
+      carries no implication about any future signal.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">06</span>Why the engines are kept separate</h2>
+  <p>It would be simpler to merge six scores into one headline number. The
+    system does not, for one reason: a single number hides disagreement, and
+    disagreement is the most useful thing a multi-engine system produces.</p>
+  <p>A stock that the Picker likes on momentum but WMA reads as a downtrend is
+    telling you something specific — a bounce inside a falling trend. Averaged
+    into one figure, that distinction vanishes. The Combined Signal exists for
+    readers who want only the names where the engines agree; the individual
+    engines remain visible for everyone else.</p>
+</section>
+
+<div class="cta">
+  <h2>See it on today's market</h2>
+  <p>The method above runs tonight, like every trading night. Seven days of
+    full access, no card required.</p>
+  <a class="go" href="/shell.html#signup">Start free — no card needed</a>
+</div>
+
+<p class="disc"><strong>Risk disclosure.</strong> DSE Pulse publishes technical
+  analysis of publicly listed securities. It is not investment advice, not a
+  recommendation to buy or sell any security, and not a personalised
+  assessment of anyone's circumstances. No return is promised or implied.
+  Share prices fall as well as rise and you can lose money, including the whole
+  of a position. Entry, target and stop levels are arithmetic consequences of
+  the stated conditions, not predictions, and they exclude brokerage
+  commission. Historical signal performance does not indicate future results.
+  Consider your own objectives, and take independent licensed advice, before
+  acting on anything published here.</p>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 DSE Pulse ·
+    <a href="/">Home</a> ·
+    <a href="/trackrecord.html">Track record</a> ·
+    <a href="/#pricing">Pricing</a>
+  </div>
+</footer>
+</html>

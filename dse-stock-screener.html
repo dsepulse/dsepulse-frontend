@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- DSE Pulse · dse-stock-screener · built 2026-11-18 · STATIC: no fetch, no loader.
+     Every product fact here was read out of main.py. Exchange rules that
+     could not be verified against a primary source are deliberately absent. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DSE Stock Screener — Filtering 400+ Dhaka Stock Exchange Shares</title>
+<meta name="description" content="How to screen Dhaka Stock Exchange stocks: which criteria mean something on this market, the liquidity trap, and why a screener should reject names rather than rank them.">
+<link rel="canonical" href="https://dsepulse.com/dse-stock-screener.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DSE Pulse">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://dsepulse.com/dse-stock-screener.html">
+<meta property="og:title" content="DSE Stock Screener — Filtering 400+ Dhaka Stock Exchange Shares">
+<meta property="og:description" content="How to screen Dhaka Stock Exchange stocks: which criteria mean something on this market, the liquidity trap, and why a screener should reject names rather than rank them.">
+<meta property="og:image" content="https://dsepulse.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSE Stock Screener — Filtering 400+ Dhaka Stock Exchange Shares">
+<meta name="twitter:description" content="How to screen Dhaka Stock Exchange stocks: which criteria mean something on this market, the liquidity trap, and why a screener should reject names rather than rank them.">
+<meta name="twitter:image" content="https://dsepulse.com/og-cover.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://dsepulse.com/dse-stock-screener.html#page",
+      "url": "https://dsepulse.com/dse-stock-screener.html",
+      "name": "DSE Stock Screener — Filtering 400+ Dhaka Stock Exchange Shares",
+      "description": "How to screen Dhaka Stock Exchange stocks: which criteria mean something on this market, the liquidity trap, and why a screener should reject names rather than rank them.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://dsepulse.com/#website"
+      },
+      "publisher": {
+        "@id": "https://dsepulse.com/#organization"
+      },
+      "datePublished": "2026-11-18",
+      "dateModified": "2026-11-18"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://dsepulse.com/dse-stock-screener.html#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DSE Pulse",
+          "item": "https://dsepulse.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "DSE Stock Screener",
+          "item": "https://dsepulse.com/dse-stock-screener.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:400 16px/1.68 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.band{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 18px rgba(13,31,60,.10)}
+.band .wrap{display:flex;align-items:center;gap:18px;height:52px}
+.logo{font:700 16px/1 var(--sans);color:#fff;text-decoration:none;
+  display:flex;align-items:center;gap:8px}
+.logo i{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.band nav{margin-left:auto;display:flex;gap:17px}
+.band nav a{color:rgba(255,255,255,.80);text-decoration:none;
+  font:500 13.5px/1 var(--sans)}
+.band nav a:hover{color:#fff}
+@media(max-width:680px){ .band nav a.opt{display:none} }
+header.top{padding:44px 0 10px}
+.crumb{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.04em;
+  text-transform:uppercase;margin:0 0 14px}
+.crumb a{color:var(--ink3)}
+h1{font:700 clamp(28px,4.6vw,42px)/1.16 var(--serif);margin:0 0 14px;
+  letter-spacing:-.012em;text-wrap:balance}
+.stand{font:400 18.5px/1.6 var(--sans);color:var(--ink2);margin:0 0 22px;
+  max-width:62ch}
+main{padding-bottom:30px}
+section{padding:30px 0 4px;border-top:1px solid var(--bd);margin-top:28px}
+section:first-of-type{border-top:0;margin-top:4px}
+h2{font:700 clamp(20px,2.8vw,27px)/1.26 var(--serif);margin:0 0 9px;
+  text-wrap:balance}
+h3{font:600 16.5px/1.35 var(--sans);margin:24px 0 6px}
+p{margin:0 0 15px;max-width:68ch}
+a{color:var(--gold-d);text-underline-offset:2px}
+strong{font-weight:600;color:var(--ink)}
+ul,ol{margin:0 0 15px;padding-left:20px;max-width:68ch}
+li{margin-bottom:9px}
+li::marker{color:var(--gold-d)}
+.tbl{overflow-x:auto;margin:18px 0 6px;border:1px solid var(--bd);
+  border-radius:12px;background:var(--paper)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--bd);
+  vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);background:var(--cream);white-space:nowrap}
+td.k{font-weight:600;white-space:nowrap}
+.note{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:17px 19px;margin:20px 0}
+.note.warn{background:var(--gold-bg);border-color:var(--gold-bd)}
+.note p:last-child{margin-bottom:0}
+.note b{display:block;font:600 14px/1.4 var(--sans);margin-bottom:5px}
+.qa{border-top:1px solid var(--bd);padding:19px 0 4px}
+.qa:first-of-type{border-top:0}
+.qa h3{margin:0 0 7px;font-size:17px}
+.cta{background:var(--navy);color:#fff;border-radius:15px;padding:30px 28px;
+  margin:34px 0 10px}
+.cta h2{color:#fff;margin-bottom:9px}
+.cta p{color:rgba(255,255,255,.80);margin-bottom:19px}
+.cta a.go{display:inline-block;background:var(--gold);color:var(--navy);
+  text-decoration:none;font:600 15px/1 var(--sans);padding:14px 22px;
+  border-radius:10px}
+.cta a.go:hover{background:var(--gold-d);color:#fff}
+.more{margin:26px 0 6px;font-size:14.5px;color:var(--ink2)}
+.more b{display:block;font:600 11px/1 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.more a{display:inline-block;margin:0 14px 7px 0}
+.disc{font:400 13px/1.65 var(--sans);color:var(--ink3);max-width:72ch;
+  border-top:1px solid var(--bd);padding:22px 0 44px;margin-top:30px}
+footer{background:var(--navy);color:rgba(255,255,255,.62);padding:24px 0;
+  font:400 13px/1.6 var(--sans)}
+footer a{color:rgba(255,255,255,.82)}
+</style>
+
+<div class="band">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>DSE Pulse</a>
+    <nav>
+      <a class="opt" href="/how-dse-pulse-works.html">Methodology</a>
+      <a class="opt" href="/trackrecord.html">Track record</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/shell.html#signup">Start free</a>
+    </nav>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumb"><a href="/">DSE Pulse</a> &rsaquo; Screener</p>
+    <h1>Screening the Dhaka Stock Exchange</h1>
+    <p class="stand">A screener's job is subtraction. On a market of 400+ listed names, the value is not in scoring everything — it is in removing everything that cannot be acted on, and being honest about why.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<section>
+  <h2>What a screen is actually for</h2>
+  <p>A stock screener applies a set of conditions to every name in a market
+    and returns the ones that match. The conditions are the whole product.
+    Choose them badly and the output is a long list of stocks that look
+    interesting and cannot be traded.</p>
+  <p>On the Dhaka Stock Exchange the conditions worth screening on fall into
+    three groups: <strong>what the price did</strong>, <strong>whether anyone
+    was trading it</strong>, and <strong>where it sits in its own
+    range</strong>.</p>
+</section>
+
+<section>
+  <h2>The liquidity trap</h2>
+  <p>This is the failure mode that catches most screens on this market, and
+    it is worth being concrete about.</p>
+  <p>A stock that trades a handful of times in a session can post a large
+    percentage move on almost no money. It will top a screen sorted by "biggest
+    gainers" and be the worst name on the list — the move is an artefact of
+    thin trading, and attempting to buy it moves the price against you
+    immediately.</p>
+  <p>The answer is not to rank such stocks lower. It is to
+    <strong>reject them outright</strong>, before scoring, so they cannot
+    appear at all. DSE Pulse's BD Signal engine does exactly that: names
+    whose volume is too low for the volume measures to mean anything are
+    rejected rather than scored, and the rejection is recorded.</p>
+</section>
+
+<section>
+  <h2>Criteria that carry information here</h2>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Criterion</th><th>Why it matters on this market</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Volume vs its own average</td>
+        <td>Absolute volume says more about a company's size than about today.
+          A stock trading three times its own normal volume is the signal;
+          the raw number is not.</td></tr>
+      <tr><td class="k">Move against the index</td>
+        <td>A 2% gain on a day the DSEX fell is a different event from the
+          same gain on a day it rose. Screens that ignore market direction
+          treat them identically.</td></tr>
+      <tr><td class="k">Position in the 52-week range</td>
+        <td>Context for the current price. DSE Pulse computes this range from
+          closing prices rather than intraday extremes, so a single erratic
+          tick cannot define a stock's "high".</td></tr>
+      <tr><td class="k">Exchange category</td>
+        <td>The exchange assigns listed companies to categories. DSE Pulse's
+          Daily Picker reads that category as one of its inputs.</td></tr>
+      <tr><td class="k">Moving-average alignment</td>
+        <td>Whether short, medium and long averages are stacked in the same
+          direction — a trend filter rather than a trigger.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Each of those is a filter, not a forecast. Together they reduce 400+
+    names to something a person can read.</p>
+</section>
+
+<section>
+  <h2>What a screen cannot tell you</h2>
+  <p>A screen reports that conditions were met at the last close. It does not
+    know why, it does not know what is coming, and it does not know your
+    position size or your tolerance for being wrong.</p>
+  <div class="note warn">
+    <b>Costs are not in the screen</b>
+    <p>Round-trip exchange and regulatory charges on the DSE come to roughly
+      0.025% of turnover, with brokerage commission on top and varying by
+      broker. A screen that surfaces a 1.5% opportunity has not accounted for
+      what it costs to take it — particularly on a small position.</p>
+  </div>
+</section>
+<div class="cta">
+  <h2>See tonight's shortlist</h2>
+  <p>Every listed DSE stock, scored after the close. Seven days of full
+    access, no card required.</p>
+  <a class="go" href="/shell.html#signup">Start free — no card needed</a>
+</div>
+<p class="more"><b>Related</b><a href="/dse-stock-analysis-tools.html">The full toolset</a><a href="/short-term-stock-trading-bangladesh.html">Short-term trading costs</a><a href="/how-dse-pulse-works.html">Full methodology</a></p>
+<p class="disc"><strong>Risk disclosure.</strong> DSE Pulse publishes technical analysis of publicly listed securities. It is not investment advice, not a recommendation to buy or sell any security, and not a personalised assessment of anyone's circumstances. No return is promised or implied. Share prices fall as well as rise and you can lose money, including the whole of a position. Entry, target and stop levels are arithmetic consequences of stated conditions, not predictions, and they exclude brokerage commission. Historical signal performance does not indicate future results. Consider your own objectives, and take independent licensed advice, before acting on anything published here.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 DSE Pulse ·
+    <a href="/">Home</a> ·
+    <a href="/how-dse-pulse-works.html">Methodology</a> ·
+    <a href="/trackrecord.html">Track record</a> ·
+    <a href="/#pricing">Pricing</a>
+  </div>
+</footer>
+</html>

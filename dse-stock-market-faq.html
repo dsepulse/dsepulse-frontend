@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- DSE Pulse · dse-stock-market-faq · built 2026-11-18 · STATIC: no fetch, no loader.
+     Every product fact here was read out of main.py. Exchange rules that
+     could not be verified against a primary source are deliberately absent. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DSE Stock Market FAQ — Questions About Dhaka Stock Exchange Analysis</title>
+<meta name="description" content="Common questions about analysing the Dhaka Stock Exchange with DSE Pulse: update schedule, how levels are set, what is excluded, and what it costs to trade.">
+<link rel="canonical" href="https://dsepulse.com/dse-stock-market-faq.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DSE Pulse">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://dsepulse.com/dse-stock-market-faq.html">
+<meta property="og:title" content="DSE Stock Market FAQ — Questions About Dhaka Stock Exchange Analysis">
+<meta property="og:description" content="Common questions about analysing the Dhaka Stock Exchange with DSE Pulse: update schedule, how levels are set, what is excluded, and what it costs to trade.">
+<meta property="og:image" content="https://dsepulse.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSE Stock Market FAQ — Questions About Dhaka Stock Exchange Analysis">
+<meta name="twitter:description" content="Common questions about analysing the Dhaka Stock Exchange with DSE Pulse: update schedule, how levels are set, what is excluded, and what it costs to trade.">
+<meta name="twitter:image" content="https://dsepulse.com/og-cover.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://dsepulse.com/dse-stock-market-faq.html#page",
+      "url": "https://dsepulse.com/dse-stock-market-faq.html",
+      "name": "DSE Stock Market FAQ — Questions About Dhaka Stock Exchange Analysis",
+      "description": "Common questions about analysing the Dhaka Stock Exchange with DSE Pulse: update schedule, how levels are set, what is excluded, and what it costs to trade.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://dsepulse.com/#website"
+      },
+      "publisher": {
+        "@id": "https://dsepulse.com/#organization"
+      },
+      "datePublished": "2026-11-18",
+      "dateModified": "2026-11-18"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://dsepulse.com/dse-stock-market-faq.html#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DSE Pulse",
+          "item": "https://dsepulse.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "DSE Stock Market FAQ",
+          "item": "https://dsepulse.com/dse-stock-market-faq.html"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://dsepulse.com/dse-stock-market-faq.html#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is DSE Pulse?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A market-analysis service for the Dhaka Stock Exchange. After each trading session it applies six independent sets of technical conditions to every listed stock and publishes the names that met them, together with the price levels those conditions imply."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How often is it updated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Once per trading day, after the close. The engines run in sequence between roughly 4:35 PM and 5:30 PM Bangladesh time. Nothing updates during the trading session."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is DSE Pulse investment advice?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. It publishes technical analysis of publicly listed securities. It is not advice, not a recommendation to buy or sell, and not a personalised assessment of anyone's circumstances."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it predict share prices?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. It filters a universe of over 400 listed stocks to those that met defined conditions at the last close, and states the levels that follow from those conditions. It makes no forecast and promises no return."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How are entry, target and stop decided?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mechanically, not by judgement. The Daily Picker anchors a buy zone to the session's low and places a fixed ladder of targets above it with a stop below. BD Signal derives its stop from Average True Range instead, so a more volatile stock gets a wider stop."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do all the signals come with levels?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Tech Analysis, WMA Analysis and Smart Money publish no entry, target or stop of their own. Where levels appear beside those signals they are borrowed from an engine that computes them, and the source is named. Smart Money borrows none at all."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which moving averages does it use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Weighted moving averages over 9, 34 and 89 sessions, computed from 150 days of price history. The signal comes from the order of the three averages rather than their values."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why is there no put-call ratio or implied volatility?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Dhaka Stock Exchange has no options market, so indicators derived from options pricing have no inputs. Publishing a proxy under the familiar name would be misleading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens if the daily run fails?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Setups stop appearing. Every published setup is bound to the most recent completed run, so if the engines do not run, stocks stop showing a current setup together rather than continuing to display levels from an earlier date."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are illiquid stocks included?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Names that do not trade enough for the volume measures to mean anything are rejected rather than scored. A thinly traded stock can post a large percentage move on very little money, which would otherwise dominate any ranking."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does it cost to trade on the figures shown?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Exchange and regulatory charges come to roughly 0.025% of turnover for a round trip. Brokerage commission is on top and varies by broker, so it is not assumed anywhere in the system. Every published level is gross of commission."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a free trial?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — seven days of full access, with no card required."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:400 16px/1.68 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.band{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 18px rgba(13,31,60,.10)}
+.band .wrap{display:flex;align-items:center;gap:18px;height:52px}
+.logo{font:700 16px/1 var(--sans);color:#fff;text-decoration:none;
+  display:flex;align-items:center;gap:8px}
+.logo i{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.band nav{margin-left:auto;display:flex;gap:17px}
+.band nav a{color:rgba(255,255,255,.80);text-decoration:none;
+  font:500 13.5px/1 var(--sans)}
+.band nav a:hover{color:#fff}
+@media(max-width:680px){ .band nav a.opt{display:none} }
+header.top{padding:44px 0 10px}
+.crumb{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.04em;
+  text-transform:uppercase;margin:0 0 14px}
+.crumb a{color:var(--ink3)}
+h1{font:700 clamp(28px,4.6vw,42px)/1.16 var(--serif);margin:0 0 14px;
+  letter-spacing:-.012em;text-wrap:balance}
+.stand{font:400 18.5px/1.6 var(--sans);color:var(--ink2);margin:0 0 22px;
+  max-width:62ch}
+main{padding-bottom:30px}
+section{padding:30px 0 4px;border-top:1px solid var(--bd);margin-top:28px}
+section:first-of-type{border-top:0;margin-top:4px}
+h2{font:700 clamp(20px,2.8vw,27px)/1.26 var(--serif);margin:0 0 9px;
+  text-wrap:balance}
+h3{font:600 16.5px/1.35 var(--sans);margin:24px 0 6px}
+p{margin:0 0 15px;max-width:68ch}
+a{color:var(--gold-d);text-underline-offset:2px}
+strong{font-weight:600;color:var(--ink)}
+ul,ol{margin:0 0 15px;padding-left:20px;max-width:68ch}
+li{margin-bottom:9px}
+li::marker{color:var(--gold-d)}
+.tbl{overflow-x:auto;margin:18px 0 6px;border:1px solid var(--bd);
+  border-radius:12px;background:var(--paper)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--bd);
+  vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);background:var(--cream);white-space:nowrap}
+td.k{font-weight:600;white-space:nowrap}
+.note{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:17px 19px;margin:20px 0}
+.note.warn{background:var(--gold-bg);border-color:var(--gold-bd)}
+.note p:last-child{margin-bottom:0}
+.note b{display:block;font:600 14px/1.4 var(--sans);margin-bottom:5px}
+.qa{border-top:1px solid var(--bd);padding:19px 0 4px}
+.qa:first-of-type{border-top:0}
+.qa h3{margin:0 0 7px;font-size:17px}
+.cta{background:var(--navy);color:#fff;border-radius:15px;padding:30px 28px;
+  margin:34px 0 10px}
+.cta h2{color:#fff;margin-bottom:9px}
+.cta p{color:rgba(255,255,255,.80);margin-bottom:19px}
+.cta a.go{display:inline-block;background:var(--gold);color:var(--navy);
+  text-decoration:none;font:600 15px/1 var(--sans);padding:14px 22px;
+  border-radius:10px}
+.cta a.go:hover{background:var(--gold-d);color:#fff}
+.more{margin:26px 0 6px;font-size:14.5px;color:var(--ink2)}
+.more b{display:block;font:600 11px/1 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.more a{display:inline-block;margin:0 14px 7px 0}
+.disc{font:400 13px/1.65 var(--sans);color:var(--ink3);max-width:72ch;
+  border-top:1px solid var(--bd);padding:22px 0 44px;margin-top:30px}
+footer{background:var(--navy);color:rgba(255,255,255,.62);padding:24px 0;
+  font:400 13px/1.6 var(--sans)}
+footer a{color:rgba(255,255,255,.82)}
+</style>
+
+<div class="band">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>DSE Pulse</a>
+    <nav>
+      <a class="opt" href="/how-dse-pulse-works.html">Methodology</a>
+      <a class="opt" href="/trackrecord.html">Track record</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/shell.html#signup">Start free</a>
+    </nav>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumb"><a href="/">DSE Pulse</a> &rsaquo; FAQ</p>
+    <h1>Questions about DSE market analysis</h1>
+    <p class="stand">Twelve questions that come up most often, answered directly. Where the answer is “no” or “it cannot”, it says so.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<section>
+  <div class="qa"><h3>What is DSE Pulse?</h3><p>A market-analysis service for the Dhaka Stock Exchange. After each trading session it applies six independent sets of technical conditions to every listed stock and publishes the names that met them, together with the price levels those conditions imply.</p></div>
+  <div class="qa"><h3>How often is it updated?</h3><p>Once per trading day, after the close. The engines run in sequence between roughly 4:35 PM and 5:30 PM Bangladesh time. Nothing updates during the trading session.</p></div>
+  <div class="qa"><h3>Is DSE Pulse investment advice?</h3><p>No. It publishes technical analysis of publicly listed securities. It is not advice, not a recommendation to buy or sell, and not a personalised assessment of anyone's circumstances.</p></div>
+  <div class="qa"><h3>Does it predict share prices?</h3><p>No. It filters a universe of over 400 listed stocks to those that met defined conditions at the last close, and states the levels that follow from those conditions. It makes no forecast and promises no return.</p></div>
+  <div class="qa"><h3>How are entry, target and stop decided?</h3><p>Mechanically, not by judgement. The Daily Picker anchors a buy zone to the session's low and places a fixed ladder of targets above it with a stop below. BD Signal derives its stop from Average True Range instead, so a more volatile stock gets a wider stop.</p></div>
+  <div class="qa"><h3>Do all the signals come with levels?</h3><p>No. Tech Analysis, WMA Analysis and Smart Money publish no entry, target or stop of their own. Where levels appear beside those signals they are borrowed from an engine that computes them, and the source is named. Smart Money borrows none at all.</p></div>
+  <div class="qa"><h3>Which moving averages does it use?</h3><p>Weighted moving averages over 9, 34 and 89 sessions, computed from 150 days of price history. The signal comes from the order of the three averages rather than their values.</p></div>
+  <div class="qa"><h3>Why is there no put-call ratio or implied volatility?</h3><p>The Dhaka Stock Exchange has no options market, so indicators derived from options pricing have no inputs. Publishing a proxy under the familiar name would be misleading.</p></div>
+  <div class="qa"><h3>What happens if the daily run fails?</h3><p>Setups stop appearing. Every published setup is bound to the most recent completed run, so if the engines do not run, stocks stop showing a current setup together rather than continuing to display levels from an earlier date.</p></div>
+  <div class="qa"><h3>Are illiquid stocks included?</h3><p>No. Names that do not trade enough for the volume measures to mean anything are rejected rather than scored. A thinly traded stock can post a large percentage move on very little money, which would otherwise dominate any ranking.</p></div>
+  <div class="qa"><h3>What does it cost to trade on the figures shown?</h3><p>Exchange and regulatory charges come to roughly 0.025% of turnover for a round trip. Brokerage commission is on top and varies by broker, so it is not assumed anywhere in the system. Every published level is gross of commission.</p></div>
+  <div class="qa"><h3>Is there a free trial?</h3><p>Yes — seven days of full access, with no card required.</p></div>
+</section>
+<div class="cta">
+  <h2>See tonight's shortlist</h2>
+  <p>Every listed DSE stock, scored after the close. Seven days of full
+    access, no card required.</p>
+  <a class="go" href="/shell.html#signup">Start free — no card needed</a>
+</div>
+<p class="more"><b>Related</b><a href="/how-dse-pulse-works.html">Full methodology</a><a href="/dse-stock-analysis-tools.html">The toolset</a><a href="/dse-stock-market-signals.html">How to read a signal</a></p>
+<p class="disc"><strong>Risk disclosure.</strong> DSE Pulse publishes technical analysis of publicly listed securities. It is not investment advice, not a recommendation to buy or sell any security, and not a personalised assessment of anyone's circumstances. No return is promised or implied. Share prices fall as well as rise and you can lose money, including the whole of a position. Entry, target and stop levels are arithmetic consequences of stated conditions, not predictions, and they exclude brokerage commission. Historical signal performance does not indicate future results. Consider your own objectives, and take independent licensed advice, before acting on anything published here.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 DSE Pulse ·
+    <a href="/">Home</a> ·
+    <a href="/how-dse-pulse-works.html">Methodology</a> ·
+    <a href="/trackrecord.html">Track record</a> ·
+    <a href="/#pricing">Pricing</a>
+  </div>
+</footer>
+</html>

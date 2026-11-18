@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- DSE Pulse · technical-analysis-bangladesh · built 2026-11-18 · STATIC: no fetch, no loader.
+     Every product fact here was read out of main.py. Exchange rules that
+     could not be verified against a primary source are deliberately absent. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Technical Analysis in Bangladesh — Indicators That Work on the DSE</title>
+<meta name="description" content="Which technical indicators carry information on the Dhaka Stock Exchange, how moving averages, MACD and RSI are applied here, and which indicators have no inputs at all.">
+<link rel="canonical" href="https://dsepulse.com/technical-analysis-bangladesh.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DSE Pulse">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://dsepulse.com/technical-analysis-bangladesh.html">
+<meta property="og:title" content="Technical Analysis in Bangladesh — Indicators That Work on the DSE">
+<meta property="og:description" content="Which technical indicators carry information on the Dhaka Stock Exchange, how moving averages, MACD and RSI are applied here, and which indicators have no inputs at all.">
+<meta property="og:image" content="https://dsepulse.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Technical Analysis in Bangladesh — Indicators That Work on the DSE">
+<meta name="twitter:description" content="Which technical indicators carry information on the Dhaka Stock Exchange, how moving averages, MACD and RSI are applied here, and which indicators have no inputs at all.">
+<meta name="twitter:image" content="https://dsepulse.com/og-cover.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://dsepulse.com/technical-analysis-bangladesh.html#page",
+      "url": "https://dsepulse.com/technical-analysis-bangladesh.html",
+      "name": "Technical Analysis in Bangladesh — Indicators That Work on the DSE",
+      "description": "Which technical indicators carry information on the Dhaka Stock Exchange, how moving averages, MACD and RSI are applied here, and which indicators have no inputs at all.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://dsepulse.com/#website"
+      },
+      "publisher": {
+        "@id": "https://dsepulse.com/#organization"
+      },
+      "datePublished": "2026-11-18",
+      "dateModified": "2026-11-18"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://dsepulse.com/technical-analysis-bangladesh.html#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DSE Pulse",
+          "item": "https://dsepulse.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Technical Analysis in Bangladesh",
+          "item": "https://dsepulse.com/technical-analysis-bangladesh.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --navy:#0D1F3C; --navy2:#16305a; --gold:#D4A017; --gold-d:#B8860B;
+  --gold-bg:#FDF8EC; --gold-bd:#E8D5A0;
+  --cream:#F4F0E6; --paper:#FFFFFF; --bd:#E2DECE;
+  --ink:#0D1F3C; --ink2:#4A5568; --ink3:#8A94A6;
+  --green:#137a4d; --green-bg:#E4F3EA; --green-bd:#BFE3CE;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:400 16px/1.68 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.band{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 18px rgba(13,31,60,.10)}
+.band .wrap{display:flex;align-items:center;gap:18px;height:52px}
+.logo{font:700 16px/1 var(--sans);color:#fff;text-decoration:none;
+  display:flex;align-items:center;gap:8px}
+.logo i{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.band nav{margin-left:auto;display:flex;gap:17px}
+.band nav a{color:rgba(255,255,255,.80);text-decoration:none;
+  font:500 13.5px/1 var(--sans)}
+.band nav a:hover{color:#fff}
+@media(max-width:680px){ .band nav a.opt{display:none} }
+header.top{padding:44px 0 10px}
+.crumb{font:500 12px/1 var(--sans);color:var(--ink3);letter-spacing:.04em;
+  text-transform:uppercase;margin:0 0 14px}
+.crumb a{color:var(--ink3)}
+h1{font:700 clamp(28px,4.6vw,42px)/1.16 var(--serif);margin:0 0 14px;
+  letter-spacing:-.012em;text-wrap:balance}
+.stand{font:400 18.5px/1.6 var(--sans);color:var(--ink2);margin:0 0 22px;
+  max-width:62ch}
+main{padding-bottom:30px}
+section{padding:30px 0 4px;border-top:1px solid var(--bd);margin-top:28px}
+section:first-of-type{border-top:0;margin-top:4px}
+h2{font:700 clamp(20px,2.8vw,27px)/1.26 var(--serif);margin:0 0 9px;
+  text-wrap:balance}
+h3{font:600 16.5px/1.35 var(--sans);margin:24px 0 6px}
+p{margin:0 0 15px;max-width:68ch}
+a{color:var(--gold-d);text-underline-offset:2px}
+strong{font-weight:600;color:var(--ink)}
+ul,ol{margin:0 0 15px;padding-left:20px;max-width:68ch}
+li{margin-bottom:9px}
+li::marker{color:var(--gold-d)}
+.tbl{overflow-x:auto;margin:18px 0 6px;border:1px solid var(--bd);
+  border-radius:12px;background:var(--paper)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--bd);
+  vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);background:var(--cream);white-space:nowrap}
+td.k{font-weight:600;white-space:nowrap}
+.note{background:var(--paper);border:1px solid var(--bd);border-radius:12px;
+  padding:17px 19px;margin:20px 0}
+.note.warn{background:var(--gold-bg);border-color:var(--gold-bd)}
+.note p:last-child{margin-bottom:0}
+.note b{display:block;font:600 14px/1.4 var(--sans);margin-bottom:5px}
+.qa{border-top:1px solid var(--bd);padding:19px 0 4px}
+.qa:first-of-type{border-top:0}
+.qa h3{margin:0 0 7px;font-size:17px}
+.cta{background:var(--navy);color:#fff;border-radius:15px;padding:30px 28px;
+  margin:34px 0 10px}
+.cta h2{color:#fff;margin-bottom:9px}
+.cta p{color:rgba(255,255,255,.80);margin-bottom:19px}
+.cta a.go{display:inline-block;background:var(--gold);color:var(--navy);
+  text-decoration:none;font:600 15px/1 var(--sans);padding:14px 22px;
+  border-radius:10px}
+.cta a.go:hover{background:var(--gold-d);color:#fff}
+.more{margin:26px 0 6px;font-size:14.5px;color:var(--ink2)}
+.more b{display:block;font:600 11px/1 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.more a{display:inline-block;margin:0 14px 7px 0}
+.disc{font:400 13px/1.65 var(--sans);color:var(--ink3);max-width:72ch;
+  border-top:1px solid var(--bd);padding:22px 0 44px;margin-top:30px}
+footer{background:var(--navy);color:rgba(255,255,255,.62);padding:24px 0;
+  font:400 13px/1.6 var(--sans)}
+footer a{color:rgba(255,255,255,.82)}
+</style>
+
+<div class="band">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>DSE Pulse</a>
+    <nav>
+      <a class="opt" href="/how-dse-pulse-works.html">Methodology</a>
+      <a class="opt" href="/trackrecord.html">Track record</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/shell.html#signup">Start free</a>
+    </nav>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumb"><a href="/">DSE Pulse</a> &rsaquo; Technical analysis</p>
+    <h1>Technical analysis on the Dhaka Stock Exchange</h1>
+    <p class="stand">Most technical analysis material is written for continuously traded, deeply liquid markets with derivatives. The DSE is none of those things, and some standard indicators behave differently here — or cannot be computed at all.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<section>
+  <h2>The indicators DSE Pulse computes</h2>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Indicator</th><th>Setting</th><th>What it is read for</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Weighted moving average</td><td>9 / 34 / 89 sessions</td>
+        <td>Trend direction and the order of the three averages against each
+          other</td></tr>
+      <tr><td class="k">MACD</td><td>12 / 26 / 9</td>
+        <td>Momentum shifts and crossovers</td></tr>
+      <tr><td class="k">RSI</td><td>14 sessions</td>
+        <td>Whether a move is stretched</td></tr>
+      <tr><td class="k">Bollinger Bands</td><td>standard</td>
+        <td>Volatility relative to the stock's own recent range</td></tr>
+      <tr><td class="k">Volume ratio</td><td>vs the stock's own average</td>
+        <td>Whether a price move had participation behind it</td></tr>
+      <tr><td class="k">Average True Range</td><td>used by BD Signal</td>
+        <td>Sizing a stop to the stock's own volatility</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Why weighted, not simple, moving averages</h2>
+  <p>A simple moving average treats a price from 89 sessions ago as exactly as
+    important as yesterday's. A weighted moving average scales the influence
+    of each session by how recent it is.</p>
+  <p>DSE Pulse uses 9, 34 and 89 sessions, computed from 150 days of history,
+    and reads the <strong>order</strong> of the three rather than their
+    values:</p>
+  <ul>
+    <li>9 above 34 above 89 — all three aligned upward.</li>
+    <li>9 above 34 only — the short average has turned, the long one has not
+      confirmed.</li>
+    <li>9 below 34 — the short average has rolled over.</li>
+    <li>All three aligned downward.</li>
+  </ul>
+  <p>Trend is reported separately from signal, and the narrow band where the
+    medium and long averages are effectively level is called sideways rather
+    than forced into a direction. A market spends a lot of its time there, and
+    saying so is more useful than picking.</p>
+</section>
+
+<section>
+  <h2>Where standard indicators need care on this market</h2>
+  <h3>Daily price limits compress momentum</h3>
+  <p>The exchange restricts how far a share can move in a session. Momentum
+    indicators calibrated on markets without that restriction will read
+    differently here: a move that would be extreme elsewhere may simply be
+    the day's maximum. DSE Pulse treats a reported move beyond roughly 30% as
+    a <strong>data fault rather than news</strong> and suppresses it, because
+    at that magnitude bad data is far more likely than a real event.</p>
+
+  <h3>RSI on a stock that did not move</h3>
+  <p>The standard RSI formula divides by average losses. A price series with
+    no down days at all produces a division by zero, and the usual shortcut is
+    to return 100 — "overbought". On a thinly traded stock whose price did not
+    change, that is exactly wrong: it reports an extreme where nothing
+    happened. DSE Pulse returns a neutral reading in that case and reserves
+    100 for a series that genuinely rose without a single down day.</p>
+
+  <h3>Indicators with no inputs here</h3>
+  <p>The Dhaka Stock Exchange has no options market. Every indicator derived
+    from options pricing — put-call ratio, implied volatility, options skew —
+    therefore has nothing to compute from. DSE Pulse does not publish them.
+    Inventing a proxy and labelling it with the familiar name would be
+    straightforward and dishonest.</p>
+</section>
+
+<section>
+  <h2>Technical analysis cannot see fundamentals</h2>
+  <p>Everything above reads price, volume and exchange category. None of it
+    reads an earnings announcement, a board decision, a regulatory action or
+    a rights issue. Those move shares, and they move them overnight, between
+    the close that produced a signal and the open where you would act on it.</p>
+  <p>A technical signal is one input. Treating it as the only one is the most
+    common way to be surprised.</p>
+</section>
+<div class="cta">
+  <h2>See tonight's shortlist</h2>
+  <p>Every listed DSE stock, scored after the close. Seven days of full
+    access, no card required.</p>
+  <a class="go" href="/shell.html#signup">Start free — no card needed</a>
+</div>
+<p class="more"><b>Related</b><a href="/dse-stock-market-signals.html">How to read a signal</a><a href="/how-dse-pulse-works.html">Full methodology</a><a href="/bangladesh-stock-market-analysis.html">Analysing the DSE</a></p>
+<p class="disc"><strong>Risk disclosure.</strong> DSE Pulse publishes technical analysis of publicly listed securities. It is not investment advice, not a recommendation to buy or sell any security, and not a personalised assessment of anyone's circumstances. No return is promised or implied. Share prices fall as well as rise and you can lose money, including the whole of a position. Entry, target and stop levels are arithmetic consequences of stated conditions, not predictions, and they exclude brokerage commission. Historical signal performance does not indicate future results. Consider your own objectives, and take independent licensed advice, before acting on anything published here.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 DSE Pulse ·
+    <a href="/">Home</a> ·
+    <a href="/how-dse-pulse-works.html">Methodology</a> ·
+    <a href="/trackrecord.html">Track record</a> ·
+    <a href="/#pricing">Pricing</a>
+  </div>
+</footer>
+</html>

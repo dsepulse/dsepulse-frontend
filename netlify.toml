@@ -1,0 +1,50 @@
+#  dsepulse.com — Netlify configuration
+#
+#  ⚠  ONLY ADD THIS FILE IF THE REPO DOES NOT ALREADY HAVE ONE.
+#     If a netlify.toml already exists, do not replace it — send it to me and
+#     I will give you the exact blocks to merge. A replaced build config can
+#     break the deploy.
+
+#  Deploy previews must never be indexed. Netlify gives every branch and
+#  every pull request its own public URL; without this they compete with
+#  dsepulse.com for the same content and can be indexed in its place.
+[[context.deploy-preview.headers]]
+  for = "/*"
+  [context.deploy-preview.headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[context.branch-deploy.headers]]
+  for = "/*"
+  [context.branch-deploy.headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+#  Belt and braces on the two private pages. The meta tag in each file is the
+#  primary signal; this one also covers the case where a crawler sees the
+#  response headers but never parses the document.
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/analytics.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+#  Correct content types, so robots.txt and the sitemap are served as text
+#  and XML rather than guessed.
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=UTF-8"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=UTF-8"
+
+#  The share image is immutable once published; let it cache.
+[[headers]]
+  for = "/og-cover.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

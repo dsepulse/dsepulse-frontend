@@ -1,0 +1,52 @@
+# dsepulse.com — robots.txt
+# Public: the marketing pages, the track record, the calculator and the
+# picks teaser. Everything that renders as a sign-in gate or an account
+# screen is kept out of the index: to a crawler those pages are ~20 copies
+# of the same empty shell, and they compete with the pages that do say
+# something.
+
+User-agent: *
+Allow: /
+
+# ── private: never crawl ────────────────────────────────────────────────
+Disallow: /admin.html
+Disallow: /analytics.html
+
+# ── the signed-in application ───────────────────────────────────────────
+Disallow: /shell.html
+
+# ── plan-gated tools. Verified to render as a gate or an empty loader to
+#    an anonymous fetch, so there is nothing here for a search result.
+Disallow: /wma.html
+Disallow: /tech.html
+Disallow: /combined.html
+Disallow: /bd.html
+Disallow: /smartmoney.html
+Disallow: /mastersignal.html
+Disallow: /risk.html
+Disallow: /screener.html
+Disallow: /comparison.html
+Disallow: /crosstool.html
+Disallow: /fundamentals.html
+
+# ── AI answer engines. Named explicitly rather than relying on the
+#    wildcard, because several read only their own block.
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin.html
+Disallow: /analytics.html
+Disallow: /shell.html
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin.html
+Disallow: /analytics.html
+Disallow: /shell.html
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin.html
+Disallow: /analytics.html
+Disallow: /shell.html
+
+Sitemap: https://dsepulse.com/sitemap.xml

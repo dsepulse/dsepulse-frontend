@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<title>DSE Pulse · Admin</title>
+<style>
+  :root{--bg:#0a0f1a;--panel:#0e1726;--panel2:#16233a;--border:#1d2b40;--border2:#2a3a52;--text:#e8eef7;--muted:#9fb0c7;--hint:#7b8aa3;--info:#378add;--success:#5fd38a;--danger:#ff8fa3;--amber:#f4c659}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  a{color:var(--info)}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .top h1{font-size:20px;margin:0;font-weight:600}
+  .btn{padding:9px 14px;border:1px solid var(--border2);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer;font-size:14px}
+  .btn:hover{background:#1d2d49}
+  .btn-pri{background:var(--info);border-color:var(--info);color:#04243f;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:18px}
+  .card h2{font-size:13px;margin:0 0 14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px}
+  .stat{background:var(--panel2);border-radius:10px;padding:12px 14px}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .stat .v{font-size:22px;font-weight:600;margin-top:2px}
+  .bar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  input,select{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--panel2);color:var(--text);font-size:14px}
+  .search{flex:1;min-width:180px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid var(--panel2);white-space:nowrap;font-size:13px}
+  th{color:var(--muted);font-weight:600}
+  .sub{color:var(--hint);font-size:11px}
+  .badge{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase}
+  .b-free{background:#243043;color:#9fb0c7}.b-premium{background:#3a2f12;color:var(--amber)}.b-pro{background:#13321f;color:var(--success)}
+  .ban{padding:6px 10px;border:1px solid #4a2230;border-radius:7px;background:#2a141c;color:var(--danger);cursor:pointer;margin-left:6px;font-size:12px}
+  .ban.un{border-color:#234a2f;background:#14271b;color:var(--success)}
+  .msg{font-size:13px;min-height:18px;margin:6px 0;color:var(--muted)}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .fld label{min-height:2.4em;display:flex;align-items:flex-end;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .fld input{width:100%}
+  /* ── campaigns ─────────────────────────────────────────────────────── */
+  .ccap{margin:18px 0 8px;font-size:13px;font-weight:600}
+  .cshow{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:13px;color:var(--muted)}
+  .cshow label{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .cerr{margin-top:10px;font-size:12.5px;line-height:1.7;color:var(--danger)}
+  .cerr b{display:block;color:var(--danger);margin-bottom:2px}
+  .cprev{margin-top:14px;font-size:12.5px;line-height:1.75;color:var(--muted)}
+  .cprev s{color:var(--hint)}
+  .cprev b{color:var(--text)}
+  .cprev .pvbadge{display:inline-block;background:var(--amber);color:#1a1205;
+    font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 8px;
+    border-radius:999px;text-transform:uppercase}
+  /*  One colour per state, so the table can be read without reading it. */
+  .st{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;
+    text-transform:uppercase;white-space:nowrap}
+  .st-active{background:#13321f;color:var(--success)}
+  .st-scheduled{background:#3a2f12;color:var(--amber)}
+  .st-draft{background:#243043;color:#9fb0c7}
+  .st-expired{background:#1d222b;color:var(--hint)}
+  .st-disabled{background:#1d222b;color:var(--hint)}
+  .st-invalid{background:#2a141c;color:var(--danger)}
+  /*  A warning the admin must not be able to scroll past. Used where acting
+      on what the panel shows would destroy data on the live site.          */
+  .warn{margin:10px 0 0;padding:11px 13px;border-radius:0 8px 8px 0;
+    border-left:3px solid var(--amber);background:#241d0c;color:var(--amber);
+    font-size:12.5px;line-height:1.65}
+  .warn b{color:var(--amber)}
+  .warn[hidden]{display:none}
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 16px}
+  .gate input{width:100%;margin:14px 0}
+  .hide{display:none}
+  .toolgrp{font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px}
+  .toolrow{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--panel2)}
+  .toolrow span{font-size:13px}
+  .sw{position:relative;display:inline-block;width:40px;height:22px;flex:none}
+  .sw input{opacity:0;width:0;height:0}
+  .sw .sl{position:absolute;inset:0;background:#243043;border-radius:999px;transition:.15s;cursor:pointer}
+  .sw .sl:before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:#9fb0c7;border-radius:50%;transition:.15s}
+  .sw input:checked + .sl{background:var(--success)}
+  .sw input:checked + .sl:before{transform:translateX(18px);background:#04241a}
+  .toolhd{display:grid;grid-template-columns:1fr 64px 64px 64px;align-items:center;padding:6px 2px 8px;font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border2)}
+  .toolhd span:not(:first-child){justify-self:center}
+  .toolrow2{display:grid;grid-template-columns:1fr 64px 64px 64px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--panel2)}
+  .toolrow2>span:first-child{font-size:13px}
+  .toolrow2 label.sw{justify-self:center}
+  .socialhd{display:grid;grid-template-columns:1fr 2.2fr 64px;align-items:center;padding:6px 2px 8px;font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border2)}
+  .socialhd span:last-child{justify-self:center}
+  .socialrow{display:grid;grid-template-columns:1fr 2.2fr 64px;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--panel2)}
+  .socialrow>span:first-child{font-size:13px}
+  .socialrow input{width:100%}
+  .socialrow label.sw{justify-self:center}
+  /*  Growth. The one card that answers "is December reachable", so it reads
+      top-down: the gap, the rate it demands, the rate actually happening. */
+  .gwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .gbig{background:var(--panel2);border-radius:10px;padding:14px 16px}
+  .gbig .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .gbig .v{font-size:26px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .gbig .s{font-size:11px;color:var(--hint);margin-top:2px}
+  .gv-ok{color:var(--success)} .gv-bad{color:var(--danger)} .gv-warn{color:var(--amber)}
+  .gsec{font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 6px}
+  .grow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px 2px;border-bottom:1px solid var(--panel2);font-size:13px}
+  .grow b{font-variant-numeric:tabular-nums}
+  .gnote{font-size:12px;color:var(--muted);background:#141f33;border-left:3px solid var(--amber);
+    border-radius:0 7px 7px 0;padding:10px 12px;margin-top:12px;line-height:1.6}
+  .gbar{height:8px;border-radius:99px;background:#243043;overflow:hidden;margin-top:10px}
+  .gbar i{display:block;height:100%;background:var(--success);border-radius:99px}
+  @media(max-width:560px){.socialhd{display:none}
+    .socialrow{grid-template-columns:1fr 64px;gap:8px}
+    .socialrow input{grid-column:1/-1;order:3}}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <h1>DSE Pulse · Admin</h1>
+  <p style="color:#9fb0c7">Enter your admin key to continue.</p>
+  <input id="keyIn" type="password" placeholder="Admin key" onkeydown="if(event.key==='Enter')unlock()">
+  <button class="btn btn-pri" style="width:100%" onclick="unlock()">Unlock</button>
+  <div id="gateMsg" class="msg" style="color:#ff8fa3"></div>
+</div>
+
+<div id="app" class="wrap hide">
+  <div class="top">
+    <h1>DSE Pulse · Admin</h1>
+    <div style="display:flex;gap:8px">
+      <!--  Analytics is its own page rather than another card here: seven
+            screens inside a card stack would bury the settings this page
+            exists for. Same admin key, same sessionStorage slot, so opening
+            it does not ask for the key again.  -->
+      <a class="btn btn-pri" href="/analytics.html">Analytics →</a>
+      <button class="btn" onclick="lock()">Lock</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Overview</h2>
+    <div class="stats" id="stats"><div class="stat"><div class="l">Loading…</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Growth &middot; 5,000 paying subscribers</h2>
+    <div class="bar">
+      <select id="gDays">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+      <button class="btn" onclick="loadGrowth()">&#8635; Refresh</button>
+    </div>
+    <div id="gMsg" class="msg"></div>
+    <div id="growth"><div class="sub">Loading&hellip;</div></div>
+  </div>
+
+  <div class="card">
+    <h2>User management</h2>
+    <div class="bar">
+      <input class="search" id="search" placeholder="Search name or email…" oninput="renderUsers()">
+      <button class="btn" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+    <div id="uMsg" class="msg"></div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>User</th><th>Plan</th><th>Trial</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="uRows"><tr><td colspan="5">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!--  ══ PRICING ════════════════════════════════════════════════════════
+        These are the LIST prices — config.pricing on the server, the
+        undiscounted table. They are NOT what the site is charging while a
+        campaign is running; the campaign card below decides that.
+
+        The boxes are filled from /api/config's `standard` block whenever a
+        campaign is live, because pricing[period][plan] is the DISCOUNTED
+        figure during a campaign. Filling them from the discounted figure and
+        pressing Save would write the campaign's own prices in as the new
+        list prices — the discount would vanish, the struck-through price
+        would disappear from the public site, and the real list prices would
+        be gone with no copy anywhere. See loadPricing().                  -->
+  <div class="card">
+    <h2>Pricing <span class="sub" style="text-transform:none;letter-spacing:0">— list prices, not campaign prices</span></h2>
+    <div id="pWarn" class="warn" hidden></div>
+    <div id="pMsg" class="msg"></div>
+    <div class="grid2">
+      <div class="fld"><label>Monthly · Premium (৳)</label><input id="mp" type="number"></div>
+      <div class="fld"><label>Monthly · Pro (৳)</label><input id="mpr" type="number"></div>
+      <div class="fld"><label>Quarterly · Premium (৳)</label><input id="qp" type="number"></div>
+      <div class="fld"><label>Quarterly · Pro (৳)</label><input id="qpr" type="number"></div>
+      <div class="fld"><label>Annual · Premium (৳)</label><input id="ap" type="number"></div>
+      <div class="fld"><label>Annual · Pro (৳)</label><input id="apr" type="number"></div>
+      <div class="fld"><label>Trial days</label><input id="td" type="number"></div>
+    </div>
+
+    <div id="pLadder" class="warn" hidden></div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="savePricing()">Save pricing</button>
+  </div>
+
+  <!--  ══ CAMPAIGNS ══════════════════════════════════════════════════════
+        The prices above are the LIST prices and are never written by
+        anything in this card. A campaign is a separate record with its own
+        dates, and the five states shown on each row are worked out from the
+        clock by the server, so a campaign cannot outlive its own end date.  -->
+  <div class="card">
+    <h2>Campaigns</h2>
+    <div id="cNote" class="sub" style="margin-bottom:10px"></div>
+    <div id="cMsg" class="msg"></div>
+
+    <div class="tbl" style="margin-bottom:14px">
+      <table><thead><tr>
+        <th>Campaign</th><th>State</th><th>Window</th><th>Applies to</th><th></th>
+      </tr></thead><tbody id="cRows"></tbody></table>
+    </div>
+    <button class="btn" onclick="campNew()">New campaign</button>
+
+    <div id="cEdit" class="hide" style="margin-top:18px;padding-top:16px;
+         border-top:1px solid var(--panel2)">
+      <input id="cId" type="hidden">
+      <div class="grid2">
+        <div class="fld"><label>Campaign name</label><input id="cName" maxlength="80"
+          placeholder="Early Bird Offer"></div>
+        <div class="fld"><label>Analytics code</label><input id="cCode" maxlength="32"
+          placeholder="earlybird"></div>
+        <div class="fld"><label>Badge</label><input id="cBadge" maxlength="40"
+          placeholder="LIMITED-TIME OFFER"></div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="fld" style="grid-column:1/-1"><label>Heading</label>
+          <input id="cHead" maxlength="120"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Description</label>
+          <input id="cDesc" maxlength="400"></div>
+      </div>
+
+      <div class="ccap">Window <span class="sub">— typed in the campaign's own
+        time zone. Both ends are inclusive to the minute.</span></div>
+      <div class="grid2">
+        <div class="fld"><label>Time zone</label>
+          <select id="cTz"><option>Asia/Dhaka</option><option>UTC</option>
+          <option>Asia/Kolkata</option><option>Asia/Karachi</option></select></div>
+        <div class="fld"><label>Starts</label><input id="cFrom" type="datetime-local"></div>
+        <div class="fld"><label>Ends</label><input id="cTo" type="datetime-local"></div>
+      </div>
+
+      <div class="ccap">Campaign prices <span class="sub">— leave a box blank to
+        keep that cell at its list price. A campaign price must be below the
+        list price or the server refuses it.</span></div>
+      <div class="tbl"><table><thead><tr>
+        <th>Period</th><th>Eligible</th><th>Premium list</th><th>Premium campaign</th>
+        <th>Pro list</th><th>Pro campaign</th><th>Discount</th></tr></thead>
+        <tbody id="cPrices"></tbody></table></div>
+
+      <div class="ccap">What the visitor sees</div>
+      <div class="cshow">
+        <label><input type="checkbox" id="sw_banner" checked> Banner</label>
+        <label><input type="checkbox" id="sw_popup" checked> Arrival popup</label>
+        <label><input type="checkbox" id="sw_countdown" checked> Countdown</label>
+        <label><input type="checkbox" id="sw_strike" checked> Crossed-out list price</label>
+        <label><input type="checkbox" id="sw_savings" checked> Savings %</label>
+        <label><input type="checkbox" id="sw_cta"> Call to action</label>
+        <label><input type="checkbox" id="sw_terms"> Terms</label>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="fld"><label>CTA text</label><input id="cCtaT" maxlength="40"
+          placeholder="See the plans"></div>
+        <div class="fld"><label>CTA destination</label><select id="cCtaH"></select></div>
+        <div class="fld" style="grid-column:1/-1"><label>Terms</label>
+          <input id="cTerms" maxlength="600"></div>
+      </div>
+
+      <div class="bar" style="margin-top:16px">
+        <button class="btn" onclick="campPreview()">Preview</button>
+        <button class="btn btn-pri" onclick="campSave('draft')">Save as draft</button>
+        <button class="btn btn-pri" onclick="campSave('enabled')">Save &amp; schedule</button>
+        <button class="btn" onclick="campClose()">Cancel</button>
+      </div>
+      <div id="cErr" class="cerr"></div>
+      <div id="cPrev" class="cprev"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Referral rewards</h2>
+    <div id="rMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:12px">Invited customers get a discount on
+      their first subscription. Referrers earn one reward per friend who completes a
+      verified payment — rewards add up, but only to the maximum below on any single
+      purchase. Saved values apply to the very next checkout; no deploy is needed.</div>
+    <div class="grid2">
+      <div class="fld"><label>Programme</label>
+        <select id="rEnabled"><option value="1">On</option><option value="0">Off</option></select></div>
+      <div class="fld"><label>Invited customer gets (%)</label><input id="rInv" type="number" step="1"></div>
+      <div class="fld"><label>Reward per referral (%)</label><input id="rUnit" type="number" step="1"></div>
+      <div class="fld"><label>Maximum on one purchase (%)</label><input id="rMax" type="number" step="1"></div>
+      <div class="fld"><label>Reward valid for (days)</label><input id="rDays" type="number" step="1"></div>
+      <div class="fld"><label>Checkout hold (minutes)</label><input id="rHold" type="number" step="1"></div>
+      <div class="fld"><label>Lifetime cap per person (0 = unlimited)</label><input id="rCap" type="number" step="1"></div>
+    </div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveReferral()">Save referral rewards</button>
+    <div class="sub" id="rTerms" style="margin-top:10px"></div>
+    <div class="sub" style="margin-top:8px">Rewards already earned keep the percentage
+      they were earned at — changing a rate here only affects rewards earned from now on.</div>
+  </div>
+
+  <div class="card">
+    <h2>Tool visibility</h2>
+    <div id="tMsg" class="msg"></div>
+    <div id="tools"><div class="sub">Loading…</div></div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveTools()">Save tool visibility</button>
+    <div class="sub" style="margin-top:8px">Each tool can be on/off per plan. A tool turned off for a plan is hidden from those users' sidebar. Hard-refresh the app after saving.</div>
+  </div>
+
+  <div class="card">
+    <h2>Footer &amp; social</h2>
+    <div id="sMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:12px">An icon appears in the site
+      footer only when it is switched on <b>and</b> holds an <code>https://</code>
+      address. Switching one off hides it everywhere without losing the address,
+      so it can go back up later without being retyped. Addresses are checked on
+      the server — anything that is not https is stored as blank.</div>
+    <div id="social"><div class="sub">Loading…</div></div>
+    <button class="btn btn-pri" style="margin-top:12px" onclick="saveSocial()">Save footer &amp; social</button>
+    <div class="sub" style="margin-top:8px">Saved changes show on the next page
+      load of the public site. No deploy is needed.</div>
+  </div>
+
+  <div class="card">
+    <h2>Trial win-back emails</h2>
+    <div id="wbMsg" class="msg"></div>
+    <div class="sub" style="margin-bottom:10px">Sends a 3-email sequence (Day 0 / 2 / 5 after a trial expires), then stops. Each user receives each email only once.</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="wbTest" class="search" style="max-width:260px" placeholder="your@email.com (test recipient)">
+      <select id="wbStage">
+        <option value="1">Stage 1 · Day 0</option>
+        <option value="2">Stage 2 · Day 2</option>
+        <option value="3">Stage 3 · Day 5</option>
+      </select>
+      <button class="btn" onclick="wbTest()">Send test to me</button>
+      <button class="btn btn-pri" onclick="wbRun()">Run win-back now</button>
+    </div>
+    <div class="sub" style="margin-top:8px">"Send test to me" emails one sample to the address above (no real users touched). "Run win-back now" emails any users who are due today — the daily GitHub Action does this automatically, so this button is just for manual runs.</div>
+  </div>
+</div>
+
+<script src="/env.js"></script>
+<script>
+const API=(window.DSEEnv?window.DSEEnv.apiBase:"https://dsepulse-backend-production.up.railway.app");
+let KEY=sessionStorage.getItem("dse_admin_key")||"";
+let USERS=[];
+const H=()=>({"Content-Type":"application/json","X-Admin-Key":KEY});
+function $(id){return document.getElementById(id)}
+function fmtDate(s){if(!s)return"—";const d=new Date(s);return isNaN(d)?"—":d.toLocaleDateString()}
+function badge(p){p=(p||"free").toLowerCase();return `<span class="badge b-${p}">${p}</span>`}
+
+async function unlock(){
+  KEY=$("keyIn").value.trim();
+  if(!KEY){$("gateMsg").textContent="Enter a key.";return}
+  $("gateMsg").textContent="Checking…";
+  try{
+    const r=await fetch(`${API}/api/admin/stats`,{headers:H()});
+    if(r.status===401||r.status===403){$("gateMsg").textContent="Wrong admin key.";return}
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    sessionStorage.setItem("dse_admin_key",KEY);
+    $("gate").classList.add("hide");$("app").classList.remove("hide");boot();
+  }catch(e){$("gateMsg").textContent="Could not reach backend: "+e.message}
+}
+function lock(){sessionStorage.removeItem("dse_admin_key");location.reload()}
+function boot(){loadStats();loadGrowth();loadUsers();loadPricing();loadCampaigns();loadReferral();loadTools();loadSocial()}
+
+/*  Growth. Everything here comes from /api/admin/growth, which reads the
+    users, transactions and subscriptions tables that already exist — no
+    visitor tracking is needed for any of it. The visitor block is the one
+    part that waits on the collector, and it says so rather than showing a
+    zero, because an empty collector and a zero conversion rate look identical
+    in a number and mean opposite things.                                   */
+function gnum(n){ return (n===null||n===undefined) ? "—" : Number(n).toLocaleString(); }
+function grow(l,v){ return `<div class="grow"><span>${l}</span><b>${v}</b></div>`; }
+
+async function loadGrowth(){
+  $("gMsg").textContent="Loading growth…";
+  const days=$("gDays").value||30;
+  try{
+    const r=await fetch(`${API}/api/admin/growth?days=${days}`,{headers:H()});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    const t=d.target||{}, reg=d.registrations||{}, paid=d.paid||{},
+          rev=d.revenue||{}, rate=d.rates||{}, vis=d.visitors||{};
+
+    //  Behind or ahead, stated as a fact rather than a colour alone.
+    const need=t.required_net_paid_per_week||0, got=t.actual_new_paid_last_7||0;
+    const cls = got>=need&&need>0 ? "gv-ok" : (got>0 ? "gv-warn" : "gv-bad");
+    const pct = t.goal ? Math.min(100,(100*(t.active_paid_now||0)/t.goal)) : 0;
+
+    let h='<div class="gwrap">'+
+      `<div class="gbig"><div class="l">Active paid now</div><div class="v">${gnum(t.active_paid_now)}</div><div class="s">of ${gnum(t.goal)} by ${t.deadline||""}</div></div>`+
+      `<div class="gbig"><div class="l">Gap</div><div class="v">${gnum(t.gap)}</div><div class="s">${t.weeks_remaining} weeks left</div></div>`+
+      `<div class="gbig"><div class="l">Needed / week</div><div class="v gv-warn">${gnum(need)}</div><div class="s">net new paying</div></div>`+
+      `<div class="gbig"><div class="l">Actual last 7 days</div><div class="v ${cls}">${gnum(got)}</div><div class="s">${need? (got>=need?"on track":"behind by "+gnum(need-got)) : ""}</div></div>`+
+      `<div class="gbig"><div class="l">Revenue</div><div class="v">৳${gnum(rev.total_bdt)}</div><div class="s">৳${gnum(rev.last_30_bdt)} last 30 days</div></div>`+
+      '</div>'+
+      `<div class="gbar"><i style="width:${pct.toFixed(2)}%"></i></div>`;
+
+    h+='<div class="gsec">Registrations</div>'+
+       grow("Total", gnum(reg.total))+grow("Last 7 days", gnum(reg.last_7))+
+       grow("Last 30 days", gnum(reg.last_30));
+
+    h+='<div class="gsec">Paid</div>'+
+       grow("Paying users ever", gnum(paid.paying_users_ever))+
+       grow("New, last 7 days", gnum(paid.new_last_7))+
+       grow("New, last 30 days", gnum(paid.new_last_30))+
+       grow("Renewals, last 30 days", gnum(paid.renewals_last_30))+
+       grow("Registration → paid", rate.registration_to_paid_pct==null?"—":rate.registration_to_paid_pct+"%")+
+       grow("Lapsed subscriptions", gnum(rate.lapsed_subscriptions));
+
+    h+='<div class="gsec">Visitors · last '+(vis.days||days)+' days</div>';
+    if(vis.collecting){
+      h+=grow("Unique visitors", gnum(vis.unique_visitors))+
+         grow("Sessions", gnum(vis.sessions))+
+         grow("Page views", gnum(vis.page_views))+
+         grow("Visitor → registration", vis.visitor_to_registration_pct==null?"—":vis.visitor_to_registration_pct+"%");
+      (vis.by_source||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;source &middot; "+x.source, gnum(x.visitors)); });
+      (vis.by_device||[]).forEach(x=>{ h+=grow("&nbsp;&nbsp;device &middot; "+x.device, gnum(x.visitors)); });
+    } else {
+      h+=`<div class="gnote">${vis.note||"No visitor events collected yet."}</div>`;
+    }
+
+    //  The arithmetic that turns the target into a traffic requirement. Shown
+    //  only when there is a real conversion rate to base it on — a required
+    //  visitor count derived from one sale would be a made-up number.
+    if(t.required_registrations_per_week){
+      h+=`<div class="gnote"><b>At the current ${rate.registration_to_paid_pct}% registration→paid rate,
+          ${gnum(need)} paying subscribers a week needs about
+          <b>${gnum(t.required_registrations_per_week)} registrations a week</b>.</b>
+          Against ${gnum(reg.last_7)} in the last 7 days. This is arithmetic from your own
+          numbers, not a forecast — the rate itself rests on ${gnum(paid.paying_users_ever)} paying
+          ${paid.paying_users_ever===1?"user":"users"} and will move a lot as that grows.</div>`;
+    }
+
+    $("growth").innerHTML=h;
+    $("gMsg").textContent="As of "+(d.as_of||"").replace("T"," ")+".";
+  }catch(e){
+    $("growth").innerHTML="";
+    $("gMsg").textContent="Could not load growth: "+e.message;
+  }
+}
+
+async function loadStats(){
+  try{
+    const s=await(await fetch(`${API}/api/admin/stats`,{headers:H()})).json();
+    $("stats").innerHTML=[["Total",s.total],["Free",s.free],["Premium",s.premium],["Pro",s.pro],["MRR","৳"+(s.mrr||0).toLocaleString()]]
+      .map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v??0}</div></div>`).join("");
+  }catch(e){$("stats").innerHTML=`<div class="stat"><div class="l">Failed: ${e.message}</div></div>`}
+}
+
+async function loadUsers(){
+  $("uMsg").textContent="Loading users…";
+  try{
+    const r=await fetch(`${API}/api/admin/users`,{headers:H()});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    USERS=(await r.json()).users||[];
+    renderUsers();$("uMsg").textContent=`${USERS.length} users.`;
+  }catch(e){$("uMsg").textContent="Failed: "+e.message}
+}
+
+const TRIAL_DAYS=7;
+function trialCell(u){
+  const plan=(u.plan||"free").toLowerCase();
+  if(plan!=="free") return '<span class="sub">—</span>';           // paid plans: trial N/A
+  if(!u.trial_start) return '<span class="sub">—</span>';
+  const start=new Date(u.trial_start);
+  if(isNaN(start)) return '<span class="sub">—</span>';
+  const used=(Date.now()-start.getTime())/86400000;
+  const left=Math.ceil(TRIAL_DAYS-used);
+  if(left>1)  return `<span style="color:var(--success)">${left} days left</span>`;
+  if(left===1)return `<span style="color:var(--amber)">1 day left</span>`;
+  if(left===0)return `<span style="color:var(--amber)">last day</span>`;
+  return `<span style="color:var(--hint)">ended ${Math.abs(left)}d ago</span>`;
+}
+function renderUsers(){
+  const q=($("search").value||"").toLowerCase();
+  const rows=USERS.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||(u.name||"").toLowerCase().includes(q));
+  const tb=$("uRows");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="6">No users.</td></tr>`;return}
+  tb.innerHTML=rows.map(u=>{
+    const plan=(u.plan||"free").toLowerCase(),banned=u.status==="banned";
+    const opts=["free","premium","pro"].map(p=>`<option value="${p}" ${p===plan?"selected":""}>${p[0].toUpperCase()+p.slice(1)}</option>`).join("");
+    return `<tr>
+      <td><div>${u.name||"—"}</div><div class="sub">${u.email||""}</div></td>
+      <td>${badge(plan)}</td>
+      <td>${trialCell(u)}</td>
+      <td>${banned?'<span style="color:#ff8fa3">banned</span>':"active"}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><select onchange="setPlan('${u.id}',this.value)">${opts}</select>
+      <button class="ban ${banned?"un":""}" onclick="ban('${u.id}',${banned?"false":"true"})">${banned?"Unban":"Ban"}</button></td></tr>`;
+  }).join("");
+}
+
+async function setPlan(id,plan){
+  $("uMsg").textContent=`Updating to ${plan}…`;
+  try{
+    const r=await fetch(`${API}/api/admin/user/plan`,{method:"POST",headers:H(),body:JSON.stringify({user_id:id,plan})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const u=USERS.find(x=>x.id===id);if(u)u.plan=plan;
+    renderUsers();loadStats();$("uMsg").textContent=`Plan set to ${plan}.`;
+  }catch(e){$("uMsg").textContent="Failed: "+e.message;loadUsers()}
+}
+
+async function ban(id,b){
+  try{
+    const r=await fetch(`${API}/api/admin/user/ban`,{method:"POST",headers:H(),body:JSON.stringify({user_id:id,ban:b})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const u=USERS.find(x=>x.id===id);if(u)u.status=b?"banned":"active";
+    renderUsers();$("uMsg").textContent=b?"User banned.":"User unbanned.";
+  }catch(e){$("uMsg").textContent="Failed: "+e.message}
+}
+
+/*  ══ THE LIST PRICES ═════════════════════════════════════════════════════
+    LIST_NOW holds the undiscounted table and nothing else. It is also what
+    the campaign editor's "Premium list" / "Pro list" columns read, so both
+    cards agree about what a list price is.
+
+    /api/config publishes TWO things per period:
+      pricing[period][plan]            what the site is CHARGING today
+      pricing[period].standard[plan]   the list price, present only while a
+                                       campaign is discounting that cell
+
+    Reading the first of those into these boxes is the bug this function
+    exists to not have: during a campaign it would fill the card with the
+    campaign's own prices, and Save would write them in as the list prices.
+    The discount would silently become zero, the struck-through price would
+    vanish from the public site, and the real list prices would be gone —
+    they are stored in exactly one place and nothing keeps a copy.        */
+let LIST_NOW = {}, CAMPAIGN_LIVE = false;
+
+function listPrice(period, plan) {
+  const row = LIST_NOW[period] || {};
+  const std = row.standard || {};
+  //  `standard` is present only for a cell a campaign is discounting, so fall
+  //  back to the charged figure — outside a campaign the two are the same.
+  return std[plan] != null ? std[plan] : row[plan];
+}
+
+async function loadPricing(){
+  try{
+    const c=await(await fetch(`${API}/api/config?x=`+Date.now())).json();
+    LIST_NOW = (c && c.pricing) || {};
+    CAMPAIGN_LIVE = !!(LIST_NOW.campaign);
+    const g=(per,pl,dflt)=>{ const v=listPrice(per,pl); return v==null?dflt:v; };
+    $("mp").value =g("monthly","premium",249);  $("mpr").value=g("monthly","pro",399);
+    $("qp").value =g("quarterly","premium",699);$("qpr").value=g("quarterly","pro",1099);
+    $("ap").value =g("annual","premium",2490);  $("apr").value=g("annual","pro",3990);
+    $("td").value =LIST_NOW.trial_days??7;
+
+    const w=$("pWarn");
+    if(CAMPAIGN_LIVE){
+      const nm=(LIST_NOW.campaign&&(LIST_NOW.campaign.name||LIST_NOW.campaign.id))||"a campaign";
+      w.innerHTML="<b>"+esc(String(nm))+" is running.</b> The boxes below are the "+
+        "LIST prices, which is what they have always meant — the site is "+
+        "currently charging the campaign's lower prices instead. Saving here "+
+        "changes the list prices only. It does not end the campaign, and it does "+
+        "not change what anyone is charged today.";
+      w.hidden=false;
+    } else { w.hidden=true; w.innerHTML=""; }
+    paintLadder();
+  }catch(e){$("pMsg").textContent="Could not load current pricing: "+e.message}
+}
+
+/*  A longer commitment that costs MORE than paying monthly is not a plan, it
+    is a mistake — and the public site will refuse to print a saving badge for
+    it, so it would otherwise go unnoticed. Checked live as the boxes change.  */
+function paintLadder(){
+  const n=id=>Number($(id).value);
+  const bad=[];
+  [["Quarterly","qp","mp",3],["Quarterly","qpr","mpr",3],
+   ["Annual","ap","mp",12],["Annual","apr","mpr",12]].forEach(([lab,id,mid,mo])=>{
+    const now=n(id), full=n(mid)*mo;
+    if(now>0&&full>0&&now>=full)
+      bad.push(lab+" "+(id.endsWith("r")?"Pro":"Premium")+" at ৳"+now+
+               " costs the same or more than "+mo+" months at ৳"+n(mid)+
+               " (৳"+full+").");
+  });
+  const w=$("pLadder");
+  if(bad.length){ w.innerHTML="<b>Upside-down ladder</b>"+bad.map(b=>"<br>· "+esc(b)).join("");
+                  w.hidden=false; }
+  else { w.hidden=true; w.innerHTML=""; }
+}
+["mp","mpr","qp","qpr","ap","apr"].forEach(id=>{
+  document.addEventListener("input",e=>{ if(e.target&&e.target.id===id) paintLadder(); });
+});
+
+async function savePricing(){
+  $("pMsg").textContent="Saving…";
+  const body={monthly_premium:+$("mp").value,monthly_pro:+$("mpr").value,quarterly_premium:+$("qp").value,quarterly_pro:+$("qpr").value,annual_premium:+$("ap").value,annual_pro:+$("apr").value,trial_days:+$("td").value};
+  try{
+    const r=await fetch(`${API}/api/admin/pricing`,{method:"POST",headers:H(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    $("pMsg").textContent="List prices saved."+(CAMPAIGN_LIVE
+      ? " A campaign is still running, so the public site keeps charging the campaign prices."
+      : " Hard-refresh the public site to see them.");
+    //  Re-read rather than trust the panel: the campaign editor's list columns
+    //  read the same table and would otherwise be a version behind.
+    loadPricing(); loadCampaigns();
+  }catch(e){$("pMsg").textContent="Failed: "+e.message}
+}
+
+/* ══ CAMPAIGNS ════════════════════════════════════════════════════════════
+   This panel decides nothing. Every state badge, every saving percentage and
+   every preview below is a figure the SERVER returned — the same functions
+   the public page calls. A panel that works out its own answer is a second
+   implementation, and the one that drifts is always the one nobody tests.  */
+const CPLANS = ["premium", "pro"], CPERIODS = ["monthly", "quarterly", "annual"];
+//  Every display flag the server knows about, in one place. Adding one to
+//  _CAMPAIGN_SHOW in main.py and forgetting it here is how a flag ends up
+//  uncontrollable: campBody() would omit it and the server would apply its
+//  default on every save.
+const CSHOW = ["banner", "popup", "countdown", "strike", "savings", "cta", "terms"];
+const CSHOW_OFF_BY_DEFAULT = ["cta", "terms"];
+let CAMPS = [], CTA_TARGETS = [];
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const BDT = n => "৳" + Number(n || 0).toLocaleString("en-US");
+
+async function loadCampaigns() {
+  try {
+    //  LIST_NOW is loaded by loadPricing(); if that has not run yet, read it
+    //  here too rather than render a table of blank list prices.
+    if (!Object.keys(LIST_NOW).length) {
+      const c = await (await fetch(`${API}/api/config?x=` + Date.now())).json();
+      LIST_NOW = (c && c.pricing) || {};
+    }
+    const d = await (await fetch(`${API}/api/admin/campaigns`, { headers: H() })).json();
+    CAMPS = d.campaigns || [];
+    CTA_TARGETS = d.cta_targets || [];
+    $("cNote").textContent = d.note + "  Server time " + d.now + " (" + d.tz +
+      ", via " + d.tz_source + "). " + d.count + " of " + d.max + " stored.";
+    const sel = $("cCtaH");
+    sel.innerHTML = '<option value="">— none —</option>' +
+      CTA_TARGETS.map(t => '<option>' + esc(t) + '</option>').join("");
+    paintCampaigns();
+  } catch (e) { $("cMsg").textContent = "Could not load campaigns: " + e.message; }
+}
+
+function paintCampaigns() {
+  if (!CAMPS.length) {
+    $("cRows").innerHTML = '<tr><td colspan="5" class="sub">' +
+      'No campaigns yet. The list prices above are what the site charges.</td></tr>';
+    return;
+  }
+  $("cRows").innerHTML = CAMPS.map(c => {
+    //  An expired campaign keeps its row for the record but offers no action
+    //  that could put it back on sale by accident.
+    const acts = [];
+    if (c.state !== "expired")
+      acts.push('<button class="ban un" onclick="campEdit(\'' + c.id + '\')">Edit</button>');
+    acts.push('<button class="ban un" onclick="campDuplicate(\'' + c.id + '\')">Duplicate</button>');
+    if (c.state === "draft" || c.state === "disabled")
+      acts.push('<button class="ban un" onclick="campStatus(\'' + c.id + '\',\'enabled\')">Schedule</button>');
+    if (c.state === "scheduled" || c.state === "active")
+      acts.push('<button class="ban" onclick="campStatus(\'' + c.id + '\',\'disabled\')">Disable</button>');
+    if (c.state === "draft")
+      acts.push('<button class="ban" onclick="campDelete(\'' + c.id + '\')">Delete</button>');
+    return '<tr><td>' + esc(c.name || c.id) +
+      (c.code ? '<div class="sub">' + esc(c.code) + '</div>' : "") + '</td>' +
+      '<td><span class="st st-' + esc(c.state) + '">' + esc(c.state) + '</span></td>' +
+      '<td class="sub">' + esc((c.starts_at || "immediately").replace("T", " ")) +
+        '<br>to ' + esc((c.ends_at || "—").replace("T", " ")) +
+        '<br>' + esc(c.tz || "") + '</td>' +
+      '<td class="sub">' + (c.cells || []).map(esc).join('<br>') + '</td>' +
+      '<td>' + acts.join("") + '</td></tr>';
+  }).join("");
+}
+
+function campPriceRows(prices, periods) {
+  $("cPrices").innerHTML = CPERIODS.map(per => {
+    const row = (prices || {})[per] || {};
+    const on = !periods || periods.indexOf(per) >= 0;
+    const bits = [];
+    return '<tr><td>' + per.charAt(0).toUpperCase() + per.slice(1) + '</td>' +
+      '<td><input type="checkbox" id="pe_' + per + '"' + (on ? " checked" : "") + '></td>' +
+      CPLANS.map(pl => {
+        //  THE LIST PRICE, not the charged price. listPrice() reads
+        //  pricing[period].standard first, which is the only figure that
+        //  stays put while a campaign is running.
+        const lp = listPrice(per, pl);
+        const cv = row[pl];
+        if (lp != null && cv != null && Number(lp) > 0 && Number(cv) < Number(lp))
+          bits.push(pl + " −" +
+            Math.round((lp - cv) * 100 / lp) + "% (" + BDT(lp - cv) + " off)");
+        return '<td class="sub">' + (lp != null ? BDT(lp) : "—") + '</td>' +
+          '<td><input type="number" id="pc_' + per + '_' + pl + '" style="width:92px" ' +
+            'oninput="campPriceRows_recalc()" ' +
+            'placeholder="list price" value="' + (cv != null ? cv : "") + '"></td>';
+      }).join("") +
+      '<td class="sub" id="pd_' + per + '">' + (bits.join(" · ") || "—") + '</td></tr>';
+  }).join("");
+}
+
+//  Recompute only the discount column, so typing does not rebuild the inputs
+//  under the cursor.
+function campPriceRows_recalc() {
+  CPERIODS.forEach(per => {
+    const cell = $("pd_" + per);
+    if (!cell) return;
+    const bits = [];
+    CPLANS.forEach(pl => {
+      const lp = listPrice(per, pl);
+      const raw = String(($("pc_" + per + "_" + pl) || {}).value || "").trim();
+      if (raw === "" || lp == null) return;
+      const cv = Number(raw);
+      if (!(Number(lp) > 0) || !(cv < Number(lp))) return;
+      bits.push(pl + " −" + Math.round((lp - cv) * 100 / lp) +
+                "% (" + BDT(lp - cv) + " off)");
+    });
+    cell.textContent = bits.join(" · ") || "—";
+  });
+}
+
+function campNew() { campFill({}); }
+
+function campEdit(id) {
+  const c = CAMPS.filter(x => x.id === id)[0];
+  if (c) campFill(c);
+}
+
+//  Duplicate: same content, no id, no dates, back to draft. The dates are
+//  cleared on purpose — a copy that kept them would overlap the original and
+//  the server would refuse the save with a message about a campaign the admin
+//  did not think they were touching.
+function campDuplicate(id) {
+  const c = CAMPS.filter(x => x.id === id)[0];
+  if (!c) return;
+  const copy = JSON.parse(JSON.stringify(c));
+  copy.id = ""; copy.starts_at = ""; copy.ends_at = "";
+  copy.name = (c.name || "Campaign") + " (copy)";
+  copy.code = "";
+  campFill(copy);
+  $("cMsg").textContent = "Copied. Give it a new window and an analytics code, " +
+    "then save. Nothing has been stored yet.";
+}
+
+function campFill(c) {
+  $("cEdit").classList.remove("hide");
+  $("cErr").innerHTML = ""; $("cPrev").innerHTML = ""; $("cMsg").textContent = "";
+  $("cId").value = c.id || "";
+  $("cName").value = c.name || ""; $("cCode").value = c.code || "";
+  $("cBadge").value = c.badge || ""; $("cHead").value = c.heading || "";
+  $("cDesc").value = c.description || "";
+  $("cTz").value = c.tz || "Asia/Dhaka";
+  $("cFrom").value = c.starts_at || ""; $("cTo").value = c.ends_at || "";
+  $("cCtaT").value = c.cta_text || ""; $("cCtaH").value = c.cta_href || "";
+  $("cTerms").value = c.terms || "";
+  const show = c.show || {};
+  CSHOW.forEach(k => {
+    const box = $("sw_" + k);
+    if (!box) return;
+    box.checked = show[k] !== undefined ? !!show[k]
+                                        : CSHOW_OFF_BY_DEFAULT.indexOf(k) < 0;
+  });
+  campPriceRows(c.prices, c.periods);
+  $("cEdit").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function campClose() { $("cEdit").classList.add("hide"); }
+
+function campBody(status) {
+  const prices = {}, periods = [];
+  CPERIODS.forEach(per => {
+    if (!$("pe_" + per).checked) return;
+    periods.push(per);
+    const cell = {};
+    CPLANS.forEach(pl => {
+      const v = String($("pc_" + per + "_" + pl).value).trim();
+      if (v !== "") cell[pl] = Number(v);
+    });
+    if (Object.keys(cell).length) prices[per] = cell;
+  });
+  const show = {};
+  CSHOW.forEach(k => { const b = $("sw_" + k); if (b) show[k] = b.checked; });
+  const b = {
+    name: $("cName").value, code: $("cCode").value, badge: $("cBadge").value,
+    heading: $("cHead").value, description: $("cDesc").value,
+    cta_text: $("cCtaT").value, cta_href: $("cCtaH").value,
+    terms: $("cTerms").value, tz: $("cTz").value,
+    starts_at: $("cFrom").value, ends_at: $("cTo").value,
+    periods: periods, prices: prices, show: show
+  };
+  if ($("cId").value) b.id = $("cId").value;
+  if (status) b.status = status;
+  return b;
+}
+
+function campErrors(errs) {
+  $("cErr").innerHTML = (errs && errs.length)
+    ? "<b>Nothing was saved. Fix these first:</b>" +
+      errs.map(e => "· " + esc(e)).join("<br>")
+    : "";
+  return !!(errs && errs.length);
+}
+
+async function campPreview() {
+  $("cMsg").textContent = "Building preview…";
+  try {
+    const r = await fetch(`${API}/api/admin/campaigns/preview`,
+      { method: "POST", headers: H(), body: JSON.stringify(campBody(null)) });
+    const d = await r.json();
+    $("cMsg").textContent = d.note || "";
+    campErrors(d.errors);
+    paintPreview(d.preview, d.would_be);
+  } catch (e) { $("cMsg").textContent = "Preview failed: " + e.message; }
+}
+
+function paintPreview(p, state) {
+  if (!p) { $("cPrev").innerHTML = ""; return; }
+  let h = '<div style="margin-bottom:8px">This campaign would be <b>' +
+    esc(state) + '</b> right now.</div>';
+  //  WHAT WOULD SHOW, AND WHERE. The banner and the popup are independent
+  //  flags, so the four combinations are spelled out rather than implied —
+  //  "no public promotion" is a real and easy-to-reach state and the admin
+  //  should not have to deduce it from two unticked boxes.
+  const where = [];
+  if (p.show.banner) where.push("the pricing banner");
+  if (p.show.popup)  where.push("the arrival popup");
+  h += '<div style="margin-bottom:8px">Shown on: <b>' +
+    (where.length ? esc(where.join(" and ")) : "nowhere — prices change silently") +
+    '</b></div>';
+  if (p.show.banner || p.show.popup) {
+    h += '<div style="margin-bottom:8px">' +
+      (p.badge ? '<span class="pvbadge">' + esc(p.badge) + '</span> ' : "") +
+      (p.heading ? '<b>' + esc(p.heading) + '</b>' : "") +
+      (p.description ? '<br>' + esc(p.description) : "") + '</div>';
+    if (!p.heading)
+      h += '<div class="cerr">· No heading. The banner and the popup both ' +
+           'refuse to render without one, so nothing would appear.</div>';
+  }
+  CPERIODS.forEach(per => {
+    const row = p.prices[per];
+    if (!row) return;
+    h += '<div>' + per.charAt(0).toUpperCase() + per.slice(1) + ' — ' +
+      CPLANS.filter(pl => row[pl]).map(pl => {
+        const x = row[pl];
+        return pl + ": " + (p.show.strike ? "<s>" + BDT(x.was) + "</s> " : "") +
+          "<b>" + BDT(x.now) + "</b>" +
+          (p.show.savings ? " (save " + x.save_pct + "%)" : "");
+      }).join(" · ") + '</div>';
+  });
+  if (!Object.keys(p.prices).length)
+    h += '<div class="sub">No cell is discounted, so nothing would change.</div>';
+  if (p.ends_at_display)
+    h += '<div style="margin-top:6px">Ends ' + esc(p.ends_at_display) + ' ' +
+      esc(p.tz) + (p.show.countdown
+        ? ' · countdown shown (' + Math.floor((p.ends_in_seconds || 0) / 86400) +
+          ' days left)' : ' · no countdown') + '</div>';
+  if (p.show.cta) h += '<div style="margin-top:6px">Button: <b>' +
+    esc(p.cta_text) + '</b> &rarr; ' + esc(p.cta_href) + '</div>';
+  if (p.show.terms) h += '<div class="sub" style="margin-top:6px">' +
+    esc(p.terms) + '</div>';
+  h += '<div class="sub" style="margin-top:8px">Nothing was stored and no price ' +
+    'changed.</div>';
+  $("cPrev").innerHTML = h;
+}
+
+async function campSave(status) {
+  $("cMsg").textContent = "Saving…"; $("cPrev").innerHTML = "";
+  try {
+    const r = await fetch(`${API}/api/admin/campaigns`,
+      { method: "POST", headers: H(), body: JSON.stringify(campBody(status)) });
+    const d = await r.json();
+    if (campErrors(d.errors)) { $("cMsg").textContent = "Not saved."; return; }
+    if (!d.saved) { $("cMsg").textContent = "NOT SAVED — " + (d.detail || "unknown"); return; }
+    $("cMsg").textContent = "Saved. This campaign is " + d.state + ".";
+    campClose();
+    loadCampaigns();
+    //  A campaign going live changes which figure /api/config calls `standard`,
+    //  so the Pricing card must be re-read or it will be showing the old view.
+    loadPricing();
+  } catch (e) { $("cMsg").textContent = "Failed: " + e.message; }
+}
+
+async function campStatus(id, status) {
+  $("cMsg").textContent = "Updating…";
+  try {
+    const r = await fetch(`${API}/api/admin/campaigns/status?campaign_id=` +
+      encodeURIComponent(id) + "&status=" + encodeURIComponent(status),
+      { method: "POST", headers: H() });
+    const d = await r.json();
+    if (campErrors(d.errors)) { $("cMsg").textContent = "Not changed."; return; }
+    $("cMsg").textContent = d.saved ? ("Now " + d.state + ".")
+                                    : ("NOT SAVED — " + (d.detail || "unknown"));
+    loadCampaigns();
+    loadPricing();
+  } catch (e) { $("cMsg").textContent = "Failed: " + e.message; }
+}
+
+async function campDelete(id) {
+  //  No window.confirm — a modal dialog blocks this page's own tooling. The
+  //  server refuses to delete anything that has run, which is the protection
+  //  that actually matters.
+  $("cMsg").textContent = "Deleting…";
+  try {
+    const r = await fetch(`${API}/api/admin/campaigns/delete?campaign_id=` +
+      encodeURIComponent(id), { method: "POST", headers: H() });
+    const d = await r.json();
+    if (campErrors(d.errors)) { $("cMsg").textContent = "Not deleted."; return; }
+    $("cMsg").textContent = d.saved ? "Deleted." : "Not deleted.";
+    loadCampaigns();
+  } catch (e) { $("cMsg").textContent = "Failed: " + e.message; }
+}
+
+//  Referral rewards. Same shape as savePricing: read the panel, POST one row,
+//  the checkout picks it up on the next call. The BOUNDS ARE ON THE SERVER —
+//  a number field is a suggestion, and a mistyped 100 in the maximum would
+//  quietly make every subscription free.
+async function loadReferral(){
+  try{
+    const r=await fetch(`${API}/api/admin/referral`,{headers:H()});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json(), c=d.referral||{};
+    $("rEnabled").value=c.enabled?"1":"0";
+    $("rInv").value=c.referred_pct; $("rUnit").value=c.unit_pct;
+    $("rMax").value=c.max_discount_pct; $("rDays").value=c.reward_valid_days;
+    $("rHold").value=c.reservation_minutes; $("rCap").value=c.max_rewards_per_user;
+    $("rTerms").textContent="Customers currently see: "+(d.terms_preview||"");
+  }catch(e){ $("rMsg").textContent="Could not load referral settings: "+e.message; }
+}
+
+async function saveReferral(){
+  $("rMsg").textContent="Saving…";
+  const body={enabled:$("rEnabled").value==="1",
+    referred_pct:+$("rInv").value, unit_pct:+$("rUnit").value,
+    max_discount_pct:+$("rMax").value, reward_valid_days:+$("rDays").value,
+    reservation_minutes:+$("rHold").value, max_rewards_per_user:+$("rCap").value};
+  try{
+    const r=await fetch(`${API}/api/admin/referral`,{method:"POST",headers:H(),body:JSON.stringify(body)});
+    const d=await r.json().catch(()=>({}));
+    //  A refusal is the server protecting the revenue, so it is shown in full
+    //  rather than reduced to "failed".
+    if(!r.ok) throw new Error(d.detail||("HTTP "+r.status));
+    $("rMsg").textContent="Saved. The next checkout uses these numbers.";
+    $("rTerms").textContent="Customers now see: "+(d.terms_preview||"");
+  }catch(e){ $("rMsg").textContent="Not saved — "+e.message; }
+}
+
+const TOOLS=[
+  {id:'/overview.html',label:'Overview',grp:'Market',def:'free'},
+  {id:'/market.html',label:'Market Pulse',grp:'Market',def:'free'},
+  {id:'/sectors.html',label:'Sector Ranking',grp:'Market',def:'free'},
+  {id:'/trackrecord.html',label:'Track Record',grp:'Market',def:'free'},
+  {id:'/picks.html',label:"Today's Picks",grp:'Signals',def:'premium'},
+  {id:'/wma.html',label:'WMA Signals',grp:'Signals',def:'premium'},
+  {id:'/tech.html',label:'Tech Analysis',grp:'Signals',def:'premium'},
+  {id:'/combined.html',label:'Combined Signal',grp:'Signals',def:'premium'},
+  {id:'/bd.html',label:'BD Signal',grp:'Signals',def:'premium'},
+  {id:'/smartmoney.html',label:'Smart Money',grp:'Signals',def:'pro'},
+  {id:'/mastersignal.html',label:'Master Signal',grp:'Signals',def:'pro'},
+  {id:'holdings',label:'My Holdings',grp:'Portfolio',def:'pro'},
+  {id:'/risk.html',label:'Risk',grp:'Portfolio',def:'pro'},
+  {id:'/screener.html',label:'Screener',grp:'Tools',def:'premium'},
+  {id:'/comparison.html',label:'Compare',grp:'Tools',def:'premium'},
+  {id:'/crosstool.html',label:'Cross-Tool',grp:'Tools',def:'pro'},
+  {id:'/fundamentals.html',label:'Fundamentals',grp:'Tools',def:'premium'},
+  {id:'/calculator.html',label:'Calculator',grp:'Tools',def:'free'}
+];
+let TOOLSTATE={}; // { id: {free:bool, premium:bool, pro:bool} }
+const PLANS=["free","premium","pro"];
+
+async function loadTools(){
+  try{
+    const c=await(await fetch(`${API}/api/config`)).json();
+    const arr=Array.isArray(c.features)?c.features:[];
+    const map={}; arr.forEach(f=>{ if(f&&f.id) map[f.id]=f; });
+    TOOLSTATE={};
+    TOOLS.forEach(t=>{
+      const f=map[t.id];
+      if(f && (typeof f.free==="boolean"||typeof f.premium==="boolean"||typeof f.pro==="boolean")){
+        TOOLSTATE[t.id]={free:f.free!==false, premium:f.premium!==false, pro:f.pro!==false};
+      } else if(f && ("on" in f)){
+        const on=f.on!==false; TOOLSTATE[t.id]={free:on,premium:on,pro:on};      // migrate old global on/off
+      } else {
+        var d=t.def||'free';                                          // default tier from the split
+        TOOLSTATE[t.id]={free:d==='free', premium:d!=='pro', pro:true};
+      }
+    });
+    renderTools();
+  }catch(e){ TOOLS.forEach(t=>TOOLSTATE[t.id]={free:true,premium:true,pro:true}); renderTools(); $("tMsg").textContent="Could not load saved state, showing all on: "+e.message; }
+}
+
+function renderTools(){
+  let html='<div class="toolhd"><span>Tool</span><span>Free</span><span>Premium</span><span>Pro</span></div>',grp="";
+  TOOLS.forEach(t=>{
+    if(t.grp!==grp){grp=t.grp;html+=`<div class="toolgrp">${grp}</div>`}
+    const s=TOOLSTATE[t.id]||{free:true,premium:true,pro:true};
+    html+=`<div class="toolrow2"><span>${t.label}</span>`+
+      PLANS.map(p=>`<label class="sw"><input type="checkbox" ${s[p]?"checked":""} onchange="TOOLSTATE['${t.id}']['${p}']=this.checked"><span class="sl"></span></label>`).join("")+
+      `</div>`;
+  });
+  $("tools").innerHTML=html;
+}
+
+//  Footer social links. Same shape as the pricing and referral cards: read
+//  the panel, POST one row, the public footer picks it up on its next load.
+//  The URL CHECK IS ON THE SERVER — a type="url" field is a suggestion, and
+//  the footer is on every page, so a bad address there is visible everywhere.
+const SOCIAL=[{k:"facebook",label:"Facebook"},{k:"linkedin",label:"LinkedIn"},
+               {k:"youtube",label:"YouTube"},{k:"whatsapp",label:"WhatsApp"}];
+let SOCIALSTATE={};
+
+async function loadSocial(){
+  try{
+    const c=await(await fetch(`${API}/api/config`)).json();
+    const s=(c&&c.social)||{};
+    SOCIALSTATE={};
+    SOCIAL.forEach(n=>{
+      const v=s[n.k];
+      if(v&&typeof v==="object") SOCIALSTATE[n.k]={url:String(v.url||""),on:v.on===true};
+      else { const u=String(v||"").trim(); SOCIALSTATE[n.k]={url:u,on:!!u}; }
+    });
+    renderSocial();
+  }catch(e){
+    //  Show the fields rather than a dead card, but say plainly that these are
+    //  not the live values — saving from a blank panel would wipe the footer.
+    SOCIAL.forEach(n=>SOCIALSTATE[n.k]={url:"",on:false});
+    renderSocial();
+    $("sMsg").textContent="Could not read the current links ("+e.message+
+      ") — these fields are blank, not empty. Refresh before saving.";
+  }
+}
+
+function renderSocial(){
+  $("social").innerHTML=
+    '<div class="socialhd"><span>Network</span><span>Address</span><span>Show</span></div>'+
+    SOCIAL.map(n=>{
+      const s=SOCIALSTATE[n.k]||{url:"",on:false};
+      const v=String(s.url||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+      return `<div class="socialrow"><span>${n.label}</span>`+
+        `<input type="url" inputmode="url" spellcheck="false" placeholder="https://…" value="${v}" `+
+        `oninput="SOCIALSTATE['${n.k}'].url=this.value">`+
+        `<label class="sw"><input type="checkbox" ${s.on?"checked":""} `+
+        `onchange="SOCIALSTATE['${n.k}'].on=this.checked"><span class="sl"></span></label>`+
+        `</div>`;
+    }).join("");
+}
+
+async function saveSocial(){
+  $("sMsg").textContent="Saving…";
+  const social={};
+  SOCIAL.forEach(n=>{const s=SOCIALSTATE[n.k]||{};
+    social[n.k]={url:String(s.url||"").trim(),on:!!s.on};});
+  try{
+    const r=await fetch(`${API}/api/admin/social`,{method:"POST",headers:H(),
+      body:JSON.stringify({social})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.detail||("HTTP "+r.status));
+    //  Repaint from what the SERVER stored, not from what was typed, so a
+    //  rejected address shows up as the blank it actually became.
+    if(d.social){
+      SOCIAL.forEach(n=>{const v=d.social[n.k]||{};
+        SOCIALSTATE[n.k]={url:String(v.url||""),on:v.on===true};});
+      renderSocial();
+    }
+    const on=(d.showing||[]).map(k=>(SOCIAL.find(n=>n.k===k)||{}).label||k);
+    $("sMsg").textContent="Saved. Footer now shows: "+(on.length?on.join(", "):"no icons")+".";
+  }catch(e){ $("sMsg").textContent="Not saved — "+e.message; }
+}
+
+async function wbTest(){
+  const email=$("wbTest").value.trim(); const stage=$("wbStage").value;
+  if(!email){$("wbMsg").textContent="Enter a test email first.";return}
+  $("wbMsg").textContent="Sending test…";
+  try{
+    const r=await fetch(`${API}/api/admin/send-winback?test=${encodeURIComponent(email)}&stage=${stage}`,{method:"POST",headers:H()});
+    const j=await r.json();
+    $("wbMsg").textContent = r.ok ? `Test (stage ${stage}): ${j.status} → ${email}` : `Error: ${j.detail||r.status}`;
+  }catch(e){$("wbMsg").textContent="Network error: "+e.message;}
+}
+async function wbRun(){
+  if(!confirm("Send win-back emails now to every user who is due today?"))return;
+  $("wbMsg").textContent="Running…";
+  try{
+    const r=await fetch(`${API}/api/admin/send-winback`,{method:"POST",headers:H()});
+    const j=await r.json();
+    $("wbMsg").textContent = r.ok ? `Done — sent ${j.sent}, skipped ${j.skipped}, failed ${j.failed}` : `Error: ${j.detail||r.status}`;
+  }catch(e){$("wbMsg").textContent="Network error: "+e.message;}
+}
+async function saveTools(){
+  $("tMsg").textContent="Saving…";
+  const gates=TOOLS.map(t=>{const s=TOOLSTATE[t.id]||{free:true,premium:true,pro:true};return {id:t.id,free:!!s.free,premium:!!s.premium,pro:!!s.pro};});
+  try{
+    const r=await fetch(`${API}/api/admin/features`,{method:"POST",headers:H(),body:JSON.stringify({gates})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    $("tMsg").textContent="Saved. Hard-refresh the app to see each plan's sidebar update.";
+  }catch(e){$("tMsg").textContent="Failed: "+e.message}
+}
+
+if(KEY){fetch(`${API}/api/admin/stats`,{headers:H()}).then(r=>{if(r.ok){$("gate").classList.add("hide");$("app").classList.remove("hide");boot();}}).catch(()=>{});}
+</script>
+</body>
+</html>

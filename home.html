@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="en">
 <!-- ============================================================================
      DSE Pulse — home                                              2026-08-28
      ----------------------------------------------------------------------------
@@ -40,6 +41,93 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DSE Pulse — Find the Signal</title>
 <meta name="description" content="Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.">
+
+<!--  CANONICAL. Netlify serves this same document at /, /index.html, the
+      *.netlify.app subdomain and every deploy preview. Without this line any
+      of those can be indexed in place of dsepulse.com and the links split
+      between hosts.  -->
+<link rel="canonical" href="https://dsepulse.com/">
+
+<!--  Open Graph and Twitter. Until these existed, every share of this site
+      in a WhatsApp or Facebook group rendered as a bare blue link: no image,
+      no headline, no description. In Bangladesh retail investing those groups
+      are the distribution channel.  -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DSE Pulse">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://dsepulse.com/">
+<meta property="og:title" content="DSE Pulse — Find the Signal">
+<meta property="og:description" content="Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.">
+<meta property="og:image" content="https://dsepulse.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DSE Pulse — stop searching through 400+ DSE stocks">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSE Pulse — Find the Signal">
+<meta name="twitter:description" content="Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.">
+<meta name="twitter:image" content="https://dsepulse.com/og-cover.png">
+
+<!--  STRUCTURED DATA. Inert markup: it cannot affect a signal, a price or a
+      payment. It is what tells an answer engine that DSE Pulse is a named
+      thing with a market, a subject and a set of features, rather than an
+      unlabelled page. Every value below is checked against the product.  -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://dsepulse.com/#organization",
+      "name": "DSE Pulse",
+      "url": "https://dsepulse.com/",
+      "description": "Dhaka Stock Exchange market analytics and short-term trading intelligence.",
+      "areaServed": { "@type": "Country", "name": "Bangladesh" },
+      "knowsAbout": [
+        "Dhaka Stock Exchange",
+        "Bangladesh stock market",
+        "stock screening",
+        "technical analysis",
+        "weighted moving averages",
+        "short-term trading",
+        "risk management"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://dsepulse.com/#website",
+      "url": "https://dsepulse.com/",
+      "name": "DSE Pulse",
+      "description": "Hundreds of Dhaka Stock Exchange stocks are scanned after every close. Layered signals filter them to a shortlist, and each setup carries an entry, a target and a risk level. Type any ticker free.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://dsepulse.com/#organization" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://dsepulse.com/#app",
+      "name": "DSE Pulse",
+      "url": "https://dsepulse.com/",
+      "applicationCategory": "FinanceApplication",
+      "applicationSubCategory": "Stock market analysis",
+      "operatingSystem": "Web browser",
+      "description": "Scans 400+ Dhaka Stock Exchange stocks after every market close and produces a scored shortlist, each setup carrying an entry, a target and a stop loss.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://dsepulse.com/#organization" },
+      "featureList": [
+        "Daily Picker shortlist",
+        "WMA 9/34/89 analysis",
+        "Technical analysis signals",
+        "Combined Signal",
+        "BD Signal",
+        "Smart Money",
+        "Stock screener",
+        "Risk and position-size calculator",
+        "Published track record"
+      ]
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
@@ -3909,3 +3997,5 @@ body.has-banner .ybanner .ylong{display:none}
     });
 })();
 </script>
+
+</html>
